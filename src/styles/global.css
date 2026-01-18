@@ -169,37 +169,47 @@ main :is(h1,h2,h3,h4,p,ul,ol,blockquote,pre,table,.figure-card,.references,.kate
 }
 
 .byline {
+  max-width: 108ch;
+  margin: 0 auto 26px;
+
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  flex-wrap: wrap;
+
   font-size: 14px;
   color: rgba(17, 24, 39, 0.55);
-  margin: 0 auto 26px;
-  max-width: 108ch;
-  padding-top: 2px;
+}
+
+.byline-left {
+  display: inline-flex;
+  gap: 6px;
   align-items: baseline;
 }
 
-/* If your byline renders as: <div>By Chahat</div><div>January ...</div> */
-.byline > :first-child {
-  text-align: left;
-  color: var(--brand-gold);   /* gold-ish */
+.byline-left .by {
+  color: rgba(17, 24, 39, 0.55); /* "By" stays muted */
+  font-weight: 500;
+}
+
+.byline-left .author {
   font-weight: 650;
 }
 
-.byline > :last-child {
-  text-align: right;
-  color: rgba(17, 24, 39, 0.55);
-}
-
-.byline a {
-  color: var(--brand-gold);
+.byline-left .author,
+.byline-left .author a {
+  color: var(--brand-gold);      /* author name in gold */
   text-decoration: none;
 }
-.byline a:hover {
+
+.byline-left .author a:hover {
   color: var(--brand-gold-2);
   text-decoration: underline;
+}
+
+.byline-right {
+  color: rgba(17, 24, 39, 0.55); /* date on the right, muted */
+  text-align: right;
 }
 
 /* Headings */
