@@ -16,15 +16,15 @@ This post derives the core equations, shows where they break, and explains how t
 
 ## Definitions
 
-Let the image intensity be \( I(\mathbf{x}, t) \) with pixel coordinate \( \mathbf{x} = (x, y)^\top \).
+Let the image intensity be $I(\mathbf{x}, t)$ with pixel coordinate $\mathbf{x} = (x, y)^\top$.
 
 **Optical flow** is a 2D vector field
-\[
+$$
 \mathbf{u}(\mathbf{x}) = (u(\mathbf{x}), v(\mathbf{x}))^\top
-\]
-such that a point at \( \mathbf{x} \) at time \( t \) moves to \( \mathbf{x} + \mathbf{u}(\mathbf{x}) \) at \( t + \Delta t \).
+$$
+such that a point at $\mathbf{x}$ at time $t$ moves to $\mathbf{x} + \mathbf{u}(\mathbf{x})$ at $t + \Delta t$.
 
-**Motion flow** is the flow field induced by camera rigid motion \((\mathbf{v}, \boldsymbol{\omega})\) and scene depth \(Z(\mathbf{x})\) through projective geometry. It is what you *should* observe in the image under a rigid world and calibrated camera.
+**Motion flow** is the flow field induced by camera rigid motion $(\mathbf{v}, \boldsymbol{\omega})$ and scene depth $Z(\mathbf{x})$ through projective geometry. It is what you *should* observe in the image under a rigid world and calibrated camera.
 
 Optical flow is *estimated from images* (photometric assumptions). Motion flow is *predicted from geometry* (kinematics + depth).
 
@@ -33,23 +33,23 @@ Optical flow is *estimated from images* (photometric assumptions). Motion flow i
 ## Optical flow from brightness constancy
 
 The classical starting point is **brightness constancy**:
-\[
+$$
 I(\mathbf{x}, t) = I(\mathbf{x} + \mathbf{u}(\mathbf{x}), t+\Delta t).
-\]
+$$
 
 For small motions, linearize:
-\[
+$$
 I(\mathbf{x} + \mathbf{u}, t+\Delta t) \approx I(\mathbf{x}, t) + I_x u + I_y v + I_t,
-\]
+$$
 giving the **optical flow constraint equation (OFCE)**:
-\[
+$$
 I_x u + I_y v + I_t = 0.
-\]
+$$
 
-This is one equation for two unknowns \((u,v)\) — the **aperture problem**. Any component of motion orthogonal to the local image gradient is unobservable:
-\[
+This is one equation for two unknowns $(u,v)$ — the **aperture problem**. Any component of motion orthogonal to the local image gradient is unobservable:
+$$
 \mathbf{u} = \mathbf{u}_\parallel + \mathbf{u}_\perp,\quad \nabla I \cdot \mathbf{u}_\perp = 0.
-\]
+$$
 
 So, *optical flow is not “the” motion*; it’s the motion field that best satisfies photometric constraints plus whatever regularization you impose.
 
@@ -58,45 +58,43 @@ So, *optical flow is not “the” motion*; it’s the motion field that best sa
 ## Regularization: why every optical flow method encodes a prior
 
 Most flow methods solve an optimization problem:
-
-\[
+$$
 \min_{\mathbf{u}} \int_\Omega \rho\!\left(I(\mathbf{x}+\mathbf{u}, t+\Delta t)-I(\mathbf{x}, t)\right)\,d\mathbf{x}
 \;+\;
 \lambda \int_\Omega \phi(\nabla \mathbf{u})\,d\mathbf{x}.
-\]
+$$
 
 - The first term enforces *data consistency* (brightness constancy, sometimes gradient constancy).
 - The second enforces *spatial coherence* (smoothness, piecewise-smoothness, total variation, etc.).
 
-This is not a nuisance detail: the choice of \(\phi\) is an *assumption about the world*.
-In robotics scenes with thin structures, disocclusions, specularities, or rapid lighting change, many “accurate” benchmarks priors become liabilities.
+This is not a nuisance detail: the choice of $\phi$ is an *assumption about the world*.
+In robotics scenes with thin structures, disocclusions, specularities, or rapid lighting change, many “accurate” benchmark priors become liabilities.
 
 ---
 
 ## Motion flow from projective geometry
 
-Now derive motion flow. Let a 3D point in camera coordinates be \(\mathbf{X}=(X,Y,Z)^\top\). Under a pinhole model (normalized image coordinates),
-\[
+Now derive motion flow. Let a 3D point in camera coordinates be $\mathbf{X}=(X,Y,Z)^\top$. Under a pinhole model (normalized image coordinates),
+$$
 x = \frac{X}{Z},\qquad y = \frac{Y}{Z}.
-\]
+$$
 
-Let the camera undergo instantaneous rigid motion: translational velocity \(\mathbf{v}=(v_x,v_y,v_z)^\top\) and angular velocity \(\boldsymbol{\omega}=(\omega_x,\omega_y,\omega_z)^\top\). The point’s velocity in camera coordinates (rigid scene) is:
-\[
+Let the camera undergo instantaneous rigid motion: translational velocity $\mathbf{v}=(v_x,v_y,v_z)^\top$ and angular velocity $\boldsymbol{\omega}=(\omega_x,\omega_y,\omega_z)^\top$. The point’s velocity in camera coordinates (rigid scene) is:
+$$
 \dot{\mathbf{X}} = -\mathbf{v} - \boldsymbol{\omega}\times \mathbf{X}.
-\]
+$$
 
-Differentiate \(x = X/Z\), \(y = Y/Z\). The induced image velocity \((\dot{x},\dot{y})\) is:
-
-\[
+Differentiate $x = X/Z$, $y = Y/Z$. The induced image velocity $(\dot{x},\dot{y})$ is:
+$$
 \begin{aligned}
 \dot{x} &= \frac{1}{Z}\left(-v_x + x v_z\right) + x y\, \omega_x - (1+x^2)\,\omega_y + y\,\omega_z, \\
 \dot{y} &= \frac{1}{Z}\left(-v_y + y v_z\right) + (1+y^2)\,\omega_x - x y\,\omega_y - x\,\omega_z.
 \end{aligned}
-\]
+$$
 
 Key takeaways:
 
-1. The translational component scales as \(1/Z\). Closer objects move faster in the image.
+1. The translational component scales as $1/Z$. Closer objects move faster in the image.
 2. The rotational component is depth-independent (in normalized coordinates).
 3. You need calibration (or work in pixel coordinates with intrinsics).
 
@@ -131,7 +129,7 @@ Downstream effect: if you use flow for control (e.g., collision avoidance via ti
 ### 2) Illumination and exposure changes
 Outdoor robotics and SLAM systems see strong intensity variation. Classic fixes:
 - gradient constancy,
-- robust penalties \(\rho\),
+- robust penalties $\rho$,
 - photometric calibration,
 - learned features.
 
@@ -152,10 +150,10 @@ This is why flow is often paired with segmentation or layered motion models in r
 
 ## Using flow for ego-motion: what is and isn’t identifiable?
 
-From motion flow equations, translation is entangled with depth through \(1/Z\). This implies:
+From motion flow equations, translation is entangled with depth through $1/Z$. This implies:
 
-- With pure rotation (\(\mathbf{v}=0\)), you can estimate \(\boldsymbol{\omega}\) from flow without depth (in principle).
-- With translation, you need depth (or additional constraints) to separate \(\mathbf{v}\) and \(Z\).
+- With pure rotation $(\mathbf{v}=0)$, you can estimate $\boldsymbol{\omega}$ from flow without depth (in principle).
+- With translation, you need depth (or additional constraints) to separate $\mathbf{v}$ and $Z$.
 
 This is the root of **scale ambiguity** in monocular setups. You can get the *direction* of translation and the *structure up to scale* but not absolute scale without additional sensors or priors.
 
@@ -164,9 +162,9 @@ This is the root of **scale ambiguity** in monocular setups. You can get the *di
 ## Flow, depth, and time-to-contact
 
 For planar motion towards a surface, an important quantity is **divergence** of flow (expansion), related to time-to-contact (TTC). In simplified cases,
-\[
+$$
 \text{TTC} \approx \frac{1}{\nabla \cdot \mathbf{u}}.
-\]
+$$
 
 But this is only meaningful if:
 - the flow corresponds to actual motion (not regularizer artifacts),
