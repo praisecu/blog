@@ -1,0 +1,44 @@
+---
+const headings = Astro.props.headings ?? [];
+
+// Keep H2/H3 only
+const filtered = headings.filter((h) => h.depth === 2 || h.depth === 3);
+
+function indent(depth) {
+  return depth === 3 ? "14px" : "0px";
+}
+---
+
+<nav class="toc" aria-label="Table of contents">
+  <div class="toc-title">CONTENTS</div>
+  {filtered.map((h) => (
+    <a href={`#${h.slug}`} style={`margin-left:${indent(h.depth)};`} data-toc-link>
+      {h.text}
+    </a>
+  ))}
+</nav>
+
+<script>
+  // Active-section highlighting
+  const links = Array.from(document.querySelectorAll("[data-toc-link]"));
+  const targets = links
+    .map((a) => document.querySelector(decodeURIComponent(a.getAttribute("href"))))
+    .filter(Boolean);
+
+  const obs = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) {
+          const id = e.target.id;
+          for (const a of links) {
+            a.dataset.active = a.getAttribute("href") === "#" + id ? "true" : "false";
+          }
+          break;
+        }
+      }
+    },
+    { rootMargin: "-20% 0px -70% 0px", threshold: 0.01 }
+  );
+
+  targets.forEach((t) => obs.observe(t));
+</script>

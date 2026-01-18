@@ -1,0 +1,47 @@
+---
+import Toc from "../components/Toc.astro";
+
+const { frontmatter, headings } = Astro.props;
+
+const title = frontmatter?.title ?? "Untitled";
+const author = frontmatter?.author ?? "Anonymous";
+const date = frontmatter?.date ?? "";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title}</title>
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="/src/styles/global.css" />
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="topbar">
+        <div>Other Blogs</div>
+        <div><a href="https://github.com/">Link to Code</a></div>
+      </div>
+
+      <div class="layout">
+        <aside>
+          <Toc headings={headings} />
+        </aside>
+
+        <main>
+          <h1 class="post-title">{title}</h1>
+
+          <div class="byline">
+            <div>
+              By <a href="#">{author}</a>
+            </div>
+            <div>{date}</div>
+          </div>
+
+          <slot />
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

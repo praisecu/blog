@@ -1,0 +1,50 @@
+---
+layout: ../../layouts/PostLayout.astro
+title: "A Visual Introduction to Rectified Flows"
+author: "Your Name"
+date: "January 13, 2026"
+---
+
+import FlowDemo from "../../components/FlowDemo.svelte";
+
+<div class="figure-card">
+  <FlowDemo client:load />
+  <div class="caption">
+    <b>Figure 1:</b> An interactive toy example comparing <i>curved</i> vs <i>straight</i> sampling paths.
+    Adjust <span style="color:#9ca3af;">Sampling Duration</span> to change the speed.
+  </div>
+</div>
+
+---
+
+## Introduction
+
+Flow-based generative models transform a simple base distribution into a target distribution using a continuous-time dynamical system.
+A basic form is:
+
+$$
+\frac{d x(t)}{dt} = v_\theta(x(t), t),
+$$
+
+where $v_\theta$ is a learned velocity field.
+
+In practice, **curvature is computationally expensive**: curved trajectories typically require more solver steps to maintain accuracy.
+
+## Background
+
+The model defines a mapping from noise to data via integration.
+A common numerical discretization with $N$ steps has complexity that scales with $N$.
+
+## The Problem
+
+If trajectories are highly curved, then stable simulation requires smaller step sizes.
+This is why “straightening” paths can materially reduce sampling cost.
+
+## References
+
+<div class="references">
+
+1. Example reference placeholder.  
+2. Another placeholder reference.
+
+</div>
