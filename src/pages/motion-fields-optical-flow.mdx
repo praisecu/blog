@@ -1,0 +1,245 @@
+---
+title: "Class 18: Motion Fields and Optical Flow"
+description: "From 3D camera/object motion to 2D image motion: motion fields, optical flow, constraints, Lucas–Kanade, and core applications."
+date: 2026-01-18
+tags: ["computer-vision", "optical-flow", "motion-fields", "geometry"]
+draft: false
+---
+
+## Learning objectives
+
+By the end of this lecture, you should be able to:
+
+- Distinguish **motion field** (projection of true 3D motion) from **optical flow** (apparent motion of brightness patterns).
+- Derive the **image motion (motion field) equation** under camera translation and rotation.
+- State and interpret the **optical flow constraint** (brightness constancy + small motion).
+- Explain the **aperture problem** and why additional constraints/regularization are required.
+- Explain the core idea behind **Lucas–Kanade** (local least squares).
+- Connect optical flow to practical uses (tracking, stabilization, control, compression, biological navigation).
+
+---
+
+## 1) Motion fields: projecting 3D motion into the image
+
+Consider a 3D point \(P = (X, Y, Z)^\top\) observed by a pinhole camera. The normalized image-plane coordinates are
+
+\[
+x = \frac{X}{Z}, \qquad y = \frac{Y}{Z}.
+\]
+
+A **motion field** is the 2D vector field \(\dot{p} = (\dot{x}, \dot{y})^\top\) induced by the **true 3D motion** of scene points (or equivalently, camera motion) projected onto the image plane.
+
+### Rigid camera motion model
+
+For a rigid scene and moving camera, 3D point motion in the camera frame can be written as
+
+\[
+\dot{P} = -\,\Omega \times P - V,
+\]
+
+where:
+
+- \(V = (V_x, V_y, V_z)^\top\) is camera translational velocity,
+- \(\Omega = (\omega_x, \omega_y, \omega_z)^\top\) is camera angular velocity.
+
+---
+
+## 2) Motion field vs. optical flow: they are not the same
+
+**Motion field**: what geometry dictates (projection of actual 3D motion of points).  
+**Optical flow**: what you *estimate from image intensities* (apparent motion of brightness patterns).
+
+They coincide only under ideal conditions.
+
+### Counterexamples (why they differ)
+
+- A **perfectly uniform sphere** rotating: surface points move → **non-zero motion field**, but intensity patterns don’t change → **optical flow ~ 0**.
+- A **textured sphere** rotating: intensity patterns move → **non-zero optical flow**.
+
+In practice, optical flow can be corrupted/induced by:
+
+- illumination/shading changes,
+- specularities and non-Lambertian effects,
+- motion blur,
+- exposure flicker,
+- rolling shutter, etc.
+
+> Optical flow is an observable proxy; it is not guaranteed to recover the true motion field.
+
+---
+
+## 3) The motion field equation (translation + rotation)
+
+Let \(p = (x, y, 1)^\top\) be the normalized ray direction (up to scale). Image motion decomposes into **translational** and **rotational** components:
+
+\[
+\dot{p} = \dot{p}_{\text{trans}} + \dot{p}_{\text{rot}}.
+\]
+
+### Translational component (depth dependent)
+
+\[
+\dot{p}_{\text{trans}} =
+\frac{1}{Z}
+\begin{bmatrix}
+x V_z - V_x \\
+y V_z - V_y
+\end{bmatrix}.
+\]
+
+Key point: **translation depends on depth** \(Z\). This is why pure translation contains depth/scale cues.
+
+### Rotational component (depth independent)
+
+A standard form is:
+
+\[
+\dot{p}_{\text{rot}} =
+\begin{bmatrix}
+xy & -(1+x^2) & y \\
+(1+y^2) & -xy & -x
+\end{bmatrix}
+\Omega.
+\]
+
+Key point: **rotation is independent of depth**. Under **pure rotation**, flow carries **no depth information**.
+
+---
+
+## 4) Pure rotation vs. pure translation: structure in the flow
+
+### Pure rotation
+
+- Produces a swirl-like flow pattern.
+- No depth cue is available from the flow magnitude alone.
+
+**Figure placeholder:**
+```md
+![Pure rotational flow pattern](/images/lectures/class-18/pure-rotation.png)
+```
+
+### Pure translation and the Focus of Expansion (FOE)
+
+Under pure translation, the flow vectors radiate from a special point:
+
+\[
+\text{FOE} = \left(\frac{V_x}{V_z}, \frac{V_y}{V_z}\right).
+\]
+
+- FOE is also the **epipole** for translational motion.
+- If \(V_z = 0\), the FOE goes to infinity (pure sideways motion).
+
+**Figure placeholder:**
+```md
+![Focus of Expansion (FOE)](/images/lectures/class-18/foe.png)
+```
+
+---
+
+## 5) Time-to-contact (time-to-collision)
+
+A classic result: the **time-to-contact** can be estimated (under assumptions) as
+
+\[
+\tau = \frac{Z}{V_z}.
+\]
+
+Using the translation flow magnitude (relative to FOE), one can write:
+
+\[
+\frac{V_z}{Z} = \frac{\|\dot{p}_{\text{trans}}\|}{\|p - \text{FOE}\|}.
+\]
+
+Interpretation:
+
+- Flow magnitude scales inversely with depth (and proportional to \(1/\tau\)) for fixed angular offset from FOE.
+- This underlies collision-avoidance cues in biology and robotics.
+
+---
+
+## 6) The aperture problem: why flow is ambiguous locally
+
+A single oriented edge moving through a small window yields only the motion component **normal** to the edge; motion parallel to the edge is unobservable locally.
+
+This is the **aperture problem**: local measurements cannot determine full 2D motion without additional constraints (spatial smoothness, larger support, features/corners, etc.).
+
+**Figure placeholder:**
+```md
+![Aperture problem illustration](/images/lectures/class-18/aperture-problem.png)
+```
+
+---
+
+## 7) Optical flow constraints: from intensity to motion
+
+To estimate optical flow, we impose assumptions.
+
+### Assumption 1: brightness constancy
+
+Let \(I(x, y, t)\) be image intensity. Brightness constancy says:
+
+\[
+I(x, y, t) \approx I(x+\delta x, y+\delta y, t+\delta t).
+\]
+
+### Assumption 2: small motion (Taylor expansion)
+
+For small \(\delta x, \delta y, \delta t\), first-order Taylor expansion gives:
+
+\[
+I_x \delta x + I_y \delta y + I_t \delta t = 0.
+\]
+
+Divide by \(\delta t\) and define velocities \(u=\frac{\delta x}{\delta t}\), \(v=\frac{\delta y}{\delta t}\):
+
+\[
+I_x u + I_y v + I_t = 0.
+\]
+
+This is the **optical flow constraint equation**: one equation, two unknowns → underdetermined.
+
+---
+
+## 8) Lucas–Kanade: local least squares
+
+Lucas–Kanade resolves underdetermination by assuming **constant flow within a small window** (e.g., \(3\times3\), \(5\times5\)).
+
+For each pixel \(i\) in the window:
+
+\[
+I_x(x_i,y_i) \; u + I_y(x_i,y_i) \; v = -I_t(x_i,y_i).
+\]
+
+Stacking these yields:
+
+\[
+A \, \mathbf{v} = \mathbf{b},
+\quad
+\mathbf{v} =
+\begin{bmatrix}u\\v\end{bmatrix},
+\quad
+\mathbf{v} = (A^\top A)^{-1}A^\top \mathbf{b}.
+\]
+
+Practical note: the conditioning of \(A^\top A\) depends on local texture. Corners / gradients in multiple directions are well-posed (structure tensor intuition).
+
+---
+
+## 9) Applications
+
+- Motion detection and object tracking
+- Action recognition (motion as a representation)
+- Video stabilization (estimate camera motion)
+- Autonomy/control: optical-flow-based navigation (e.g., drones)
+- Compression: motion-compensated prediction (MPEG-style pipelines)
+- Biological navigation: insects/birds exploiting flow fields for landing and gap traversal
+
+---
+
+## 10) Key takeaways
+
+- Motion field is geometric truth; optical flow is an image-based estimate and can deviate.
+- Translation flow depends on depth; rotation flow does not.
+- FOE is diagnostic for translation; time-to-contact relates to flow magnitude patterns.
+- Optical flow estimation is ill-posed without extra constraints (aperture problem).
+- Lucas–Kanade is the canonical local least-squares approach under constant-flow-in-window.

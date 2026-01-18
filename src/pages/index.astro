@@ -423,7 +423,7 @@ const rest = posts.filter((p) => p !== featured);
         <>
           {featured ? (
             <>
-              <div class="section-title">Featured</div>
+              <div class="section-title">Pinned</div>
               <a
                 class="featured"
                 href={featured.url}
@@ -444,7 +444,7 @@ const rest = posts.filter((p) => p !== featured);
                   <div class="meta">
                     {featured.tags?.length ? <span class="tag">{featured.tags[0]}</span> : <span class="tag">note</span>}
                     <span>{featured.date}</span>
-                    <span class="cta">Read ↗</span>
+                    <span class="cta">Read</span>
                   </div>
                 </div>
               </a>
