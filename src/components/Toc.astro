@@ -11,34 +11,104 @@ function indent(depth) {
 
 <nav class="toc" aria-label="Table of contents">
   <div class="toc-title">CONTENTS</div>
+
   {filtered.map((h) => (
-    <a href={`#${h.slug}`} style={`margin-left:${indent(h.depth)};`} data-toc-link>
+    <a
+      href={`#${h.slug}`}
+      style={`margin-left:${indent(h.depth)};`}
+      data-toc-link
+      data-toc-href={`#${h.slug}`}
+    >
       {h.text}
     </a>
   ))}
 </nav>
 
-<script>
-  // Active-section highlighting
-  const links = Array.from(document.querySelectorAll("[data-toc-link]"));
-  const targets = links
-    .map((a) => document.querySelector(decodeURIComponent(a.getAttribute("href"))))
-    .filter(Boolean);
+<style>
+  .toc-title {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(15, 23, 42, 0.55);
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
 
-  const obs = new IntersectionObserver(
-    (entries) => {
-      for (const e of entries) {
-        if (e.isIntersecting) {
-          const id = e.target.id;
-          for (const a of links) {
-            a.dataset.active = a.getAttribute("href") === "#" + id ? "true" : "false";
-          }
-          break;
+  .toc a[data-toc-link] {
+    display: block;
+    padding: 6px 10px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 1.35;
+    color: rgba(15, 23, 42, 0.70);
+    border: 1px solid transparent;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+
+  .toc a[data-toc-link]:hover {
+    background: rgba(59, 130, 246, 0.08);
+    color: rgba(15, 23, 42, 0.92);
+  }
+
+  /* Active highlight (this is what you were missing) */
+  .toc a[data-toc-link][data-active="true"] {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.25);
+    color: rgba(15, 23, 42, 0.95);
+    font-weight: 750;
+  }
+</style>
+
+<script is:inline>
+  (() => {
+    const links = Array.from(document.querySelectorAll(".toc [data-toc-link]"));
+    if (!links.length) return;
+
+    const targets = links
+      .map((a) => {
+        const href = a.getAttribute("href");
+        if (!href || !href.startsWith("#")) return null;
+        try {
+          return document.querySelector(decodeURIComponent(href));
+        } catch {
+          return document.querySelector(href);
         }
-      }
-    },
-    { rootMargin: "-20% 0px -70% 0px", threshold: 0.01 }
-  );
+      })
+      .filter(Boolean);
 
-  targets.forEach((t) => obs.observe(t));
+    const setActive = (id) => {
+      for (const a of links) {
+        a.dataset.active = (a.getAttribute("href") === "#" + id) ? "true" : "false";
+      }
+    };
+
+    // If loaded with a hash
+    if (location.hash) {
+      const id = location.hash.slice(1);
+      if (id) setActive(id);
+    }
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        // pick the top-most visible heading
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (visible.length) setActive(visible[0].target.id);
+      },
+      { rootMargin: "-20% 0px -70% 0px", threshold: 0.01 }
+    );
+
+    targets.forEach((t) => obs.observe(t));
+
+    // Immediate feedback on click
+    links.forEach((a) => {
+      a.addEventListener("click", () => {
+        const href = a.getAttribute("href");
+        if (href && href.startsWith("#")) setActive(href.slice(1));
+      });
+    });
+  })();
 </script>
