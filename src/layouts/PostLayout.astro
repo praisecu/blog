@@ -32,13 +32,12 @@ const date = frontmatter?.date ?? "";
         <main>
           <h1 class="post-title">{title}</h1>
 
-        <div class="byline">
-          <div class="byline-left">
-            <span class="by">By</span>
-            <span class="author">{frontmatter.author}</span>
+          <div class="byline">
+            <div>
+              By <a href="#">{author}</a>
+            </div>
+            <div>{date}</div>
           </div>
-          <div class="byline-right">{frontmatter.date}</div>
-        </div>
 
           <slot />
         </main>

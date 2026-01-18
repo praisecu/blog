@@ -214,9 +214,9 @@ main :is(h1,h2,h3,h4,p,ul,ol,blockquote,pre,table,.figure-card,.references,.kate
 
 /* Headings */
 h2 {
-  font-size: 32px;
+  font-size: 26px;
   line-height: 1.15;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: rgba(17, 24, 39, 0.92);
   margin-top: 30px;
@@ -224,9 +224,9 @@ h2 {
 }
 
 h3 {
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1.22;
-  font-weight: 700;
+  font-weight: 650;
   letter-spacing: -0.015em;
   color: rgba(17, 24, 39, 0.92);
   margin-top: 22px;
