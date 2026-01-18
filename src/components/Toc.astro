@@ -71,6 +71,20 @@ function indent(depth) {
   .toc-link.is-active::before {
     background: rgb(37, 99, 235);
   }
+
+  .toc a:hover {
+    background: var(--accent-bg-hover);
+    border-left-color: rgba(200, 178, 119, 0.55);
+    color: var(--fg);
+    text-decoration: none;
+  }
+  
+  .toc a[data-active="true"] {
+    background: var(--accent-bg);
+    border-left-color: var(--gold-strong);
+    color: var(--fg);
+  }
+
 </style>
 
 <script is:inline>
