@@ -1,7 +1,5 @@
 ---
 const headings = Astro.props.headings ?? [];
-
-// Keep H2/H3 only
 const filtered = headings.filter((h) => h.depth === 2 || h.depth === 3);
 
 function indent(depth) {
@@ -14,10 +12,10 @@ function indent(depth) {
 
   {filtered.map((h) => (
     <a
+      class="toc-link"
       href={`#${h.slug}`}
       style={`margin-left:${indent(h.depth)};`}
       data-toc-link
-      data-toc-href={`#${h.slug}`}
     >
       {h.text}
     </a>
@@ -34,81 +32,105 @@ function indent(depth) {
     margin-bottom: 10px;
   }
 
-  .toc a[data-toc-link] {
+  .toc-link {
+    position: relative;
     display: block;
-    padding: 6px 10px;
+    padding: 8px 10px 8px 14px; /* space for left bar */
     border-radius: 10px;
     text-decoration: none;
     font-size: 13px;
     line-height: 1.35;
-    color: rgba(15, 23, 42, 0.70);
-    border: 1px solid transparent;
-    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+    color: rgba(15, 23, 42, 0.72);
+    transition: background 120ms ease, color 120ms ease;
   }
 
-  .toc a[data-toc-link]:hover {
+  .toc-link:hover {
     background: rgba(59, 130, 246, 0.08);
     color: rgba(15, 23, 42, 0.92);
   }
 
-  /* Active highlight (this is what you were missing) */
-  .toc a[data-toc-link][data-active="true"] {
-    background: rgba(59, 130, 246, 0.12);
-    border-color: rgba(59, 130, 246, 0.25);
-    color: rgba(15, 23, 42, 0.95);
+  /* Left accent bar (hidden by default) */
+  .toc-link::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 7px;
+    bottom: 7px;
+    width: 3px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.0);
+    transition: background 120ms ease;
+  }
+
+  /* Active state: subtle fill + strong left bar */
+  .toc-link.is-active {
+    background: rgba(59, 130, 246, 0.10);
+    color: rgb(37, 99, 235);
     font-weight: 750;
+  }
+  .toc-link.is-active::before {
+    background: rgb(37, 99, 235);
   }
 </style>
 
 <script is:inline>
   (() => {
-    const links = Array.from(document.querySelectorAll(".toc [data-toc-link]"));
+    const toc = document.querySelector(".toc");
+    if (!toc) return;
+
+    const links = Array.from(toc.querySelectorAll("a[data-toc-link]"));
     if (!links.length) return;
 
     const targets = links
       .map((a) => {
         const href = a.getAttribute("href");
         if (!href || !href.startsWith("#")) return null;
-        try {
-          return document.querySelector(decodeURIComponent(href));
-        } catch {
-          return document.querySelector(href);
-        }
+        const id = decodeURIComponent(href.slice(1));
+        return document.getElementById(id);
       })
       .filter(Boolean);
 
-    const setActive = (id) => {
-      for (const a of links) {
-        a.dataset.active = (a.getAttribute("href") === "#" + id) ? "true" : "false";
-      }
+    const clear = () => links.forEach((a) => a.classList.remove("is-active"));
+
+    const setActiveById = (id) => {
+      if (!id) return;
+      clear();
+      const active = links.find((a) => decodeURIComponent(a.getAttribute("href").slice(1)) === id);
+      if (active) active.classList.add("is-active");
     };
 
-    // If loaded with a hash
-    if (location.hash) {
-      const id = location.hash.slice(1);
-      if (id) setActive(id);
-    }
+    // 1) If loaded with a hash, highlight immediately
+    if (location.hash) setActiveById(decodeURIComponent(location.hash.slice(1)));
 
-    const obs = new IntersectionObserver(
+    // 2) Update on hashchange (back/forward navigation)
+    window.addEventListener("hashchange", () => {
+      if (location.hash) setActiveById(decodeURIComponent(location.hash.slice(1)));
+    });
+
+    // 3) Update immediately on click
+    links.forEach((a) => {
+      a.addEventListener("click", () => {
+        const href = a.getAttribute("href");
+        if (href && href.startsWith("#")) setActiveById(decodeURIComponent(href.slice(1)));
+      });
+    });
+
+    // 4) Scroll spy via IntersectionObserver
+    const io = new IntersectionObserver(
       (entries) => {
-        // pick the top-most visible heading
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
 
-        if (visible.length) setActive(visible[0].target.id);
+        if (visible.length) setActiveById(visible[0].target.id);
       },
-      { rootMargin: "-20% 0px -70% 0px", threshold: 0.01 }
+      {
+        root: null,
+        rootMargin: "-18% 0px -72% 0px",
+        threshold: 0.01
+      }
     );
 
-    targets.forEach((t) => obs.observe(t));
-
-    // Immediate feedback on click
-    links.forEach((a) => {
-      a.addEventListener("click", () => {
-        const href = a.getAttribute("href");
-        if (href && href.startsWith("#")) setActive(href.slice(1));
-      });
-    });
+    targets.forEach((t) => io.observe(t));
   })();
 </script>
