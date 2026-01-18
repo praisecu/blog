@@ -32,12 +32,20 @@ const date = frontmatter?.date ?? "";
         <main>
           <h1 class="post-title">{title}</h1>
 
-          <div class="byline">
-            <div>
-              By <a href="#">{author}</a>
-            </div>
-            <div>{date}</div>
+        <div class="byline">
+          <div class="byline-left">
+            <span class="by">By</span>
+            <span class="author">
+              {frontmatter.authorLink ? (
+                <a href={frontmatter.authorLink}>{frontmatter.author}</a>
+              ) : (
+                frontmatter.author
+              )}
+            </span>
           </div>
+
+          <div class="byline-right">{frontmatter.date}</div>
+        </div>
 
           <slot />
         </main>
