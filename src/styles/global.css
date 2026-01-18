@@ -308,11 +308,10 @@ hr {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(139, 107, 0, 0.22),
+    rgba(27, 21, 0, 0.678),
     transparent
   );
 }
-
 
 
 h2 {
