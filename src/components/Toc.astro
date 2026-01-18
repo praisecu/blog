@@ -7,7 +7,8 @@ function indent(depth) {
 }
 ---
 
-<nav class="toc" aria-label="Table of contents">
+<!-- Desktop TOC -->
+<nav class="toc toc-desktop" aria-label="Table of contents">
   <div class="toc-title">CONTENTS</div>
 
   {filtered.map((h) => (
@@ -21,6 +22,27 @@ function indent(depth) {
     </a>
   ))}
 </nav>
+
+<!-- Mobile TOC (collapsible) -->
+<details class="toc toc-mobile" aria-label="Table of contents">
+  <summary class="toc-summary">
+    <span class="toc-title">CONTENTS</span>
+    <span class="toc-chevron" aria-hidden="true">▾</span>
+  </summary>
+
+  <div class="toc-mobile-body">
+    {filtered.map((h) => (
+      <a
+        class="toc-link"
+        href={`#${h.slug}`}
+        style={`margin-left:${indent(h.depth)};`}
+        data-toc-link
+      >
+        {h.text}
+      </a>
+    ))}
+  </div>
+</details>
 
 <style>
   .toc-title {
@@ -58,11 +80,11 @@ function indent(depth) {
     bottom: 7px;
     width: 3px;
     border-radius: 999px;
-    background: rgba(59, 130, 246, 0.0);
+    background: rgba(0, 0, 0, 0);
     transition: background 120ms ease;
   }
 
-  /* Active state: subtle fill + strong left bar */
+  /* Active state */
   .toc-link.is-active {
     background: var(--brand-wash);
     color: var(--brand-ink);
@@ -72,33 +94,59 @@ function indent(depth) {
     background: var(--brand-gold);
   }
 
-  .toc a:hover {
-    background: var(--brand-wash);
-    border-left-color: rgba(139, 107, 0, 0.55);
-    color: var(--fg);
-    text-decoration: none;
-  }
+  /* ------- Responsive TOC behavior ------- */
+  .toc-desktop { display: block; }
+  .toc-mobile { display: none; }
 
-  .toc a[data-active="true"] {
-    background: var(--brand-wash);
-    border-left-color: var(--brand-gold);
-    color: var(--fg);
-  }
+  @media (max-width: 980px) {
+    .toc-desktop { display: none; }
+    .toc-mobile { display: block; }
 
-  .brand-bar {
-    background: var(--brand-ink);
-    color: #fff;
-    border-radius: 10px;
-  }
+    .toc-mobile {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 14px;
+      padding: 8px;
+      margin: 0 0 16px;
+    }
 
+    .toc-summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--brand-wash);
+      user-select: none;
+    }
+
+    .toc-mobile summary::-webkit-details-marker { display: none; }
+
+    .toc-chevron {
+      opacity: 0.7;
+      font-size: 14px;
+      transform: rotate(0deg);
+      transition: transform 120ms ease;
+    }
+    details[open] .toc-chevron {
+      transform: rotate(180deg);
+    }
+
+    .toc-mobile-body {
+      padding: 8px 2px 2px;
+      max-height: 40vh;
+      overflow: auto;
+    }
+  }
 </style>
 
 <script is:inline>
   (() => {
-    const toc = document.querySelector(".toc");
-    if (!toc) return;
-
-    const links = Array.from(toc.querySelectorAll("a[data-toc-link]"));
+    // We have 2 TOCs on the page (desktop + mobile). Collect all links.
+    const links = Array.from(document.querySelectorAll("a[data-toc-link]"));
     if (!links.length) return;
 
     const targets = links
@@ -115,27 +163,29 @@ function indent(depth) {
     const setActiveById = (id) => {
       if (!id) return;
       clear();
-      const active = links.find((a) => decodeURIComponent(a.getAttribute("href").slice(1)) === id);
-      if (active) active.classList.add("is-active");
+      for (const a of links) {
+        const hid = decodeURIComponent(a.getAttribute("href").slice(1));
+        if (hid === id) a.classList.add("is-active");
+      }
     };
 
-    // 1) If loaded with a hash, highlight immediately
-    if (location.hash) setActiveById(decodeURIComponent(location.hash.slice(1)));
-
-    // 2) Update on hashchange (back/forward navigation)
-    window.addEventListener("hashchange", () => {
-      if (location.hash) setActiveById(decodeURIComponent(location.hash.slice(1)));
-    });
-
-    // 3) Update immediately on click
+    // Close mobile accordion after clicking a link
     links.forEach((a) => {
       a.addEventListener("click", () => {
+        const details = a.closest("details.toc-mobile");
+        if (details) details.removeAttribute("open");
+
         const href = a.getAttribute("href");
         if (href && href.startsWith("#")) setActiveById(decodeURIComponent(href.slice(1)));
       });
     });
 
-    // 4) Scroll spy via IntersectionObserver
+    if (location.hash) setActiveById(decodeURIComponent(location.hash.slice(1)));
+
+    window.addEventListener("hashchange", () => {
+      if (location.hash) setActiveById(decodeURIComponent(location.hash.slice(1)));
+    });
+
     const io = new IntersectionObserver(
       (entries) => {
         const visible = entries
@@ -144,13 +194,11 @@ function indent(depth) {
 
         if (visible.length) setActiveById(visible[0].target.id);
       },
-      {
-        root: null,
-        rootMargin: "-18% 0px -72% 0px",
-        threshold: 0.01
-      }
+      { root: null, rootMargin: "-18% 0px -72% 0px", threshold: 0.01 }
     );
 
-    targets.forEach((t) => io.observe(t));
+    // De-dup targets (because links repeat in desktop+mobile)
+    const uniq = Array.from(new Set(targets));
+    uniq.forEach((t) => io.observe(t));
   })();
 </script>

@@ -2,7 +2,6 @@
 
 /* =========================================================
    Global theme + typography (gold/olive scheme)
-   Cleaned: removed duplicated blocks + removed leftover blues
    ========================================================= */
 
 :root {
@@ -13,17 +12,17 @@
   --border: #ece7da;
   --card: #fbfaf1;
 
-  /* Course-site palette (olive + gold) */
+  /* Palette (olive + gold) */
   --brand-ink: #2a2400;     /* deep olive/brown */
-  --brand-gold: #413800;   /* warm gold for links */
-  --brand-gold-2: #6f5400;  /* darker gold for hover */
+  --brand-gold: #413800;    /* warm gold for links/author */
+  --brand-gold-2: #6f5400;  /* hover */
   --brand-wash: #f3f1df;    /* warm beige highlight */
   --brand-wash-2: #ece7c9;  /* stronger beige */
 
   /* Accents */
   --link: var(--brand-gold);
-  --accent-bg: rgba(139, 107, 0, 0.10);
-  --accent-bg-hover: rgba(139, 107, 0, 0.16);
+  --accent-bg: rgba(65, 56, 0, 0.10);
+  --accent-bg-hover: rgba(65, 56, 0, 0.16);
 
   /* Layout */
   --content-max: 980px;
@@ -32,14 +31,18 @@
   /* Fonts */
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
     "Apple Color Emoji", "Segoe UI Emoji";
+
+  /* Display font (used for titles/headings) */
+  --font-display: var(--font-sans);
 }
 
 * { box-sizing: border-box; }
 
 html,
-body { height: 100%;
+body {
+  height: 100%;
   scroll-behavior: smooth;
-  hyphens: auto;  
+  hyphens: auto;
 }
 
 body {
@@ -58,7 +61,7 @@ body {
 
 /* Links */
 a {
-  color: var(--brand-gold);
+  color: var(--link);
   text-decoration: none;
 }
 a:hover {
@@ -126,7 +129,7 @@ aside {
 
 .toc a:hover {
   background: var(--brand-wash);
-  border-left-color: rgba(68, 52, 0, 0.651);
+  border-left-color: rgba(65, 56, 0, 0.45);
   color: var(--fg);
   text-decoration: none;
 }
@@ -154,20 +157,20 @@ main :is(h1,h2,h3,h4,p,ul,ol,blockquote,pre,table,.figure-card,.references,.kate
   margin-right: auto;
 }
 
+/* Title */
 .post-title {
   max-width: 108ch;
   margin: 16px auto 12px;
 
-  font-family: var(--font-display);     /* keep consistent */
+  font-family: var(--font-display);
   font-size: clamp(30px, 3.2vw, 44px);
   line-height: 1.12;
-  font-weight: 700;                  /* was too heavy */
+  font-weight: 700;
   letter-spacing: -0.025em;
-
-  /* color: var(--fg); */
   color: rgba(17, 24, 39, 0.92);
 }
 
+/* Byline: author left (gold), date right (muted) */
 .byline {
   max-width: 108ch;
   margin: 0 auto 26px;
@@ -188,7 +191,7 @@ main :is(h1,h2,h3,h4,p,ul,ol,blockquote,pre,table,.figure-card,.references,.kate
 }
 
 .byline-left .by {
-  color: rgba(17, 24, 39, 0.55); /* "By" stays muted */
+  color: rgba(17, 24, 39, 0.55);
   font-weight: 500;
 }
 
@@ -198,7 +201,7 @@ main :is(h1,h2,h3,h4,p,ul,ol,blockquote,pre,table,.figure-card,.references,.kate
 
 .byline-left .author,
 .byline-left .author a {
-  color: var(--brand-gold);      /* author name in gold */
+  color: var(--brand-gold);
   text-decoration: none;
 }
 
@@ -208,12 +211,13 @@ main :is(h1,h2,h3,h4,p,ul,ol,blockquote,pre,table,.figure-card,.references,.kate
 }
 
 .byline-right {
-  color: rgba(17, 24, 39, 0.55); /* date on the right, muted */
+  color: rgba(17, 24, 39, 0.55);
   text-align: right;
 }
 
 /* Headings */
 h2 {
+  font-family: var(--font-display);
   font-size: 26px;
   line-height: 1.15;
   font-weight: 700;
@@ -224,33 +228,35 @@ h2 {
 }
 
 h3 {
+  font-family: var(--font-display);
   font-size: 20px;
   line-height: 1.22;
   font-weight: 650;
   letter-spacing: -0.015em;
-  color: rgba(31, 31, 31, 0.822);
+  color: rgba(31, 31, 31, 0.82);
   margin-top: 22px;
   margin-bottom: 8px;
 }
 
 /* Paragraph + lists */
 p {
-   margin: 14px 0; 
-   text-align: justify;
-   text-justify: inter-word;
-   hyphens: auto;
-  }
+  margin: 14px 0;
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+}
 
 ul,
 ol {
   margin: 10px 0 14px;
   padding-left: 1.25rem;
 }
+
 li {
-   margin: 6px 0;
+  margin: 6px 0;
   text-align: justify;
   hyphens: auto;
-} 
+}
 
 strong {
   font-weight: 650;
@@ -277,7 +283,7 @@ hr.sep {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(32, 28, 0, 0.712),
+    rgba(32, 28, 0, 0.72),
     transparent
   );
 }
@@ -317,3 +323,6 @@ pre code { font-size: 0.9em; }
 /* KaTeX spacing */
 .katex-display { margin: 14px auto; }
 .katex-display > .katex { font-size: 1.05em; }
+/* =========================================================
+   End global styles
+   ========================================================= */
