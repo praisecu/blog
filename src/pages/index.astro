@@ -1,7 +1,29 @@
 ---
-import "../styles/global.css";
+/**
+ * Attractive science blog homepage
+ * - Auto-discovers posts from /src/pages/blog/*.mdx
+ * - Requires each post to have: title, date
+ * - Optional: description, tags[], image
+ */
+const modules = import.meta.glob("./blog/*.mdx", { eager: true });
 
-const posts = [{ title: "A Visual Introduction to Rectified Flows", href: "blog/rectified-flow/" }];
+function toPost(mod, filePath) {
+  const fm = mod.frontmatter ?? {};
+  const slug = filePath.split("/").pop().replace(/\.mdx$/, "");
+  return {
+    slug,
+    url: `/blog/${slug}/`,
+    title: fm.title ?? slug,
+    date: fm.date ?? "",
+    description: fm.description ?? "",
+    tags: Array.isArray(fm.tags) ? fm.tags : [],
+    image: fm.image ?? ""
+  };
+}
+
+const posts = Object.entries(modules)
+  .map(([path, mod]) => toPost(mod, path))
+  .sort((a, b) => (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0));
 ---
 
 <html lang="en">
@@ -9,19 +31,265 @@ const posts = [{ title: "A Visual Introduction to Rectified Flows", href: "blog/
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>Blog</title>
-    <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <link rel="stylesheet" href="/src/styles/global.css" />
+    <style>
+      .home-hero {
+        padding: 18px 0 10px;
+        margin-bottom: 18px;
+        border-bottom: 1px solid var(--border);
+      }
+      .home-title {
+        font-size: 44px;
+        line-height: 1.08;
+        font-weight: 850;
+        margin: 0 0 10px;
+        letter-spacing: -0.02em;
+      }
+      .home-subtitle {
+        margin: 0;
+        color: var(--muted);
+        max-width: 72ch;
+        font-size: 16px;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        margin: 18px 0 18px;
+        flex-wrap: wrap;
+      }
+
+      .search {
+        flex: 1;
+        min-width: 220px;
+        max-width: 520px;
+        position: relative;
+      }
+      .search input {
+        width: 100%;
+        padding: 10px 12px 10px 36px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        outline: none;
+        background: white;
+        font-size: 14px;
+      }
+      .search svg {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.55;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 8px 12px;
+        color: var(--muted);
+        font-size: 13px;
+        background: #fff;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+      @media (max-width: 980px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: #fff;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        transition: transform 120ms ease, box-shadow 120ms ease;
+      }
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 40px rgba(0,0,0,0.06);
+      }
+
+      .thumb {
+        height: 150px;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(135deg, rgba(37,99,235,0.12), rgba(245,158,11,0.12));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .thumb .mark {
+        position: absolute;
+        bottom: 10px;
+        left: 12px;
+        font-weight: 750;
+        color: rgba(17,24,39,0.8);
+        background: rgba(255,255,255,0.75);
+        border: 1px solid rgba(229,231,235,0.9);
+        backdrop-filter: blur(6px);
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+      }
+
+      .body {
+        padding: 14px 14px 16px;
+      }
+
+      .meta {
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+        align-items: baseline;
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 6px;
+      }
+      .title {
+        margin: 0 0 8px;
+        font-size: 18px;
+        line-height: 1.25;
+        letter-spacing: -0.01em;
+      }
+      .title a {
+        color: var(--fg);
+        text-decoration: none;
+      }
+      .title a:hover { text-decoration: underline; }
+
+      .desc {
+        margin: 0 0 12px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .tag {
+        font-size: 12px;
+        color: rgba(17,24,39,0.75);
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        padding: 4px 8px;
+        border-radius: 999px;
+      }
+
+      .empty {
+        border: 1px dashed var(--border);
+        border-radius: 14px;
+        padding: 18px;
+        color: var(--muted);
+      }
+    </style>
   </head>
 
   <body>
     <div class="container">
-      <h1 style="margin: 10px 0 18px; font-size: 34px;">Blog</h1>
-      <ul>
-        {posts.map((p) => (
-          <li>
-            <a href={p.href}>{p.title}</a>
-          </li>
-        ))}
-      </ul>
+      <div class="home-hero">
+        <div class="topbar">
+          <div>Blog</div>
+          <div><a href="https://github.com/">Link to Code</a></div>
+        </div>
+
+        <h1 class="home-title">Science Notes</h1>
+        <p class="home-subtitle">
+          Technical posts with derivations, implementation details, and interactive visualizations.
+          Topics include generative modeling, geometry, robotics perception, and estimation.
+        </p>
+      </div>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <input id="q" type="search" placeholder="Search posts (title, tags, description)..." />
+        </div>
+
+        <div class="pill">
+          <span id="count">{posts.length}</span>
+          <span>posts</span>
+        </div>
+      </div>
+
+      {posts.length === 0 ? (
+        <div class="empty">
+          No posts yet. Add MDX files in <code>src/pages/blog/</code>.
+        </div>
+      ) : (
+        <div class="grid" id="grid">
+          {posts.map((p) => (
+            <article class="card" data-title={p.title.toLowerCase()} data-desc={p.description.toLowerCase()} data-tags={p.tags.join(" ").toLowerCase()}>
+              <div class="thumb">
+                {p.image ? <img src={p.image} alt="" loading="lazy" /> : null}
+                <div class="mark">Read</div>
+              </div>
+
+              <div class="body">
+                <div class="meta">
+                  <div>{p.date}</div>
+                  <div>↗</div>
+                </div>
+
+                <h2 class="title">
+                  <a href={p.url}>{p.title}</a>
+                </h2>
+
+                {p.description ? <p class="desc">{p.description}</p> : null}
+
+                {p.tags.length ? (
+                  <div class="tags">
+                    {p.tags.slice(0, 6).map((t) => <span class="tag">{t}</span>)}
+                  </div>
+                ) : null}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <script>
+        const q = document.getElementById("q");
+        const cards = Array.from(document.querySelectorAll("#grid .card"));
+        const count = document.getElementById("count");
+
+        function filter() {
+          const s = (q.value || "").trim().toLowerCase();
+          let visible = 0;
+
+          for (const c of cards) {
+            const hay =
+              (c.dataset.title || "") + " " +
+              (c.dataset.desc || "") + " " +
+              (c.dataset.tags || "");
+            const ok = hay.includes(s);
+            c.style.display = ok ? "" : "none";
+            if (ok) visible++;
+          }
+          if (count) count.textContent = String(visible);
+        }
+
+        if (q) q.addEventListener("input", filter);
+      </script>
     </div>
   </body>
 </html>
