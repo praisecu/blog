@@ -31,8 +31,8 @@ const posts = Object.entries(modules)
   .filter(Boolean)
   .sort((a, b) => (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0));
 
-const featured = posts[0] ?? null;
-const rest = posts.slice(1);
+const featured = posts.find((p) => p.featured === true) ?? posts[0] ?? null;
+const rest = posts.filter((p) => p !== featured);
 ---
 
 <html lang="en">
