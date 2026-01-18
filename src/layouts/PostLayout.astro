@@ -67,7 +67,7 @@ const date = frontmatter?.date ?? "";
 
       const saved = localStorage.getItem("theme");
       const theme = saved ? saved : "light";   // <- default light
-      const initial = (saved === "light" || saved === "dark") ? saved : preferred;
+      // const initial = (saved === "light" || saved === "dark") ? saved : preferred;
       document.documentElement.dataset.theme = theme;
 
       const apply = (mode) => {
