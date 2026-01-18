@@ -1,5 +1,6 @@
 ---
 import Toc from "../components/Toc.astro";
+import "../styles/global.css";
 
 const { frontmatter, headings } = Astro.props;
 
@@ -13,8 +14,7 @@ const date = frontmatter?.date ?? "";
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>{title}</title>
-    <link rel="icon" href="/favicon.svg" />
-    <link rel="stylesheet" href="/src/styles/global.css" />
+    <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} />
   </head>
 
   <body>

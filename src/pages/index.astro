@@ -1,5 +1,7 @@
 ---
-const posts = [{ title: "A Visual Introduction to Rectified Flows", href: "/blog/rectified-flow/" }];
+import "../styles/global.css";
+
+const posts = [{ title: "A Visual Introduction to Rectified Flows", href: "blog/rectified-flow/" }];
 ---
 
 <html lang="en">
@@ -7,7 +9,7 @@ const posts = [{ title: "A Visual Introduction to Rectified Flows", href: "/blog
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>Blog</title>
-    <link rel="stylesheet" href="/src/styles/global.css" />
+    <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} />
   </head>
 
   <body>
