@@ -58,6 +58,27 @@ html[data-theme="dark"] {
   --accent-bg-hover: rgba(200, 178, 119, 0.18);
 }
 
+/* ---------- Dark mode overrides ---------- */
+html[data-theme="dark"] .toc-title {
+  color: rgba(200, 178, 119, 0.85); /* gold-ish, readable */
+}
+
+html[data-theme="dark"] .toc a {
+  color: rgba(229, 231, 235, 0.70); /* readable gray */
+}
+
+html[data-theme="dark"] .toc a:hover {
+  background: rgba(200, 178, 119, 0.10);
+  border-left-color: rgba(200, 178, 119, 0.35);
+  color: rgba(229, 231, 235, 0.92);
+}
+
+html[data-theme="dark"] .toc a[data-active="true"] {
+  background: rgba(200, 178, 119, 0.14);
+  border-left-color: var(--brand-gold);
+  color: rgba(243, 241, 223, 0.95);
+}
+
 * { box-sizing: border-box; }
 
 html,
