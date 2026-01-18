@@ -301,6 +301,20 @@ hr.sep {
   margin: 24px 0;
 }
 
+hr {
+  border: 0;
+  height: 1px;
+  margin: 28px 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(139, 107, 0, 0.22),
+    transparent
+  );
+}
+
+
+
 h2 {
   margin-top: 38px;
   line-height: 1.25;
