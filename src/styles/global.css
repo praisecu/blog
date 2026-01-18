@@ -178,6 +178,28 @@ main :is(h1,h2,h3,h4,p,ul,ol,blockquote,pre,table,.figure-card,.references,.kate
   margin: 0 auto 26px;
   max-width: 108ch;
   padding-top: 2px;
+  align-items: baseline;
+}
+
+/* If your byline renders as: <div>By Chahat</div><div>January ...</div> */
+.byline > :first-child {
+  text-align: left;
+  color: var(--brand-gold);   /* gold-ish */
+  font-weight: 650;
+}
+
+.byline > :last-child {
+  text-align: right;
+  color: rgba(17, 24, 39, 0.55);
+}
+
+.byline a {
+  color: var(--brand-gold);
+  text-decoration: none;
+}
+.byline a:hover {
+  color: var(--brand-gold-2);
+  text-decoration: underline;
 }
 
 /* Headings */
