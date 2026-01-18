@@ -154,15 +154,18 @@ main :is(h1,h2,h3,h4,p,ul,ol,blockquote,pre,table,.figure-card,.references,.kate
   margin-right: auto;
 }
 
-/* Title + byline */
 .post-title {
-  font-size: 44px;
-  line-height: 1.1;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--fg);
-  margin: 10px auto 12px;
   max-width: 108ch;
+  margin: 18px auto 14px;
+
+  font-family: var(--font-display);     /* keep consistent */
+  font-size: clamp(38px, 4.2vw, 56px);
+  line-height: 1.08;
+  font-weight: 700;                  /* was too heavy */
+  letter-spacing: -0.02em;
+
+  /* color: var(--fg); */
+  color: rgba(17, 24, 39, 0.92);
 }
 
 .byline {
@@ -172,8 +175,9 @@ main :is(h1,h2,h3,h4,p,ul,ol,blockquote,pre,table,.figure-card,.references,.kate
   flex-wrap: wrap;
   font-size: 14px;
   color: rgba(17, 24, 39, 0.55);
-  margin: 0 auto 20px;
+  margin: 0 auto 26px;
   max-width: 108ch;
+  padding-top: 2px;
 }
 
 /* Headings */
