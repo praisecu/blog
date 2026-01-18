@@ -25,9 +25,9 @@ By the end of this lecture, you should be able to:
 
 Consider a 3D point \(P = (X, Y, Z)^\top\) observed by a pinhole camera. The normalized image-plane coordinates are
 
-\[
+$$
 x = \frac{X}{Z}, \qquad y = \frac{Y}{Z}.
-\]
+$$
 
 A **motion field** is the 2D vector field \(\dot{p} = (\dot{x}, \dot{y})^\top\) induced by the **true 3D motion** of scene points (or equivalently, camera motion) projected onto the image plane.
 
@@ -35,9 +35,9 @@ A **motion field** is the 2D vector field \(\dot{p} = (\dot{x}, \dot{y})^\top\) 
 
 For a rigid scene and moving camera, 3D point motion in the camera frame can be written as
 
-\[
+$$
 \dot{P} = -\,\Omega \times P - V,
-\]
+$$
 
 where:
 
@@ -74,20 +74,20 @@ In practice, optical flow can be corrupted/induced by:
 
 Let \(p = (x, y, 1)^\top\) be the normalized ray direction (up to scale). Image motion decomposes into **translational** and **rotational** components:
 
-\[
+$$
 \dot{p} = \dot{p}_{\text{trans}} + \dot{p}_{\text{rot}}.
-\]
+$$
 
 ### Translational component (depth dependent)
 
-\[
+$$
 \dot{p}_{\text{trans}} =
 \frac{1}{Z}
 \begin{bmatrix}
 x V_z - V_x \\
 y V_z - V_y
 \end{bmatrix}.
-\]
+$$
 
 Key point: **translation depends on depth** \(Z\). This is why pure translation contains depth/scale cues.
 
@@ -95,14 +95,14 @@ Key point: **translation depends on depth** \(Z\). This is why pure translation 
 
 A standard form is:
 
-\[
+$$
 \dot{p}_{\text{rot}} =
 \begin{bmatrix}
 xy & -(1+x^2) & y \\
 (1+y^2) & -xy & -x
 \end{bmatrix}
 \Omega.
-\]
+$$
 
 Key point: **rotation is independent of depth**. Under **pure rotation**, flow carries **no depth information**.
 
@@ -124,9 +124,9 @@ Key point: **rotation is independent of depth**. Under **pure rotation**, flow c
 
 Under pure translation, the flow vectors radiate from a special point:
 
-\[
+$$
 \text{FOE} = \left(\frac{V_x}{V_z}, \frac{V_y}{V_z}\right).
-\]
+$$
 
 - FOE is also the **epipole** for translational motion.
 - If \(V_z = 0\), the FOE goes to infinity (pure sideways motion).
@@ -142,15 +142,15 @@ Under pure translation, the flow vectors radiate from a special point:
 
 A classic result: the **time-to-contact** can be estimated (under assumptions) as
 
-\[
+$$
 \tau = \frac{Z}{V_z}.
-\]
+$$
 
 Using the translation flow magnitude (relative to FOE), one can write:
 
-\[
+$$
 \frac{V_z}{Z} = \frac{\|\dot{p}_{\text{trans}}\|}{\|p - \text{FOE}\|}.
-\]
+$$
 
 Interpretation:
 
@@ -180,23 +180,23 @@ To estimate optical flow, we impose assumptions.
 
 Let \(I(x, y, t)\) be image intensity. Brightness constancy says:
 
-\[
+$$
 I(x, y, t) \approx I(x+\delta x, y+\delta y, t+\delta t).
-\]
+$$
 
 ### Assumption 2: small motion (Taylor expansion)
 
 For small \(\delta x, \delta y, \delta t\), first-order Taylor expansion gives:
 
-\[
+$$
 I_x \delta x + I_y \delta y + I_t \delta t = 0.
-\]
+$$
 
 Divide by \(\delta t\) and define velocities \(u=\frac{\delta x}{\delta t}\), \(v=\frac{\delta y}{\delta t}\):
 
-\[
+$$
 I_x u + I_y v + I_t = 0.
-\]
+$$
 
 This is the **optical flow constraint equation**: one equation, two unknowns → underdetermined.
 
@@ -208,20 +208,20 @@ Lucas–Kanade resolves underdetermination by assuming **constant flow within a 
 
 For each pixel \(i\) in the window:
 
-\[
+$$
 I_x(x_i,y_i) \; u + I_y(x_i,y_i) \; v = -I_t(x_i,y_i).
-\]
+$$
 
 Stacking these yields:
 
-\[
+$$
 A \, \mathbf{v} = \mathbf{b},
 \quad
 \mathbf{v} =
 \begin{bmatrix}u\\v\end{bmatrix},
 \quad
 \mathbf{v} = (A^\top A)^{-1}A^\top \mathbf{b}.
-\]
+$$
 
 Practical note: the conditioning of \(A^\top A\) depends on local texture. Corners / gradients in multiple directions are well-posed (structure tensor intuition).
 
