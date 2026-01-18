@@ -9,18 +9,19 @@
  * - We exclude index.astro itself automatically because we only glob *.mdx.
  * - We also exclude MDX files you don't want listed by setting `draft: true` in frontmatter (optional).
  */
+ 
 const modules = import.meta.glob("./*.mdx", { eager: true });
+const BASE = import.meta.env.BASE_URL; // "/" locally, "/blog/" on Pages
 
 function toPost(mod, filePath) {
   const fm = mod.frontmatter ?? {};
   const slug = filePath.split("/").pop().replace(/\.mdx$/, "");
 
-  // Optional: skip drafts
   if (fm.draft === true) return null;
 
   return {
     slug,
-    url: `/${slug}/`,
+    url: `${BASE}${slug}/`,   // <-- FIX
     title: fm.title ?? slug,
     date: fm.date ?? "",
     description: fm.description ?? "",
