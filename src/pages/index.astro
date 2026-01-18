@@ -42,19 +42,20 @@ const posts = Object.entries(modules)
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>Blog</title>
-    <link rel="stylesheet" href="/src/styles/global.css" />
+    <link rel="stylesheet" href={`${BASE}src/styles/global.css`} />
     <style>
 
       .card-link {
         position: absolute;
         inset: 0;
-        z-index: 1;
+        z-index: 10;              /* overlay must be ABOVE content to catch clicks */
+        display: block;
       }
 
       /* Ensure visible content stays above the overlay for selection/hover effects if needed */
       .thumb, .body {
         position: relative;
-        z-index: 2;
+        z-index: 1;
       }
 
       .home-hero {
