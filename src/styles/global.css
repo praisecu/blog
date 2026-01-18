@@ -156,13 +156,13 @@ main :is(h1,h2,h3,h4,p,ul,ol,blockquote,pre,table,.figure-card,.references,.kate
 
 .post-title {
   max-width: 108ch;
-  margin: 18px auto 14px;
+  margin: 16px auto 12px;
 
   font-family: var(--font-display);     /* keep consistent */
-  font-size: clamp(38px, 4.2vw, 56px);
-  line-height: 1.08;
+  font-size: clamp(30px, 3.2vw, 44px);
+  line-height: 1.12;
   font-weight: 700;                  /* was too heavy */
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
 
   /* color: var(--fg); */
   color: rgba(17, 24, 39, 0.92);
