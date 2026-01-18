@@ -52,42 +52,46 @@ const date = frontmatter?.date ?? "";
       </div>
     </div>
 
-    <script is:inline>
-    (() => {
-      const STORAGE_KEY = "theme"; // "light" | "dark"
-      const root = document.documentElement;
-      const btn = document.getElementById("themeToggle");
-      const label = document.getElementById("themeLabel");
+<script is:inline>
+  (() => {
+    const STORAGE_KEY = "theme"; // "light" | "dark"
+    const root = document.documentElement;
 
-      if (!btn) return;
+    const btn = document.getElementById("themeToggle");
+    const label = document.getElementById("themeLabel");
+    const icon = document.getElementById("themeIcon"); // optional
 
-      const preferred = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
+    if (!btn) return;
 
-      const saved = localStorage.getItem("theme");
-      const theme = saved ? saved : "light";   // <- default light
-      // const initial = (saved === "light" || saved === "dark") ? saved : preferred;
-      document.documentElement.dataset.theme = theme;
+    const apply = (mode) => {
+      if (mode === "dark") root.setAttribute("data-theme", "dark");
+      else root.removeAttribute("data-theme");
 
-      const apply = (mode) => {
-        if (mode === "dark") root.setAttribute("data-theme", "dark");
-        else root.removeAttribute("data-theme");
+      // Button shows what you will switch TO
+      const next = mode === "dark" ? "Light" : "Dark";
+      if (label) label.textContent = next;
+      if (icon) icon.textContent = mode === "dark" ? "☀" : "☾";
 
-        if (label) label.textContent = mode === "dark" ? "Dark" : "Light";
-        btn.setAttribute("aria-label", mode === "dark" ? "Switch to light mode" : "Switch to dark mode");
-      };
+      btn.setAttribute(
+        "aria-label",
+        mode === "dark" ? "Switch to light mode" : "Switch to dark mode"
+      );
+    };
 
-      apply(initial);
+    // Default light unless user explicitly saved a preference
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const initial = (saved === "light" || saved === "dark") ? saved : "light";
+    apply(initial);
 
-      btn.addEventListener("click", () => {
-        const current = root.getAttribute("data-theme") === "dark" ? "dark" : "light";
-        const next = current === "dark" ? "light" : "dark";
-        localStorage.setItem(STORAGE_KEY, next);
-        apply(next);
-      });
-    })();
-    </script>
+    btn.addEventListener("click", () => {
+      const current = root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+      const next = current === "dark" ? "light" : "dark";
+      localStorage.setItem(STORAGE_KEY, next);
+      apply(next);
+    });
+  })();
+</script>
+
 
   </body>
 </html>
