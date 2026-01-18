@@ -65,8 +65,10 @@ const date = frontmatter?.date ?? "";
         ? "dark"
         : "light";
 
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem("theme");
+      const theme = saved ? saved : "light";   // <- default light
       const initial = (saved === "light" || saved === "dark") ? saved : preferred;
+      document.documentElement.dataset.theme = theme;
 
       const apply = (mode) => {
         if (mode === "dark") root.setAttribute("data-theme", "dark");
