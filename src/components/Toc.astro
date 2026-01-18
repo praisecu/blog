@@ -45,8 +45,8 @@ function indent(depth) {
   }
 
   .toc-link:hover {
-    background: rgba(59, 130, 246, 0.08);
-    color: rgba(15, 23, 42, 0.92);
+    background: var(--brand-wash);
+    color: rgba(17, 24, 39, 0.92);
   }
 
   /* Left accent bar (hidden by default) */
@@ -64,25 +64,31 @@ function indent(depth) {
 
   /* Active state: subtle fill + strong left bar */
   .toc-link.is-active {
-    background: rgba(59, 130, 246, 0.10);
-    color: rgb(37, 99, 235);
-    font-weight: 750;
+    background: var(--brand-wash);
+    color: var(--brand-ink);
+    font-weight: 780;
   }
   .toc-link.is-active::before {
-    background: rgb(37, 99, 235);
+    background: var(--brand-gold);
   }
 
   .toc a:hover {
-    background: var(--accent-bg-hover);
-    border-left-color: rgba(200, 178, 119, 0.55);
+    background: var(--brand-wash);
+    border-left-color: rgba(139, 107, 0, 0.55);
     color: var(--fg);
     text-decoration: none;
   }
-  
+
   .toc a[data-active="true"] {
-    background: var(--accent-bg);
-    border-left-color: var(--gold-strong);
+    background: var(--brand-wash);
+    border-left-color: var(--brand-gold);
     color: var(--fg);
+  }
+
+  .brand-bar {
+    background: var(--brand-ink);
+    color: #fff;
+    border-radius: 10px;
   }
 
 </style>

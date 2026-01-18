@@ -5,8 +5,14 @@
   --bg: #ffffff;
   --fg: #111827;
   --muted: #6b7280;
-  --border: #e5e7eb;
-  --card: #fafafa;
+  --border: #ece7da;
+  --card: #fbfaf1;
+
+  --brand-ink: #2a2400;         /* deep olive/brown header */
+  --brand-gold: #8b6b00;        /* warm gold for links */
+  --brand-gold-2: #6f5400;      /* darker gold for hover */
+  --brand-wash: #f3f1df;        /* warm beige highlight */
+  --brand-wash-2: #ece7c9;      /* slightly stronger beige */
 
   /* PRAISe-style accent (black + gold) */
   --ink: #0b0b0b;
@@ -14,11 +20,11 @@
   --gold-strong: #b89b55;
 
   /* Use gold for links */
-  --link: var(--gold-strong);
+  --link: var(--brand-gold);
 
   /* Reusable accent surfaces */
-  --accent-bg: rgba(200, 178, 119, 0.12);
-  --accent-bg-hover: rgba(200, 178, 119, 0.18);
+  --accent-bg: rgba(139, 107, 0, 0.10);     /* gold wash */
+  --accent-bg-hover: rgba(139, 107, 0, 0.16);
 
   --content-max: 980px;
   --sidebar-w: 260px;
@@ -47,6 +53,7 @@ a {
   text-decoration: none;
 }
 a:hover {
+  color: var(--brand-gold-2);
   text-decoration: underline;
 }
 
