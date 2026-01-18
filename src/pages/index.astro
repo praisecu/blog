@@ -1,18 +1,26 @@
 ---
 /**
  * Attractive science blog homepage
- * - Auto-discovers posts from /src/pages/blog/*.mdx
+ * - Auto-discovers posts from /src/pages/*.mdx
  * - Requires each post to have: title, date
  * - Optional: description, tags[], image
+ *
+ * IMPORTANT:
+ * - We exclude index.astro itself automatically because we only glob *.mdx.
+ * - We also exclude MDX files you don't want listed by setting `draft: true` in frontmatter (optional).
  */
-const modules = import.meta.glob("./blog/*.mdx", { eager: true });
+const modules = import.meta.glob("./*.mdx", { eager: true });
 
 function toPost(mod, filePath) {
   const fm = mod.frontmatter ?? {};
   const slug = filePath.split("/").pop().replace(/\.mdx$/, "");
+
+  // Optional: skip drafts
+  if (fm.draft === true) return null;
+
   return {
     slug,
-    url: `/blog/${slug}/`,
+    url: `/${slug}/`,
     title: fm.title ?? slug,
     date: fm.date ?? "",
     description: fm.description ?? "",
@@ -23,6 +31,7 @@ function toPost(mod, filePath) {
 
 const posts = Object.entries(modules)
   .map(([path, mod]) => toPost(mod, path))
+  .filter(Boolean)
   .sort((a, b) => (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0));
 ---
 
@@ -233,12 +242,17 @@ const posts = Object.entries(modules)
 
       {posts.length === 0 ? (
         <div class="empty">
-          No posts yet. Add MDX files in <code>src/pages/blog/</code>.
+          No posts yet. Add MDX files in <code>src/pages/</code>.
         </div>
       ) : (
         <div class="grid" id="grid">
           {posts.map((p) => (
-            <article class="card" data-title={p.title.toLowerCase()} data-desc={p.description.toLowerCase()} data-tags={p.tags.join(" ").toLowerCase()}>
+            <article
+              class="card"
+              data-title={p.title.toLowerCase()}
+              data-desc={p.description.toLowerCase()}
+              data-tags={p.tags.join(" ").toLowerCase()}
+            >
               <div class="thumb">
                 {p.image ? <img src={p.image} alt="" loading="lazy" /> : null}
                 <div class="mark">Read</div>
