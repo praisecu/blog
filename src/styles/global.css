@@ -193,7 +193,7 @@ main :is(h1,h2,h3,h4,p,ul,ol,blockquote,pre,table,.figure-card,.references,.kate
 }
 
 .byline-left .author {
-  font-weight: 650;
+  font-weight: 700;
 }
 
 .byline-left .author,
@@ -218,7 +218,7 @@ h2 {
   line-height: 1.15;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: rgba(17, 24, 39, 0.92);
+  color: rgba(31, 31, 31, 0.92);
   margin-top: 30px;
   margin-bottom: 10px;
 }
@@ -228,7 +228,7 @@ h3 {
   line-height: 1.22;
   font-weight: 650;
   letter-spacing: -0.015em;
-  color: rgba(17, 24, 39, 0.92);
+  color: rgba(31, 31, 31, 0.822);
   margin-top: 22px;
   margin-bottom: 8px;
 }
