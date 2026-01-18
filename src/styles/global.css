@@ -138,14 +138,17 @@ main {
 }
 
 main :is(p, ul, ol, blockquote, pre, .figure-card, .references) {
-  max-width: 72ch; /* ideal reading measure */
+  max-width: 108ch; /* ideal reading measure */
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .post-title {
-  font-size: 46px;
-  line-height: 1.1;
-  font-weight: 800;
-  margin: 18px 0 10px;
+  font-size: 38px;
+  line-height: 1.15;
+  font-weight: 820;
+  letter-spacing: -0.02em;
+  margin: 14px 0 10px;
 }
 
 .byline {
@@ -156,6 +159,8 @@ main :is(p, ul, ol, blockquote, pre, .figure-card, .references) {
   color: var(--muted);
   font-size: 14px;
   margin-bottom: 20px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 hr.sep {
