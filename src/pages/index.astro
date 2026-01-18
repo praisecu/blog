@@ -1,6 +1,6 @@
 ---
 /**
- * Dark science-blog index (list rows w/ thumbnails + dashed dividers)
+ * Light science-blog index (list rows w/ thumbnails + dashed dividers)
  * Auto-discovers posts from /src/pages/*.mdx
  *
  * Frontmatter supported:
@@ -45,50 +45,47 @@ const posts = Object.entries(modules)
     <meta name="viewport" content="width=device-width" />
     <title>Blog</title>
 
-    <!-- Use BASE to work under /blog/ -->
+    <!-- Base-aware global CSS -->
     <link rel="stylesheet" href={`${BASE}src/styles/global.css`} />
 
     <style>
-      :global(html), :global(body) {
-        height: 100%;
-      }
+      :global(html), :global(body) { height: 100%; }
 
-      /* Page background (screenshot-like) */
       body {
-        background: radial-gradient(1200px 600px at 15% 10%, rgba(99,102,241,0.18), rgba(0,0,0,0)),
-                    radial-gradient(900px 500px at 80% 30%, rgba(16,185,129,0.10), rgba(0,0,0,0)),
-                    #07131f;
-        color: rgba(255,255,255,0.92);
+        background:
+          radial-gradient(900px 520px at 15% 10%, rgba(59,130,246,0.10), rgba(255,255,255,0)),
+          radial-gradient(900px 520px at 85% 20%, rgba(245,158,11,0.08), rgba(255,255,255,0)),
+          #f7f7fb;
+        color: #0f172a;
       }
 
       .wrap {
         max-width: 920px;
         margin: 0 auto;
-        padding: 28px 18px 60px;
+        padding: 34px 18px 70px;
       }
 
-      /* Header */
       .hero {
         display: flex;
         align-items: baseline;
         justify-content: space-between;
         gap: 16px;
-        margin: 10px 0 18px;
+        margin: 6px 0 18px;
       }
 
       .hero h1 {
         margin: 0;
-        font-size: 40px;
+        font-size: 42px;
         letter-spacing: -0.02em;
         font-weight: 850;
       }
 
       .hero p {
         margin: 0;
-        max-width: 62ch;
-        color: rgba(255,255,255,0.70);
+        max-width: 70ch;
+        color: rgba(15,23,42,0.72);
         font-size: 14px;
-        line-height: 1.5;
+        line-height: 1.55;
       }
 
       .top-actions {
@@ -104,15 +101,15 @@ const posts = Object.entries(modules)
         gap: 8px;
         padding: 9px 12px;
         border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.12);
-        color: rgba(255,255,255,0.86);
+        border: 1px solid rgba(15,23,42,0.10);
+        color: rgba(15,23,42,0.82);
         text-decoration: none;
         font-size: 13px;
-        background: rgba(255,255,255,0.04);
+        background: rgba(255,255,255,0.65);
+        box-shadow: 0 8px 22px rgba(15,23,42,0.05);
       }
-      .btn:hover { background: rgba(255,255,255,0.07); }
+      .btn:hover { background: rgba(255,255,255,0.9); }
 
-      /* Search bar */
       .toolbar {
         display: flex;
         gap: 12px;
@@ -121,29 +118,32 @@ const posts = Object.entries(modules)
         flex-wrap: wrap;
         margin: 14px 0 18px;
       }
+
       .search {
         flex: 1;
         min-width: 240px;
         max-width: 520px;
         position: relative;
       }
+
       .search input {
         width: 100%;
         padding: 11px 12px 11px 38px;
         border-radius: 12px;
-        border: 1px solid rgba(255,255,255,0.12);
+        border: 1px solid rgba(15,23,42,0.10);
         outline: none;
-        background: rgba(255,255,255,0.04);
-        color: rgba(255,255,255,0.92);
+        background: rgba(255,255,255,0.75);
+        color: rgba(15,23,42,0.92);
         font-size: 14px;
       }
-      .search input::placeholder { color: rgba(255,255,255,0.45); }
+      .search input::placeholder { color: rgba(15,23,42,0.45); }
+
       .search svg {
         position: absolute;
         left: 12px;
         top: 50%;
         transform: translateY(-50%);
-        opacity: 0.65;
+        opacity: 0.55;
       }
 
       .pill {
@@ -152,31 +152,31 @@ const posts = Object.entries(modules)
         gap: 8px;
         padding: 9px 12px;
         border-radius: 999px;
-        border: 1px solid rgba(255,255,255,0.12);
-        background: rgba(255,255,255,0.04);
-        color: rgba(255,255,255,0.74);
+        border: 1px solid rgba(15,23,42,0.10);
+        background: rgba(255,255,255,0.65);
+        color: rgba(15,23,42,0.70);
         font-size: 13px;
       }
 
-      /* Post list */
       .list {
-        margin-top: 6px;
         border-radius: 18px;
+        background: rgba(255,255,255,0.65);
+        border: 1px solid rgba(15,23,42,0.08);
+        box-shadow: 0 18px 55px rgba(15,23,42,0.07);
+        overflow: hidden;
       }
 
       .row {
         display: grid;
         grid-template-columns: 92px 1fr;
         gap: 18px;
-        padding: 18px 10px;
+        padding: 18px 16px;
         text-decoration: none;
         color: inherit;
-        border-radius: 16px;
-        position: relative;
       }
 
       .row:hover {
-        background: rgba(255,255,255,0.03);
+        background: rgba(59,130,246,0.06);
       }
 
       .thumb {
@@ -184,8 +184,8 @@ const posts = Object.entries(modules)
         height: 92px;
         border-radius: 14px;
         overflow: hidden;
-        border: 1px solid rgba(255,255,255,0.10);
-        background: linear-gradient(135deg, rgba(99,102,241,0.22), rgba(245,158,11,0.14));
+        border: 1px solid rgba(15,23,42,0.10);
+        background: linear-gradient(135deg, rgba(59,130,246,0.18), rgba(245,158,11,0.12));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -203,22 +203,22 @@ const posts = Object.entries(modules)
         font-size: 20px;
         line-height: 1.2;
         letter-spacing: -0.01em;
-        font-weight: 800;
+        font-weight: 820;
       }
 
       .content p {
         margin: 0 0 12px;
-        color: rgba(255,255,255,0.66);
+        color: rgba(15,23,42,0.70);
         font-size: 13px;
         line-height: 1.55;
-        max-width: 78ch;
+        max-width: 80ch;
       }
 
       .meta {
         display: flex;
         gap: 10px;
         align-items: center;
-        color: rgba(255,255,255,0.55);
+        color: rgba(15,23,42,0.55);
         font-size: 12px;
       }
 
@@ -227,28 +227,28 @@ const posts = Object.entries(modules)
         align-items: center;
         padding: 4px 10px;
         border-radius: 999px;
-        border: 1px solid rgba(99,102,241,0.35);
-        background: rgba(99,102,241,0.14);
-        color: rgba(255,255,255,0.82);
+        border: 1px solid rgba(59,130,246,0.25);
+        background: rgba(59,130,246,0.10);
+        color: rgba(15,23,42,0.78);
         font-size: 12px;
       }
 
       .divider {
         border: none;
-        border-top: 1px dashed rgba(147,197,253,0.28);
+        border-top: 1px dashed rgba(15,23,42,0.22);
         margin: 0;
       }
 
       .empty {
-        border: 1px dashed rgba(255,255,255,0.18);
+        border: 1px dashed rgba(15,23,42,0.18);
         border-radius: 14px;
         padding: 18px;
-        color: rgba(255,255,255,0.70);
-        background: rgba(255,255,255,0.03);
+        color: rgba(15,23,42,0.70);
+        background: rgba(255,255,255,0.65);
       }
 
       @media (max-width: 560px) {
-        .row { grid-template-columns: 74px 1fr; }
+        .row { grid-template-columns: 74px 1fr; padding: 16px 14px; }
         .thumb { width: 74px; height: 74px; border-radius: 12px; }
         .content h2 { font-size: 18px; }
       }
@@ -261,8 +261,8 @@ const posts = Object.entries(modules)
         <div>
           <h1>Blog</h1>
           <p>
-            Technical notes with derivations, implementation details, and interactive visualizations.
-            Expect geometry, estimation, robotics perception, and generative models.
+            Technical notes with derivations, implementation details, and visualizations.
+            Geometry, estimation, robotics perception, and generative models.
           </p>
         </div>
         <div class="top-actions">
