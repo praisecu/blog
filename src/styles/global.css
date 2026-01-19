@@ -577,9 +577,9 @@ html[data-theme="paper"] {
 }
 
 /* Paper typography */
-html[data-theme="paper"] body {
+/* html[data-theme="paper"] body {
   font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-}
+} */
 
 html[data-theme="paper"] h1,
 html[data-theme="paper"] h2,
@@ -597,4 +597,22 @@ html[data-theme="paper"] main {
 html[data-theme="paper"] pre {
   background: rgba(17, 24, 39, 0.035);
   border: 1px solid rgba(17, 24, 39, 0.10);
+}
+
+/* Paper mode: keep UI (nav/TOC/buttons) sans, make only article serif */
+html[data-theme="paper"] body {
+  font-family: var(--font-sans);
+}
+
+html[data-theme="paper"] main {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  line-height: 1.85;
+}
+
+/* Ensure TOC + sidebar stay sans */
+html[data-theme="paper"] aside,
+html[data-theme="paper"] .toc,
+html[data-theme="paper"] .toc-link,
+html[data-theme="paper"] .toc-title {
+  font-family: var(--font-sans);
 }
