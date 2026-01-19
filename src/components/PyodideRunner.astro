@@ -1,5 +1,12 @@
 ---
-const { title = "Python (Pyodide)", initialCode = "", height = 240, id, packages = ["numpy","matplotlib","scipy","pandas"] } = Astro.props;
+const {
+  title = "Python (Pyodide)",
+  initialCode = "",
+  height = 240,
+  id,
+  packages = ["numpy","matplotlib","scipy","pandas"],
+  autoRun = false,
+} = Astro.props;
 const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 ---
 
@@ -302,7 +309,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   .py-img { max-width: 100%; height: auto; display: none; border-radius: 8px; background: white; }
 </style>
 
-<script is:inline type="module" define:vars={{ uid, packages }}>
+<script is:inline type="module" define:vars={{ uid, packages, autoRun }}>
   async function ensurePrism() {
     if (window.Prism?.languages?.python) return;
 
@@ -447,12 +454,17 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
       setStatus(`Loading packages: ${pkgList.join(", ")}…`);
       await pyodide.loadPackage(pkgList);
-window[globalKey] = pyodide;
+      window[globalKey] = pyodide;
       setStatus("Ready.");
       return pyodide;
     }
 
-    btn.addEventListener("click", async () => {
+    // Run handler (optionally triggered automatically on page load)
+    let hasRun = false;
+    async function runCodeOnce() {
+      if (hasRun) return;
+      hasRun = true;
+
       btn.disabled = true;
       clearIO();
       try {
@@ -513,7 +525,14 @@ _png_b64
       } finally {
         btn.disabled = false;
       }
-    });
+    }
+
+    btn.addEventListener("click", runCodeOnce);
+
+    if (autoRun) {
+      // Avoid blocking init(); also ensures listeners/DOM are fully wired.
+      queueMicrotask(() => runCodeOnce());
+    }
   }
 
   if (document.readyState === "loading") {
