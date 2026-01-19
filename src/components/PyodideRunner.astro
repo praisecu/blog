@@ -1,8 +1,7 @@
 ---
-const { title = "Python (Pyodide)", initialCode = "", height = 220 } = Astro.props;
-
-// deterministic-ish id per instance for wiring
-const uid = `py_${Math.random().toString(36).slice(2, 10)}`;
+const { title = "Python (Pyodide)", initialCode = "", height = 220, id } = Astro.props;
+// Prefer user-provided id so it stays stable across builds.
+const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 ---
 
 <section class="py-runner" data-py-runner={uid}>
@@ -39,81 +38,74 @@ const uid = `py_${Math.random().toString(36).slice(2, 10)}`;
   .py-img { max-width: 100%; height: auto; display: none; }
 </style>
 
-<!--
-IMPORTANT:
-- We use is:inline so Astro does not hoist/bundle this in a way that breaks document.currentScript assumptions.
-- We do not rely on currentScript at all; we locate the runner by data attribute.
--->
-<script is:inline type="module">
-  // Prevent double-init during client-side navigation.
-  window.__PYODIDE_RUNNERS__ ??= new Set();
-
-  const uid = "{uid}";
-  if (window.__PYODIDE_RUNNERS__.has(uid)) {
-    // already initialized
-  } else {
+<script is:inline type="module" define:vars={{ uid }}>
+  // NOTE: Astro may hoist scripts; wait until the DOM exists.
+  function init() {
+    // Guard against double init (e.g., client-side navigation)
+    window.__PYODIDE_RUNNERS__ ??= new Set();
+    if (window.__PYODIDE_RUNNERS__.has(uid)) return;
     window.__PYODIDE_RUNNERS__.add(uid);
 
     const root = document.querySelector(`[data-py-runner="${uid}"]`);
     if (!root) {
-      console.warn("PyodideRunner: root not found for", uid);
-    } else {
-      const editor = root.querySelector(".py-editor");
-      const btn = root.querySelector(".py-run");
-      const statusEl = root.querySelector(".py-status");
-      const outEl = root.querySelector(".py-stdout");
-      const errEl = root.querySelector(".py-stderr");
-      const imgEl = root.querySelector(".py-img");
+      // If script runs before DOM is ready, retry once on next frame.
+      requestAnimationFrame(() => init());
+      return;
+    }
 
-      function setStatus(s) { statusEl.textContent = s; }
-      function clearIO() {
-        outEl.textContent = "";
-        errEl.textContent = "";
-        imgEl.style.display = "none";
-        imgEl.removeAttribute("src");
-      }
-      function logErr(e) {
-        const msg = (e && (e.stack || e.message)) ? (e.stack || e.message) : String(e);
-        errEl.textContent += (errEl.textContent ? "\n" : "") + msg;
-        console.error(e);
-      }
-      function makeStdout() { return (s) => { outEl.textContent += s + "\n"; }; }
+    const editor = root.querySelector(".py-editor");
+    const btn = root.querySelector(".py-run");
+    const statusEl = root.querySelector(".py-status");
+    const outEl = root.querySelector(".py-stdout");
+    const errEl = root.querySelector(".py-stderr");
+    const imgEl = root.querySelector(".py-img");
 
-      // Shared pyodide instance across the site.
-      const globalKey = "__PYODIDE_SINGLETON__";
-      async function getPyodide() {
-        if (window[globalKey]) return window[globalKey];
+    function setStatus(s) { statusEl.textContent = s; }
+    function clearIO() {
+      outEl.textContent = "";
+      errEl.textContent = "";
+      imgEl.style.display = "none";
+      imgEl.removeAttribute("src");
+    }
+    function logErr(e) {
+      const msg = (e && (e.stack || e.message)) ? (e.stack || e.message) : String(e);
+      errEl.textContent += (errEl.textContent ? "\n" : "") + msg;
+      console.error(e);
+    }
+    function makeStdout() { return (s) => { outEl.textContent += s + "\n"; }; }
 
-        setStatus("Importing Pyodide loader…");
-        // Dynamic import on click avoids failures during build / prerender.
-        const { loadPyodide } = await import("https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.mjs");
+    // Shared Pyodide singleton across the whole site.
+    const globalKey = "__PYODIDE_SINGLETON__";
+    async function getPyodide() {
+      if (window[globalKey]) return window[globalKey];
 
-        setStatus("Downloading Pyodide runtime…");
-        const pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/" });
+      setStatus("Importing Pyodide loader…");
+      const { loadPyodide } = await import("https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.mjs");
 
-        setStatus("Loading numpy + matplotlib…");
-        await pyodide.loadPackage(["numpy", "matplotlib"]);
+      setStatus("Downloading Pyodide runtime…");
+      const pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/" });
 
-        window[globalKey] = pyodide;
-        setStatus("Ready.");
-        return pyodide;
-      }
+      setStatus("Loading numpy + matplotlib…");
+      await pyodide.loadPackage(["numpy", "matplotlib"]);
 
-      // Basic sanity: prove click handler is live.
-      setStatus("Ready to run. Click Run.");
+      window[globalKey] = pyodide;
+      setStatus("Ready.");
+      return pyodide;
+    }
 
-      btn.addEventListener("click", async () => {
-        btn.disabled = true;
-        clearIO();
+    setStatus("Ready to run. Click Run.");
 
-        try {
-          const pyodide = await getPyodide();
-          setStatus("Running…");
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      clearIO();
+      try {
+        const pyodide = await getPyodide();
+        setStatus("Running…");
 
-          pyodide.globals.set("__js_stdout__", makeStdout());
-          const userCode = editor.value;
+        pyodide.globals.set("__js_stdout__", makeStdout());
+        const userCode = editor.value;
 
-          const wrapped = `
+        const wrapped = `
 import sys, io, base64
 import matplotlib
 matplotlib.use("Agg")
@@ -125,8 +117,8 @@ class _Writer:
         if s is None: return
         s = str(s)
         if s == "": return
-        __js_stdout__(s.rstrip("\\n"))
-    def flush(self): 
+        __js_stdout__(s.rstrip("\n"))
+    def flush(self):
         return
 
 sys.stdout = _Writer()
@@ -149,20 +141,25 @@ except Exception:
 
 _png_b64
 `;
-          const b64 = await pyodide.runPythonAsync(wrapped);
-          if (b64 && typeof b64 === "string") {
-            imgEl.src = "data:image/png;base64," + b64;
-            imgEl.style.display = "block";
-          }
-          setStatus("Done.");
-        } catch (e) {
-          setStatus("Error.");
-          logErr(e);
-          errEl.textContent += "\\n\\nDebug: open DevTools → Console/Network. If you see CSP or blocked requests, GitHub Pages/site headers are preventing cdn.jsdelivr.net or .wasm downloads.";
-        } finally {
-          btn.disabled = false;
+        const b64 = await pyodide.runPythonAsync(wrapped);
+        if (b64 && typeof b64 === "string") {
+          imgEl.src = "data:image/png;base64," + b64;
+          imgEl.style.display = "block";
         }
-      });
-    }
+        setStatus("Done.");
+      } catch (e) {
+        setStatus("Error.");
+        logErr(e);
+        errEl.textContent += "\n\nIf you see network/CSP errors in DevTools, GitHub Pages must allow cdn.jsdelivr.net and wasm downloads.";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init, { once: true });
+  } else {
+    init();
   }
 </script>
