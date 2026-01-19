@@ -10,7 +10,7 @@ featured: false
 
 import PyodideRunner from "../components/PyodideRunner.astro";
 
-# From Two Points → Linear Regression → Polynomial Regression (Degree 2 vs Degree 6)
+# Gradient Descent: An Interactive In-Python Minimal Way
 
 This mini-demo shows three increasingly general ways to model a relationship between **x** and **y**:
 
@@ -79,44 +79,6 @@ $X =
 \end{bmatrix}$
 
 This model class matches the data-generating process, so it typically fits well and generalizes well.
-
----
-
-## 4) Degree-6 polynomial regression on the same quadratic data
-
-We then fit a higher-degree model:
-
-$y \approx \theta_0 + \theta_1 x + \theta_2 x^2 + \cdots + \theta_6 x^6$
-
-This is still solved with the same least-squares machinery—only the feature map changes to include higher powers of $x$.
-
-### Why do this?
-Because it illustrates a key point:
-
-- **Higher degree ⇒ more flexibility**
-- More flexibility can reduce training error
-- But it can also fit noise (unnecessary wiggles), i.e., **overfitting**
-
-Even when the *true* relationship is quadratic, a 6th-degree polynomial can start modeling random fluctuations rather than the underlying signal—especially near the boundaries of the sampled x-range.
-
----
-
-## What the 4 subplots show
-
-1. **Line through two points**: exact geometric line.
-2. **Linear regression**: best-fit line through noisy linear samples.
-3. **Degree-2 polynomial regression**: best-fit quadratic curve through noisy quadratic samples.
-4. **Degree-6 polynomial regression**: a more flexible curve fit to the same data (may overfit).
-
----
-
-## Key conceptual punchline
-
-Polynomial regression is still “linear regression” in the *parameter* sense:
-
-- The model can be nonlinear in $x$
-- But it is linear in the coefficients $\theta$
-- So we can solve it with linear least squares as long as we build the right feature matrix $X$
 
 ---
 
