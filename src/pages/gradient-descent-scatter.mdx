@@ -10,15 +10,16 @@ featured: true
 
 import PyodideRunner from "../components/PyodideRunner.astro";
 
-# Linear vs. Nonlinear Regression (Illustrative Example)
+# Linear vs. Nonlinear Regression 
 
-This example demonstrates how a **linear regression model** behaves when the underlying data-generating process is **slightly nonlinear**, and how a simple **nonlinear (quadratic) regression** can better capture that structure.
+This example demonstrates how increasingly flexible polynomial models behave when the underlying data-generating process is **mildly nonlinear**. The visualization consists of **four vertically stacked subplots**:
 
-The visualization consists of **two subplots**:
-- **Top:** Linear regression (ordinary least squares)
-- **Bottom:** Nonlinear regression (quadratic least squares)
+1. Linear regression (ordinary least squares)
+2. Quadratic regression (least squares)
+3. Cubic regression (least squares)
+4. Degree-5 polynomial regression (used here in place of 1D “bicubic”)
 
-Both models are fitted to the *same data*.
+All models are fitted to the *same dataset*. In every subplot, the fitted curve is drawn in a **golden line** (Matplotlib color name `goldenrod`) to visually distinguish it from the scatter.
 
 ---
 
@@ -33,21 +34,21 @@ $$
 where $\varepsilon \sim \mathcal{N}(0, \sigma^2)$ is Gaussian noise.
 
 Key points:
-- The dominant trend is approximately linear.
+- The dominant trend is roughly linear.
 - The sinusoidal and quadratic terms introduce systematic nonlinearity.
 - Noise prevents perfect fitting by any deterministic model.
 
 ---
 
-## 2. Linear Regression (Top Plot)
+## 2. Linear Regression
 
-The linear model assumes:
+The linear model is:
 
 $$
 \hat y = \beta_1 x + \beta_0
 $$
 
-The parameters $\beta_1$ and $\beta_0$ are computed using the **closed-form ordinary least squares (OLS)** solution:
+Parameters are computed using the closed-form OLS solution:
 
 $$
 \beta_1 = \frac{\sum (x_i - \bar x)(y_i - \bar y)}{\sum (x_i - \bar x)^2},
@@ -55,32 +56,28 @@ $$
 \beta_0 = \bar y - \beta_1 \bar x
 $$
 
-### Interpretation
-
-- The model captures the *average trend* in the data.
-- Systematic deviations remain because the true relationship is nonlinear.
-- This manifests visually as structured residuals.
-- The coefficient of determination $R^2$ is limited by model bias.
-
-This plot illustrates **underfitting**.
+### What to expect
+- Captures the average trend.
+- Leaves structured residuals due to misspecification (nonlinearity).
+- Typically exhibits lower $R^2$ than higher-order polynomials here.
 
 ---
 
-## 3. Nonlinear Regression (Bottom Plot)
+## 3. Quadratic Regression
 
-To better model the curvature, we use a quadratic function:
+A quadratic model introduces curvature:
 
 $$
 \hat y = a_2 x^2 + a_1 x + a_0
 $$
 
-Although this is a *nonlinear function of $x$*, it is still **linear in the parameters**, allowing solution via least squares:
+Although nonlinear in $x$, it is linear in parameters $(a_2, a_1, a_0)$ and is solved by least squares:
 
 $$
-\min_{a_0,a_1,a_2} \| Xa - y \|_2^2
+\min_a \|Xa - y\|_2^2
 $$
 
-where:
+with design matrix:
 
 $$
 X = \begin{bmatrix}
@@ -90,42 +87,67 @@ x_2^2 & x_2 & 1 \\
 \end{bmatrix}
 $$
 
-### Interpretation
-
-- The quadratic term absorbs curvature in the data.
-- Residual structure is significantly reduced.
-- $R^2$ increases, reflecting improved explanatory power.
-- The model still remains simple and interpretable.
-
-This plot demonstrates **reduced bias** with modest complexity.
+### What to expect
+- Better captures curvature than the linear model.
+- Higher $R^2$ in this dataset.
 
 ---
 
-## 4. Comparison and Takeaways
+## 4. Cubic Regression
 
-| Aspect | Linear Model | Quadratic Model |
-|------|-------------|----------------|
-| Assumed relationship | $y = \beta_1 x + \beta_0$ | $y = a_2 x^2 + a_1 x + a_0$ |
-| Model bias | High | Lower |
-| Variance | Low | Slightly higher |
-| Interpretability | Very high | High |
-| Fit to nonlinear data | Poor | Better |
+The cubic model adds another degree of freedom:
 
-Key conclusions:
-- Linear regression fails when the conditional mean $E[y|x]$ is nonlinear.
-- Adding polynomial terms is a principled way to reduce bias.
-- This example illustrates the **bias–variance tradeoff** in a controlled setting.
+$$
+\hat y = c_3 x^3 + c_2 x^2 + c_1 x + c_0
+$$
+
+It is also solved by linear least squares using an appropriate polynomial design matrix.
+
+### What to expect
+- More flexible than quadratic.
+- Can follow subtle structure better, but increased flexibility can also fit noise if pushed too far.
 
 ---
 
-## 5. Why This Matters
+## 5. Degree-5 Polynomial (Used Here Instead of 1D “Bicubic”)
 
-In practice:
-- Linear models are often used as baselines.
-- Residual plots or systematic deviations signal model misspecification.
-- Polynomial or feature-based nonlinear models can often fix this without resorting to complex methods.
+Important clarification: **“bicubic” is a 2D interpolation concept**, typically for mapping a grid of values $(x, y) \mapsto z$ using a bicubic surface. With a single scalar input $x$, there is no distinct notion of “bicubic regression.”
 
-This example shows *why visual inspection and model assumptions matter*, even for simple regression problems.
+To satisfy the intent (a more flexible model than cubic) in a 1D setting, we use a degree-5 polynomial:
+
+$$
+\hat y = d_5 x^5 + d_4 x^4 + d_3 x^3 + d_2 x^2 + d_1 x + d_0
+$$
+
+### What to expect
+- Higher flexibility and potentially higher $R^2$ on training data.
+- Increased risk of fitting noise rather than the underlying signal.
+- This model is included to illustrate the bias–variance tradeoff.
+
+If you actually have 2D inputs $(x, y)$ and want a true bicubic surface model $z=f(x,y)$, the model must be changed accordingly.
+
+---
+
+## 6. Evaluation Metric: $R^2$
+
+Each subplot reports $R^2$:
+
+$$
+R^2 = 1 - \frac{\sum (y_i - \hat y_i)^2}{\sum (y_i - \bar y)^2}
+$$
+
+Interpretation:
+- Larger $R^2$ indicates the model explains more variance in the observed $y$.
+- Training $R^2$ generally increases with model flexibility, but that does not guarantee better generalization.
+
+---
+
+## 7. Takeaways
+
+- Linear regression underfits when $E[y|x]$ is nonlinear.
+- Polynomial features reduce bias by expanding the model class.
+- Higher-degree polynomials can overfit, especially when noise is nontrivial.
+- “Bicubic” is not a meaningful label in 1D regression; it is fundamentally a 2D interpolation/surface-fitting concept.
 
 
 ---
@@ -138,7 +160,10 @@ This example shows *why visual inspection and model assumptions matter*, even fo
   title="Generate + plot synthetic points"
   height={240}
   autoRun={true}
-  initialCode={`import numpy as np
+  initialCode={`import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -146,49 +171,60 @@ import matplotlib.pyplot as plt
 # data (nonlinear ground truth)
 # ---------------------------
 rng = np.random.default_rng(0)
-n = 180
+n = 220
 
 df = pd.DataFrame({"x": np.sort(rng.uniform(0, 10, size=n))})
 x = df["x"].to_numpy()
 
-y_true = (
-    2.4 * x
-    + 5.0
-    + 2.0 * np.sin(0.9 * x)
-    + 0.12 * (x - 5.0) ** 2
-)
+y_true = 2.4 * x + 5.0 + 2.0 * np.sin(0.9 * x) + 0.12 * (x - 5.0) ** 2
 y = y_true + rng.normal(0, 1.8, size=n)
 df["y"] = y
 
 # ---------------------------
-# linear regression (OLS)
+# model fits
 # ---------------------------
 x_mean = x.mean()
 y_mean = y.mean()
+ss_tot = np.sum((y - y_mean) ** 2)
+
+def r2_score(y_true, y_pred):
+    return 1.0 - np.sum((y_true - y_pred) ** 2) / ss_tot
+
+# 1) Linear: y = b1 x + b0
 b1 = np.sum((x - x_mean) * (y - y_mean)) / np.sum((x - x_mean) ** 2)
 b0 = y_mean - b1 * x_mean
 
-# ---------------------------
-# nonlinear regression (quadratic: y = a2 x^2 + a1 x + a0)
-# (still linear in parameters; solved by least squares)
-# ---------------------------
-X_poly = np.column_stack([x**2, x, np.ones_like(x)])
-a2, a1, a0 = np.linalg.lstsq(X_poly, y, rcond=None)[0]
+# 2) Quadratic: y = a2 x^2 + a1 x + a0
+X2 = np.column_stack([x**2, x, np.ones_like(x)])
+a2, a1, a0 = np.linalg.lstsq(X2, y, rcond=None)[0]
+
+# 3) Cubic: y = c3 x^3 + c2 x^2 + c1 x + c0
+X3 = np.column_stack([x**3, x**2, x, np.ones_like(x)])
+c3, c2, c1, c0 = np.linalg.lstsq(X3, y, rcond=None)[0]
+
+# 4) "Bicubic" in 1D is not a distinct model.
+# Bicubic interpolation is a 2D method (x,y -> z) on a grid.
+# Here we interpret your request as a higher-order polynomial in 1D.
+# We'll use degree-5 as a reasonable "more flexible than cubic" model:
+# y = d5 x^5 + d4 x^4 + d3 x^3 + d2 x^2 + d1 x + d0
+X5 = np.column_stack([x**5, x**4, x**3, x**2, x, np.ones_like(x)])
+d5, d4, d3, d2, d1, d0 = np.linalg.lstsq(X5, y, rcond=None)[0]
 
 # prediction grid
-x_line = np.linspace(x.min(), x.max(), 500)
-y_lin = b0 + b1 * x_line
+x_line = np.linspace(x.min(), x.max(), 600)
+y_lin  = b0 + b1 * x_line
 y_quad = a2 * x_line**2 + a1 * x_line + a0
+y_cub  = c3 * x_line**3 + c2 * x_line**2 + c1 * x_line + c0
+y_deg5 = d5 * x_line**5 + d4 * x_line**4 + d3 * x_line**3 + d2 * x_line**2 + d1 * x_line + d0
 
-# R^2
-y_hat_lin = b0 + b1 * x
-y_hat_quad = a2 * x**2 + a1 * x + a0
-ss_tot = np.sum((y - y_mean) ** 2)
-r2_lin = 1.0 - np.sum((y - y_hat_lin) ** 2) / ss_tot
-r2_quad = 1.0 - np.sum((y - y_hat_quad) ** 2) / ss_tot
+# R^2 on training data
+r2_lin  = r2_score(y, b0 + b1 * x)
+r2_quad = r2_score(y, a2 * x**2 + a1 * x + a0)
+r2_cub  = r2_score(y, c3 * x**3 + c2 * x**2 + c1 * x + c0)
+r2_deg5 = r2_score(y, d5 * x**5 + d4 * x**4 + d3 * x**3 + d2 * x**2 + d1 * x + d0)
 
 # ---------------------------
-# plotting
+# plotting (4 stacked subplots)
 # ---------------------------
 plt.rcParams.update({
     "figure.dpi": 140,
@@ -197,40 +233,53 @@ plt.rcParams.update({
     "font.size": 11,
 })
 
-fig, ax = plt.subplots(2, 1, figsize=(8.2, 8.0), sharex=True, layout="constrained")
+fig, ax = plt.subplots(4, 1, figsize=(8.4, 13.0), sharex=True, layout="constrained")
 
-# Top: linear
-ax[0].scatter(x, y, s=38, alpha=0.78, edgecolors="white", linewidths=0.8, label="data")
-ax[0].plot(x_line, y_lin, linewidth=2.6, label="linear fit")
-ax[0].set_title("Linear Regression (OLS)")
-ax[0].set_ylabel("y")
-ax[0].grid(True, alpha=0.25)
-ax[0].text(
-    0.02, 0.98,
+def draw_panel(ax_i, title, y_fit_line, eq_text):
+    ax_i.scatter(x, y, s=34, alpha=0.78, edgecolors="white", linewidths=0.8, label="data")
+    ax_i.plot(x_line, y_fit_line, linewidth=2.6, color="goldenrod", label="fit")
+    ax_i.set_title(title)
+    ax_i.set_ylabel("y")
+    ax_i.grid(True, alpha=0.25)
+    ax_i.text(
+        0.02, 0.98, eq_text,
+        transform=ax_i.transAxes,
+        va="top", ha="left",
+        bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.92, linewidth=0.0),
+    )
+    ax_i.legend(frameon=False, loc="lower right")
+
+draw_panel(
+    ax[0],
+    "Linear Regression (OLS)",
+    y_lin,
     f"$\\hat y = {b1:.3f}x + {b0:.3f}$\n$R^2 = {r2_lin:.3f}$",
-    transform=ax[0].transAxes,
-    va="top", ha="left",
-    bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.92, linewidth=0.0),
 )
-ax[0].legend(frameon=False, loc="lower right")
 
-# Bottom: nonlinear (quadratic)
-ax[1].scatter(x, y, s=38, alpha=0.78, edgecolors="white", linewidths=0.8, label="data")
-ax[1].plot(x_line, y_quad, linewidth=2.6, label="quadratic fit")
-ax[1].set_title("Nonlinear Regression (Quadratic Least Squares)")
-ax[1].set_xlabel("x")
-ax[1].set_ylabel("y")
-ax[1].grid(True, alpha=0.25)
-ax[1].text(
-    0.02, 0.98,
+draw_panel(
+    ax[1],
+    "Quadratic Regression (Least Squares)",
+    y_quad,
     f"$\\hat y = {a2:.3f}x^2 + {a1:.3f}x + {a0:.3f}$\n$R^2 = {r2_quad:.3f}$",
-    transform=ax[1].transAxes,
-    va="top", ha="left",
-    bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.92, linewidth=0.0),
 )
-ax[1].legend(frameon=False, loc="lower right")
 
+draw_panel(
+    ax[2],
+    "Cubic Regression (Least Squares)",
+    y_cub,
+    f"$\\hat y = {c3:.3f}x^3 + {c2:.3f}x^2 + {c1:.3f}x + {c0:.3f}$\n$R^2 = {r2_cub:.3f}$",
+)
+
+draw_panel(
+    ax[3],
+    "Degree-5 Polynomial (used here in place of 1D 'bicubic')",
+    y_deg5,
+    f"$\\hat y = {d5:.3f}x^5 + {d4:.3f}x^4 + {d3:.3f}x^3 + {d2:.3f}x^2 + {d1:.3f}x + {d0:.3f}$\n$R^2 = {r2_deg5:.3f}$",
+)
+
+ax[3].set_xlabel("x")
 plt.show()
+
 `}
 />
 
