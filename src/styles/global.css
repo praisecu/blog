@@ -126,12 +126,66 @@ a[href*="]"] {
 }
 
 .topbar {
+  /* Modern sticky glass header */
+  position: sticky;
+  top: 12px;
+  z-index: 50;
+
+  max-width: calc(var(--content-max) + var(--sidebar-w));
+  margin: 12px auto 18px;
+  padding: 10px 12px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+
   color: var(--muted);
-  font-size: 14px;
-  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+/* If the topbar doesn't have explicit .left/.right wrappers,
+   keep spacing reasonable by styling direct children. */
+.topbar > :where(a, button, .theme-toggle) {
+  flex: 0 0 auto;
+}
+
+/* Header links as pill nav items */
+.topbar a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  text-decoration: none;
+
+  color: color-mix(in srgb, var(--fg) 78%, transparent);
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.topbar a:hover {
+  background: color-mix(in srgb, var(--brand-wash) 65%, transparent);
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+  text-decoration: none;
+}
+
+/* Make the theme toggle match the header pills */
+.theme-toggle {
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+}
+
+html[data-theme="dark"] .topbar {
+  box-shadow: 0 14px 40px rgba(0,0,0,0.45);
+  border-color: rgba(255,255,255,0.10);
+  background: rgba(10,10,10,0.55);
 }
 
 .layout {
