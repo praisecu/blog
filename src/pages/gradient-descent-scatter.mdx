@@ -5,80 +5,128 @@ author: "Chahat Deep Singh"
 description: "A minimal Pyodide-powered code cell: generate and plot points. This validates the Python runner before adding gradient descent."
 date: "January 18, 2026"
 tags: ["optimization", "machine-learning", "gradient-descent", "pyodide"]
-featured: false
+featured: true
 ---
 
 import PyodideRunner from "../components/PyodideRunner.astro";
 
-# From Linear to Polynomial Regression
+# Linear vs. Nonlinear Regression (Illustrative Example)
 
-This mini-demo shows three increasingly general ways to model a relationship between **x** and **y**:
+This example demonstrates how a **linear regression model** behaves when the underlying data-generating process is **slightly nonlinear**, and how a simple **nonlinear (quadratic) regression** can better capture that structure.
 
-1. **A line from two exact points** (deterministic geometry)
-2. **Linear regression on noisy data** (best-fit line)
-3. **Polynomial regression on noisy quadratic data** (best-fit curve), comparing **degree 2** (correct model class) vs **degree 6** (more flexible)
+The visualization consists of **two subplots**:
+- **Top:** Linear regression (ordinary least squares)
+- **Bottom:** Nonlinear regression (quadratic least squares)
 
----
-
-## 1) Line through two points (no learning)
-
-Given two points $(x_1, y_1)$ and $(x_2, y_2)$, the unique line (if $x_1 \neq x_2$) is:
-
-$m = \frac{y_2 - y_1}{x_2 - x_1}$  
-$b = y_1 - mx_1$  
-$y = mx + b$
-
-This is *not* regression—there is no notion of noise or “best fit.” The line is fully determined.
-
-**Important edge case:** if $x_1 = x_2$, the line is vertical and cannot be written as $y = mx + b$.
+Both models are fitted to the *same data*.
 
 ---
 
-## 2) Linear regression (degree 1) on 100 noisy samples
+## 1. Data Generation
 
-Now we assume the data is noisy, e.g.
+We generate one-dimensional input data $x \in [0, 10]$ and construct targets $y$ using a mildly nonlinear function:
 
-$y = 3x - 1 + \epsilon$, with $\epsilon \sim \mathcal{N}(0,\sigma^2)$
+$$
+y = 2.4x + 5 + 2\sin(0.9x) + 0.12(x - 5)^2 + \varepsilon
+$$
 
-A line won’t pass through all points (because of noise), so we learn parameters $\theta = [b, m]^T$ that minimize squared error:
+where $\varepsilon \sim \mathcal{N}(0, \sigma^2)$ is Gaussian noise.
 
-$\min_{\theta} \|X\theta - y\|_2^2$
-
-with the design matrix:
-
-$X =
-\begin{bmatrix}
-1 & x_1 \\
-1 & x_2 \\
-\vdots & \vdots \\
-1 & x_N
-\end{bmatrix}$
-
-This is the classic least-squares solution (computed via `np.linalg.lstsq`).
+Key points:
+- The dominant trend is approximately linear.
+- The sinusoidal and quadratic terms introduce systematic nonlinearity.
+- Noise prevents perfect fitting by any deterministic model.
 
 ---
 
-## 3) Quadratic regression (degree 2) on quadratic data
+## 2. Linear Regression (Top Plot)
 
-Next we generate data from a quadratic ground truth:
+The linear model assumes:
 
-$y = ax^2 + bx + c + \epsilon$
+$$
+\hat y = \beta_1 x + \beta_0
+$$
 
-Polynomial regression of degree 2 fits:
+The parameters $\beta_1$ and $\beta_0$ are computed using the **closed-form ordinary least squares (OLS)** solution:
 
-$y \approx c + bx + ax^2$
+$$
+\beta_1 = \frac{\sum (x_i - \bar x)(y_i - \bar y)}{\sum (x_i - \bar x)^2},
+\qquad
+\beta_0 = \bar y - \beta_1 \bar x
+$$
 
-with design matrix:
+### Interpretation
 
-$X =
-\begin{bmatrix}
-1 & x_1 & x_1^2 \\
-1 & x_2 & x_2^2 \\
-\vdots & \vdots & \vdots \\
-1 & x_N & x_N^2
-\end{bmatrix}$
+- The model captures the *average trend* in the data.
+- Systematic deviations remain because the true relationship is nonlinear.
+- This manifests visually as structured residuals.
+- The coefficient of determination $R^2$ is limited by model bias.
 
-This model class matches the data-generating process, so it typically fits well and generalizes well.
+This plot illustrates **underfitting**.
+
+---
+
+## 3. Nonlinear Regression (Bottom Plot)
+
+To better model the curvature, we use a quadratic function:
+
+$$
+\hat y = a_2 x^2 + a_1 x + a_0
+$$
+
+Although this is a *nonlinear function of $x$*, it is still **linear in the parameters**, allowing solution via least squares:
+
+$$
+\min_{a_0,a_1,a_2} \| Xa - y \|_2^2
+$$
+
+where:
+
+$$
+X = \begin{bmatrix}
+x_1^2 & x_1 & 1 \\
+x_2^2 & x_2 & 1 \\
+\vdots & \vdots & \vdots
+\end{bmatrix}
+$$
+
+### Interpretation
+
+- The quadratic term absorbs curvature in the data.
+- Residual structure is significantly reduced.
+- $R^2$ increases, reflecting improved explanatory power.
+- The model still remains simple and interpretable.
+
+This plot demonstrates **reduced bias** with modest complexity.
+
+---
+
+## 4. Comparison and Takeaways
+
+| Aspect | Linear Model | Quadratic Model |
+|------|-------------|----------------|
+| Assumed relationship | $y = \beta_1 x + \beta_0$ | $y = a_2 x^2 + a_1 x + a_0$ |
+| Model bias | High | Lower |
+| Variance | Low | Slightly higher |
+| Interpretability | Very high | High |
+| Fit to nonlinear data | Poor | Better |
+
+Key conclusions:
+- Linear regression fails when the conditional mean $E[y|x]$ is nonlinear.
+- Adding polynomial terms is a principled way to reduce bias.
+- This example illustrates the **bias–variance tradeoff** in a controlled setting.
+
+---
+
+## 5. Why This Matters
+
+In practice:
+- Linear models are often used as baselines.
+- Residual plots or systematic deviations signal model misspecification.
+- Polynomial or feature-based nonlinear models can often fix this without resorting to complex methods.
+
+This example shows *why visual inspection and model assumptions matter*, even for simple regression problems.
+
 
 ---
 
@@ -187,110 +235,3 @@ plt.show()
 />
 
 ---
-
-
-
-
-
-<!-- import numpy as np
-import matplotlib.pyplot as plt
-
-np.random.seed(0)
-
-# -------------------------
-# 1) Line through two points
-# -------------------------
-x1, y1 = 1.0, 2.0
-x2, y2 = 4.0, 5.5
-if x2 == x1:
-    raise ValueError("Vertical line: x2 == x1, cannot represent as y = m x + b.")
-m = (y2 - y1) / (x2 - x1)
-b = y1 - m * x1
-xs = np.linspace(0, 6, 200)
-ys = m * xs + b
-
-# -------------------------
-# 2) Linear data + linear regression fit
-# -------------------------
-N = 100
-x = np.random.uniform(-2, 2, size=N)
-true_m, true_b = 3.0, -1.0
-sigma = 0.6
-y = true_m * x + true_b + np.random.normal(0, sigma, size=N)
-
-X_lin = np.column_stack([np.ones_like(x), x])
-theta_lin, *_ = np.linalg.lstsq(X_lin, y, rcond=None)
-b_hat, m_hat = theta_lin
-
-xg = np.linspace(x.min(), x.max(), 300)
-y_true_lin = true_b + true_m * xg
-y_fit_lin = b_hat + m_hat * xg
-
-# -------------------------
-# 3) Quadratic data + degree-2 polynomial regression fit (quadratic)
-# -------------------------
-xq = np.random.uniform(-2, 2, size=N)
-true_a, true_b2, true_c = 1.5, -0.3, 2.0
-yq = true_a * xq**2 + true_b2 * xq + true_c + np.random.normal(0, sigma, size=N)
-
-# Degree-2 fit: [1, x, x^2]
-X_deg2 = np.column_stack([np.ones_like(xq), xq, xq**2])
-theta_deg2, *_ = np.linalg.lstsq(X_deg2, yq, rcond=None)
-c2_hat, b2_hat, a2_hat = theta_deg2
-
-xgq = np.linspace(xq.min(), xq.max(), 400)
-y_true_quad = true_a * xgq**2 + true_b2 * xgq + true_c
-y_fit_deg2 = a2_hat * xgq**2 + b2_hat * xgq + c2_hat
-
-# -------------------------
-# 4) Same quadratic data + degree-6 polynomial regression fit
-# -------------------------
-# Degree-6 fit: [1, x, x^2, ..., x^6]
-X_deg6 = np.column_stack([xq**k for k in range(7)])
-theta_deg6, *_ = np.linalg.lstsq(X_deg6, yq, rcond=None)
-
-Xg_deg6 = np.column_stack([xgq**k for k in range(7)])
-y_fit_deg6 = Xg_deg6 @ theta_deg6
-
-# -------------------------
-# Single figure with 4 subplots
-# -------------------------
-fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-
-# Subplot 1: line through two points
-ax = axes[0, 0]
-ax.scatter([x1, x2], [y1, y2], label="points")
-ax.plot(xs, ys, label="line")
-ax.set_title("1) Line through two points")
-ax.set_xlabel("x"); ax.set_ylabel("y")
-ax.legend()
-
-# Subplot 2: linear regression
-ax = axes[0, 1]
-ax.scatter(x, y, s=20, label="data")
-ax.plot(xg, y_fit_lin, label="fit")
-ax.plot(xg, y_true_lin, linestyle="--", label="true")
-ax.set_title("2) Linear regression (deg 1)")
-ax.set_xlabel("x"); ax.set_ylabel("y")
-ax.legend()
-
-# Subplot 3: quadratic regression (degree 2)
-ax = axes[1, 0]
-ax.scatter(xq, yq, s=20, label="data")
-ax.plot(xgq, y_fit_deg2, label="fit (deg 2)")
-ax.plot(xgq, y_true_quad, linestyle="--", label="true")
-ax.set_title("3) Polynomial regression (degree 2)")
-ax.set_xlabel("x"); ax.set_ylabel("y")
-ax.legend()
-
-# Subplot 4: degree-6 regression on the same quadratic data
-ax = axes[1, 1]
-ax.scatter(xq, yq, s=20, label="data")
-ax.plot(xgq, y_fit_deg6, label="fit (deg 6)")
-ax.plot(xgq, y_true_quad, linestyle="--", label="true (quadratic)")
-ax.set_title("4) Polynomial regression (degree 6)")
-ax.set_xlabel("x"); ax.set_ylabel("y")
-ax.legend()
-
-plt.tight_layout()
-plt.show() -->
