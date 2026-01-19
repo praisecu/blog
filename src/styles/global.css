@@ -563,62 +563,38 @@ html[data-theme="dark"] .theme-toggle {
   .topbar-center { display: none; }
 }
 
-/* --- Paper mode (print-like reading) --- */
-/* Activated by: <html data-mode="paper"> */
+/* Paper theme */
+html[data-theme="paper"] {
+  --bg: #fbf7ef;
+  --fg: #111827;
+  --muted: rgba(17, 24, 39, 0.66);
+  --border: rgba(42, 36, 0, 0.14);
 
-:root[data-mode="paper"] {
-  /* Paper palette */
-  --bg: #fbf7ef;                 /* warm paper */
-  --fg: #111827;                 /* ink */
-  --muted: rgba(17, 24, 39, 0.70);
-  --border: rgba(17, 24, 39, 0.10);
+  --brand-wash: rgba(65, 56, 0, 0.10);
+  --brand-wash-2: rgba(65, 56, 0, 0.14);
 
-  /* Washes */
-  --brand-wash: rgba(234, 179, 8, 0.12);
-
-  /* Content feel */
-  --content-max: 820px;          /* slightly narrower for reading */
+  --link: #4a3a06;
 }
 
-/* Optional: serif body for paper mode (keeps headings sans) */
-:root[data-mode="paper"] body {
+/* Paper typography */
+html[data-theme="paper"] body {
   font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
-:root[data-mode="paper"] h1,
-:root[data-mode="paper"] h2,
-:root[data-mode="paper"] h3,
-:root[data-mode="paper"] .topbar,
-:root[data-mode="paper"] .toc-title {
+html[data-theme="paper"] h1,
+html[data-theme="paper"] h2,
+html[data-theme="paper"] h3,
+html[data-theme="paper"] .topbar,
+html[data-theme="paper"] .toc-title,
+html[data-theme="paper"] .theme-toggle {
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif;
 }
 
-/* Slightly more comfortable measure */
-:root[data-mode="paper"] main {
-  line-height: 1.75;
+html[data-theme="paper"] main {
+  line-height: 1.85;
 }
 
-/* Make code blocks look like printed insets */
-:root[data-mode="paper"] pre {
-  background: rgba(17, 24, 39, 0.04);
+html[data-theme="paper"] pre {
+  background: rgba(17, 24, 39, 0.035);
   border: 1px solid rgba(17, 24, 39, 0.10);
-}
-
-/* KaTeX on paper: slightly darker and crisper */
-:root[data-mode="paper"] .katex {
-  color: #0f172a;
-}
-
-.mode-toggle-icon {
-  width: 42px;
-  height: 36px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-}
-
-.mode-toggle-icon #paperLabel {
-  display: none; /* keep JS intact; icon-only UI */
 }
