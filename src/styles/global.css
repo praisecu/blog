@@ -244,7 +244,7 @@ main {
   font-family: var(--font-sans);
   font-size: 17px;
   line-height: 1.78;
-  color: rgba(17, 24, 39, 0.80);
+  color: rgba(26, 26, 26, 0.8);
 }
 
 html[data-theme="dark"] main {
@@ -268,7 +268,7 @@ main :is(h1,h2,h3,h4,p,ul,ol,blockquote,pre,table,.figure-card,.references,.kate
   line-height: 1.12;
   font-weight: 700;
   letter-spacing: -0.025em;
-  color: rgba(17, 24, 39, 0.92);
+  color: rgba(24, 24, 24, 0.92);
 }
 
 html[data-theme="dark"] .post-title {
@@ -286,7 +286,7 @@ html[data-theme="dark"] .post-title {
   gap: 16px;
 
   font-size: 14px;
-  color: rgba(17, 24, 39, 0.55);
+  color: rgba(27, 27, 27, 0.55);
 }
 
 html[data-theme="dark"] .byline {
@@ -300,7 +300,7 @@ html[data-theme="dark"] .byline {
 }
 
 .byline-left .by {
-  color: rgba(17, 24, 39, 0.55);
+  color: rgba(22, 22, 22, 0.55);
   font-weight: 500;
 }
 html[data-theme="dark"] .byline-left .by {
@@ -323,7 +323,7 @@ html[data-theme="dark"] .byline-left .by {
 }
 
 .byline-right {
-  color: rgba(17, 24, 39, 0.55);
+  color: rgba(29, 29, 29, 0.55);
   text-align: right;
 }
 html[data-theme="dark"] .byline-right {
@@ -381,7 +381,7 @@ li {
 
 strong {
   font-weight: 650;
-  color: rgba(17, 24, 39, 0.92);
+  color: rgba(26, 26, 26, 0.92);
 }
 html[data-theme="dark"] strong {
   color: rgba(229, 231, 235, 0.92);
@@ -457,7 +457,7 @@ pre code { font-size: 0.9em; }
 .references ol { padding-left: 18px; }
 .references li {
   margin: 8px 0;
-  color: rgba(17, 24, 39, 0.88);
+  color: rgba(26, 26, 26, 0.88);
 }
 html[data-theme="dark"] .references li {
   color: rgba(229, 231, 235, 0.86);
@@ -475,7 +475,7 @@ html[data-theme="dark"] .references li {
 
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.7);
-  color: rgba(17, 24, 39, 0.78);
+  color: rgba(26, 26, 26, 0.78);
 
   padding: 8px 12px;
   border-radius: 999px;
