@@ -398,7 +398,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     }
 
     function makeStdout() {
-      return (s) => { outEl.textContent += s + "\n"; refreshPanels(); };
+      return (s) => { outEl.textContent += s; refreshPanels(); };
     }
 
     // Ensure the textarea and highlight layer share identical *computed* metrics.
@@ -573,12 +573,15 @@ warnings.filterwarnings("ignore", message="Matplotlib is currently using agg")
 
 class _Writer:
     def write(self, s):
-        if s is None: return
+        if s is None:
+            return
         s = str(s)
-        if s == "": return
-        __js_stdout__(s.rstrip("\\\\n"))
+        if not s:
+            return
+        __js_stdout__(s)  # preserve exactly what Python emits (including \n)
     def flush(self):
         return
+
 
 sys.stdout = _Writer()
 sys.stderr = _Writer()
