@@ -173,15 +173,19 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     user-select: none;
     border-right: 1px solid var(--py-border-2);
     white-space: pre;
-    overflow: hidden;
+    /* Make the gutter itself the scroll container and sync its scrollTop to the textarea.
+       This avoids transform-based scrolling, which can drift under fractional line-heights/zoom. */
+    overflow: auto;
   }
+
+  /* Hide gutter scrollbars (it is driven programmatically by the textarea scroll) */
+  .py-gutter::-webkit-scrollbar { width: 0; height: 0; }
+  .py-gutter { scrollbar-width: none; pointer-events: none; }
 
 
   .py-gutter-inner {
     margin: 0;
     padding: 14px 10px;
-    transform: translate3d(0, 0, 0);
-    will-change: transform;
   }
 
   .py-codepane { position: relative; overflow: hidden; }
@@ -386,12 +390,11 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     }
 
     function syncScroll() {
-      // Do NOT round scroll offsets.
-      // Rounding causes 1px drift when the effective line-height is fractional
-      // (common with zoom / font rendering), which misaligns gutter vs text on focus.
       const y = editor.scrollTop;
       const x = editor.scrollLeft;
-      if (gutterInner) gutterInner.style.transform = `translate3d(0, ${-y}px, 0)`;
+      // Keep gutter and highlight in the same scroll coordinate system as the textarea.
+      // Using scrollTop (rather than CSS transforms) avoids caret/line-number drift.
+      gutter.scrollTop = y;
       highlightPre.scrollTop = y;
       highlightPre.scrollLeft = x;
     }
