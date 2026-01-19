@@ -33,12 +33,37 @@ const date = frontmatter?.date ?? "";
             id="themeToggle"
             class="theme-toggle theme-toggle-icon"
             type="button"
-            aria-label="Theme: Light. Click to change."
-            title="Theme: Light (click to change)"
+            aria-label="Change theme"
+            title="Change theme"
           >
-            <span id="themeIcon" aria-hidden="true">☀</span>
-            <span id="themeLabel">Light</span>
+            <!-- Sun -->
+            <svg class="ticon ticon-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 18a6 6 0 100-12 6 6 0 000 12z" stroke="currentColor" stroke-width="2" />
+              <path
+                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              />
+            </svg>
+
+            <!-- Moon -->
+            <svg class="ticon ticon-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M21 14.5A8.5 8.5 0 019.5 3a7 7 0 109.9 11.5z"
+                stroke="currentColor" stroke-width="2" stroke-linejoin="round"
+              />
+            </svg>
+
+            <!-- Paper -->
+            <svg class="ticon ticon-paper" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M7 3h7l3 3v15H7V3z"
+                stroke="currentColor" stroke-width="2" stroke-linejoin="round"
+              />
+              <path d="M14 3v4h4" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+              <path d="M9 11h6M9 15h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
           </button>
+
         </div>
       </div>
 
