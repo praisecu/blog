@@ -1,57 +1,148 @@
 ---
-const { title = "Python (Pyodide)", initialCode = "", height = 220, id } = Astro.props;
-// Prefer user-provided id so it stays stable across builds.
+const { title = "Python (Pyodide)", initialCode = "", height = 240, id } = Astro.props;
 const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 ---
 
 <section class="py-runner" data-py-runner={uid}>
   {title && <h3 class="py-title">{title}</h3>}
 
-  <div class="py-grid">
-    <textarea class="py-editor" style={`height:${height}px`} spellcheck="false">{initialCode}</textarea>
-
-    <div class="py-actions">
-      <button class="py-run" type="button">Run</button>
-      <span class="py-status">Idle.</span>
+  <div class="py-window">
+    <div class="py-windowbar">
+      <div class="py-dots" aria-hidden="true">
+        <span class="dot red"></span>
+        <span class="dot yellow"></span>
+        <span class="dot green"></span>
+      </div>
+      <div class="py-windowtitle">python</div>
+      <div class="py-windowspacer" aria-hidden="true"></div>
     </div>
 
-    <pre class="py-stdout" aria-label="stdout"></pre>
-    <pre class="py-stderr" aria-label="stderr"></pre>
+    <div class="py-body">
+      <textarea class="py-editor" style={`height:${height}px`} spellcheck="false">{initialCode}</textarea>
 
-    <div class="py-figure">
-      <img class="py-img" alt="matplotlib output" />
+      <div class="py-actions">
+        <button class="py-run" type="button">Run</button>
+        <span class="py-status">Idle.</span>
+      </div>
+
+      <pre class="py-stdout is-empty" aria-label="stdout"></pre>
+      <pre class="py-stderr is-empty" aria-label="stderr"></pre>
+
+      <div class="py-figure">
+        <img class="py-img" alt="matplotlib output" />
+      </div>
     </div>
   </div>
 </section>
 
 <style>
-  .py-runner { margin: 1.25rem 0; }
-  .py-title { margin: 0 0 0.5rem 0; }
-  .py-grid { display: grid; gap: 0.75rem; }
-  .py-editor { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.9rem; padding: 0.75rem; border: 1px solid rgba(0,0,0,0.15); border-radius: 10px; }
-  .py-actions { display: flex; align-items: center; gap: 0.75rem; }
-  .py-run { padding: 0.45rem 0.85rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.2); cursor: pointer; }
-  .py-status { opacity: 0.8; font-size: 0.95rem; }
+  .py-runner { margin: 1.5rem 0; }
+  .py-title { margin: 0 0 0.75rem 0; }
 
-  .py-stdout, .py-stderr { white-space: pre-wrap; padding: 0.75rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.15); }
+  /* "Code window" look */
+  .py-window {
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,0.16);
+    overflow: hidden;
+    background: #0f1117;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+  }
+  :global([data-theme="dark"]) .py-window {
+    border-color: rgba(255,255,255,0.14);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  }
+
+  .py-windowbar {
+    display: grid;
+    grid-template-columns: 84px 1fr 84px;
+    align-items: center;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .py-dots { display: flex; gap: 8px; align-items: center; }
+  .dot { width: 11px; height: 11px; border-radius: 999px; display: inline-block; opacity: 0.9; }
+  .dot.red { background: #ff5f57; }
+  .dot.yellow { background: #febc2e; }
+  .dot.green { background: #28c840; }
+
+  .py-windowtitle {
+    text-align: center;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+    color: rgba(255,255,255,0.72);
+    user-select: none;
+  }
+
+  .py-body { padding: 14px; display: grid; gap: 12px; }
+
+  .py-editor {
+    width: 100%;
+    resize: vertical;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: #0b0d12;
+    color: rgba(255,255,255,0.92);
+    padding: 14px 14px;
+    line-height: 1.45;
+    font-size: 0.95rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    outline: none;
+  }
+  .py-editor:focus {
+    border-color: rgba(130,170,255,0.55);
+    box-shadow: 0 0 0 3px rgba(130,170,255,0.18);
+  }
+
+  .py-actions { display: flex; align-items: center; gap: 10px; }
+  .py-run {
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.9);
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .py-run:hover { background: rgba(255,255,255,0.10); }
+  .py-run:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .py-status { font-size: 0.95rem; color: rgba(255,255,255,0.68); }
+
+  .py-stdout, .py-stderr {
+    white-space: pre-wrap;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: #0b0d12;
+    color: rgba(255,255,255,0.88);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  .py-stderr {
+    border-color: rgba(255, 90, 90, 0.35);
+    color: rgba(255, 185, 185, 0.92);
+  }
   .py-stdout.is-empty, .py-stderr.is-empty { display: none; }
 
-  .py-stderr { border-color: rgba(255,0,0,0.25); }
-  .py-figure { padding: 0.75rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.15); }
-  .py-img { max-width: 100%; height: auto; display: none; }
+  .py-figure {
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.03);
+  }
+  .py-img { max-width: 100%; height: auto; display: none; border-radius: 8px; background: white; }
 </style>
 
 <script is:inline type="module" define:vars={{ uid }}>
-  // NOTE: Astro may hoist scripts; wait until the DOM exists.
   function init() {
-    // Guard against double init (e.g., client-side navigation)
     window.__PYODIDE_RUNNERS__ ??= new Set();
     if (window.__PYODIDE_RUNNERS__.has(uid)) return;
     window.__PYODIDE_RUNNERS__.add(uid);
 
     const root = document.querySelector(`[data-py-runner="${uid}"]`);
     if (!root) {
-      // If script runs before DOM is ready, retry once on next frame.
       requestAnimationFrame(() => init());
       return;
     }
@@ -88,9 +179,13 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       refreshPanels();
     }
 
-    function makeStdout() { return (s) => { outEl.textContent += s + "\n"; refreshPanels(); }; }
+    function makeStdout() {
+      return (s) => {
+        outEl.textContent += s + "\n";
+        refreshPanels();
+      };
+    }
 
-    // Shared Pyodide singleton across the whole site.
     const globalKey = "__PYODIDE_SINGLETON__";
     async function getPyodide() {
       if (window[globalKey]) return window[globalKey];
@@ -119,9 +214,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
         const pyodide = await getPyodide();
         setStatus("Running…");
 
-        // Make JS stdout callable from Python via global lookup.
         pyodide.globals.set("__js_stdout__", makeStdout());
-
         const userCode = editor.value;
 
         const wrapped = `
@@ -130,7 +223,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# Suppress the common Agg backend warning triggered by plt.show().
 warnings.filterwarnings("ignore", message="Matplotlib is currently using agg")
 
 class _Writer:
