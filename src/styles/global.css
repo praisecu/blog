@@ -618,9 +618,26 @@ html[data-theme="paper"] .toc-title {
 }
 
 
-/* Default to light if data-theme missing */
-html:not([data-theme]) .theme-toggle .ticon-sun { display: block; }
+/* --- Theme toggle icons: exactly ONE visible --- */
+.theme-toggle .ticon {
+  width: 18px;
+  height: 18px;
+  display: none !important;
+}
 
-html[data-theme="light"] .theme-toggle .ticon-sun { display: block; }
-html[data-theme="dark"]  .theme-toggle .ticon-moon { display: block; }
-html[data-theme="paper"] .theme-toggle .ticon-paper { display: block; }
+/* Explicit fallbacks */
+html:not([data-theme]) .theme-toggle .ticon-sun {
+  display: block !important;
+}
+
+html[data-theme="light"] .theme-toggle .ticon-sun {
+  display: block !important;
+}
+
+html[data-theme="dark"] .theme-toggle .ticon-moon {
+  display: block !important;
+}
+
+html[data-theme="paper"] .theme-toggle .ticon-paper {
+  display: block !important;
+}
