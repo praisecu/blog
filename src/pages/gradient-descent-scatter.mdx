@@ -22,15 +22,15 @@ This mini-demo shows three increasingly general ways to model a relationship bet
 
 ## 1) Line through two points (no learning)
 
-Given two points \((x_1, y_1)\) and \((x_2, y_2)\), the unique line (if \(x_1 \neq x_2\)) is:
+Given two points $(x_1, y_1)$ and $(x_2, y_2)$, the unique line (if $x_1 \neq x_2$) is:
 
-\[
-m = \frac{y_2 - y_1}{x_2 - x_1}, \quad b = y_1 - mx_1, \quad y = mx + b
-\]
+$m = \frac{y_2 - y_1}{x_2 - x_1}$  
+$b = y_1 - mx_1$  
+$y = mx + b$
 
 This is *not* regression—there is no notion of noise or “best fit.” The line is fully determined.
 
-**Important edge case:** if \(x_1 = x_2\), the line is vertical and cannot be written as \(y = mx + b\).
+**Important edge case:** if $x_1 = x_2$, the line is vertical and cannot be written as $y = mx + b$.
 
 ---
 
@@ -38,26 +38,21 @@ This is *not* regression—there is no notion of noise or “best fit.” The li
 
 Now we assume the data is noisy, e.g.
 
-\[
-y = 3x - 1 + \epsilon,\quad \epsilon \sim \mathcal{N}(0,\sigma^2)
-\]
+$y = 3x - 1 + \epsilon$, with $\epsilon \sim \mathcal{N}(0,\sigma^2)$
 
-A line won’t pass through all points (because of noise), so we learn parameters \(\theta = [b, m]^T\) that minimize squared error:
+A line won’t pass through all points (because of noise), so we learn parameters $\theta = [b, m]^T$ that minimize squared error:
 
-\[
-\min_{\theta} \|X\theta - y\|_2^2
-\]
+$\min_{\theta} \|X\theta - y\|_2^2$
 
 with the design matrix:
 
-\[
-X = \begin{bmatrix}
+$X =
+\begin{bmatrix}
 1 & x_1 \\
 1 & x_2 \\
 \vdots & \vdots \\
 1 & x_N
-\end{bmatrix}
-\]
+\end{bmatrix}$
 
 This is the classic least-squares solution (computed via `np.linalg.lstsq`).
 
@@ -67,26 +62,21 @@ This is the classic least-squares solution (computed via `np.linalg.lstsq`).
 
 Next we generate data from a quadratic ground truth:
 
-\[
-y = ax^2 + bx + c + \epsilon
-\]
+$y = ax^2 + bx + c + \epsilon$
 
 Polynomial regression of degree 2 fits:
 
-\[
-y \approx c + bx + ax^2
-\]
+$y \approx c + bx + ax^2$
 
 with design matrix:
 
-\[
-X = \begin{bmatrix}
+$X =
+\begin{bmatrix}
 1 & x_1 & x_1^2 \\
 1 & x_2 & x_2^2 \\
 \vdots & \vdots & \vdots \\
 1 & x_N & x_N^2
-\end{bmatrix}
-\]
+\end{bmatrix}$
 
 This model class matches the data-generating process, so it typically fits well and generalizes well.
 
@@ -96,11 +86,9 @@ This model class matches the data-generating process, so it typically fits well 
 
 We then fit a higher-degree model:
 
-\[
-y \approx \theta_0 + \theta_1 x + \theta_2 x^2 + \cdots + \theta_6 x^6
-\]
+$y \approx \theta_0 + \theta_1 x + \theta_2 x^2 + \cdots + \theta_6 x^6$
 
-This is still solved with the same least-squares machinery—only the feature map changes to include higher powers of \(x\).
+This is still solved with the same least-squares machinery—only the feature map changes to include higher powers of $x$.
 
 ### Why do this?
 Because it illustrates a key point:
@@ -126,11 +114,13 @@ Even when the *true* relationship is quadratic, a 6th-degree polynomial can star
 
 Polynomial regression is still “linear regression” in the *parameter* sense:
 
-- The model can be nonlinear in \(x\)
-- But it is linear in the coefficients \(\theta\)
-- So we can solve it with linear least squares as long as we build the right feature matrix \(X\)
+- The model can be nonlinear in $x$
+- But it is linear in the coefficients $\theta$
+- So we can solve it with linear least squares as long as we build the right feature matrix $X$
 
 ---
+
+
 
 
 <PyodideRunner
