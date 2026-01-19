@@ -22,16 +22,104 @@ If this cell works on your site, your Pyodide integration is functioning. Then w
   initialCode={`import numpy as np
 import matplotlib.pyplot as plt
 
-rng = np.random.default_rng(0)
-n = 200
-x = rng.uniform(0, 50, size=n)
-y = 0.35 * x + 7.0 + rng.normal(0, 3.0, size=n)
+np.random.seed(0)
 
-plt.figure()
-plt.scatter(x, y, alpha=0.35)
-plt.title("Synthetic points")
-plt.xlabel("x")
-plt.ylabel("y")
+# -------------------------
+# 1) Line through two points
+# -------------------------
+x1, y1 = 1.0, 2.0
+x2, y2 = 4.0, 5.5
+if x2 == x1:
+    raise ValueError("Vertical line: x2 == x1, cannot represent as y = m x + b.")
+m = (y2 - y1) / (x2 - x1)
+b = y1 - m * x1
+xs = np.linspace(0, 6, 200)
+ys = m * xs + b
+
+# -------------------------
+# 2) Linear data + linear regression fit
+# -------------------------
+N = 100
+x = np.random.uniform(-2, 2, size=N)
+true_m, true_b = 3.0, -1.0
+sigma = 0.6
+y = true_m * x + true_b + np.random.normal(0, sigma, size=N)
+
+X_lin = np.column_stack([np.ones_like(x), x])
+theta_lin, *_ = np.linalg.lstsq(X_lin, y, rcond=None)
+b_hat, m_hat = theta_lin
+
+xg = np.linspace(x.min(), x.max(), 300)
+y_true_lin = true_b + true_m * xg
+y_fit_lin = b_hat + m_hat * xg
+
+# -------------------------
+# 3) Quadratic data + degree-2 polynomial regression fit (quadratic)
+# -------------------------
+xq = np.random.uniform(-2, 2, size=N)
+true_a, true_b2, true_c = 1.5, -0.3, 2.0
+yq = true_a * xq**2 + true_b2 * xq + true_c + np.random.normal(0, sigma, size=N)
+
+# Degree-2 fit: [1, x, x^2]
+X_deg2 = np.column_stack([np.ones_like(xq), xq, xq**2])
+theta_deg2, *_ = np.linalg.lstsq(X_deg2, yq, rcond=None)
+c2_hat, b2_hat, a2_hat = theta_deg2
+
+xgq = np.linspace(xq.min(), xq.max(), 400)
+y_true_quad = true_a * xgq**2 + true_b2 * xgq + true_c
+y_fit_deg2 = a2_hat * xgq**2 + b2_hat * xgq + c2_hat
+
+# -------------------------
+# 4) Same quadratic data + degree-6 polynomial regression fit
+# -------------------------
+# Degree-6 fit: [1, x, x^2, ..., x^6]
+X_deg6 = np.column_stack([xq**k for k in range(7)])
+theta_deg6, *_ = np.linalg.lstsq(X_deg6, yq, rcond=None)
+
+Xg_deg6 = np.column_stack([xgq**k for k in range(7)])
+y_fit_deg6 = Xg_deg6 @ theta_deg6
+
+# -------------------------
+# Single figure with 4 subplots
+# -------------------------
+fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+
+# Subplot 1: line through two points
+ax = axes[0, 0]
+ax.scatter([x1, x2], [y1, y2], label="points")
+ax.plot(xs, ys, label="line")
+ax.set_title("1) Line through two points")
+ax.set_xlabel("x"); ax.set_ylabel("y")
+ax.legend()
+
+# Subplot 2: linear regression
+ax = axes[0, 1]
+ax.scatter(x, y, s=20, label="data")
+ax.plot(xg, y_fit_lin, label="fit")
+ax.plot(xg, y_true_lin, linestyle="--", label="true")
+ax.set_title("2) Linear regression (deg 1)")
+ax.set_xlabel("x"); ax.set_ylabel("y")
+ax.legend()
+
+# Subplot 3: quadratic regression (degree 2)
+ax = axes[1, 0]
+ax.scatter(xq, yq, s=20, label="data")
+ax.plot(xgq, y_fit_deg2, label="fit (deg 2)")
+ax.plot(xgq, y_true_quad, linestyle="--", label="true")
+ax.set_title("3) Polynomial regression (degree 2)")
+ax.set_xlabel("x"); ax.set_ylabel("y")
+ax.legend()
+
+# Subplot 4: degree-6 regression on the same quadratic data
+ax = axes[1, 1]
+ax.scatter(xq, yq, s=20, label="data")
+ax.plot(xgq, y_fit_deg6, label="fit (deg 6)")
+ax.plot(xgq, y_true_quad, linestyle="--", label="true (quadratic)")
+ax.set_title("4) Polynomial regression (degree 6)")
+ax.set_xlabel("x"); ax.set_ylabel("y")
+ax.legend()
+
+plt.tight_layout()
 plt.show()
 `}
 />
