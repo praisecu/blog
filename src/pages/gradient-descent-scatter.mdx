@@ -398,11 +398,10 @@ y_true = 2.4 * x + 5.0 + 2.0 * np.sin(0.9 * x) + 0.12 * (x - 5.0) ** 2
 y = y_true + rng.normal(0, 1.8, size=n)
 
 def l2_error(y_true, y_pred):
-  # ||y - yhat||_2
-  return float(np.linalg.norm(y_true - y_pred, ord=2))
+    return float(np.linalg.norm(y_true - y_pred, ord=2))
 
 def rmse(y_true, y_pred):
-  return float(np.sqrt(np.mean((y_true - y_pred) ** 2)))
+    return float(np.sqrt(np.mean((y_true - y_pred) ** 2)))
 
 # ---- Fit models ----
 
