@@ -65,7 +65,9 @@ const date = frontmatter?.date ?? "";
             <div>
               By <a href="#">{author}</a>
             </div>
-            <div>{date}</div>
+            <div>{date}
+                <span id="rt" class="rt" aria-label="Estimated reading time"></span>
+            </div>
           </div>
 
           <slot />
@@ -98,6 +100,20 @@ const date = frontmatter?.date ?? "";
             mode === "dark" ? "Switch to light mode" : "Switch to dark mode"
           );
         };
+
+        const el = document.getElementById("rt");
+        const article = document.querySelector("main");
+        if (!el || !article) return;
+
+        // Avoid counting nav/TOC text if they ever end up in main
+        const text = article.innerText || "";
+        const words = (text.trim().match(/\S+/g) || []).length;
+
+        // Conservative academic reading speed
+        const WPM = 220;
+        const minutes = Math.max(1, Math.round(words / WPM));
+
+        el.textContent = ` · ${minutes} min read`;
 
         // Default light unless user explicitly saved a preference
         const saved = localStorage.getItem(STORAGE_KEY);
