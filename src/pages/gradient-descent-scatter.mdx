@@ -1,6 +1,6 @@
 ---
 layout: ../layouts/PostLayout.astro
-title: "Linear vs. Polynomial Regression in the Browser (Pyodide)"
+title: "Linear vs. Polynomial Regression in the Browser"
 author: "Chahat Deep Singh"
 description: "Fit and visualize linear, quadratic, cubic, and degree-5 polynomial regressions on mildly nonlinear data using Pyodide."
 date: "January 18, 2026"
@@ -375,6 +375,97 @@ $$
 Interpretation:
 - Larger $R^2$ indicates the model explains more variance in the observed $y$.
 - Training $R^2$ generally increases with model flexibility, but that does not guarantee better generalization.
+
+
+<PyodideRunner
+  id="poly_reg_l2_compare"
+  title="Compare L2 error across models (same data)"
+  height={340}
+  autoRun={true}
+  initialCode={`import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Data (must match the earlier sections exactly)
+rng = np.random.default_rng(0)
+n = 220
+x = np.sort(rng.uniform(0, 10, size=n))
+
+y_true = 2.4 * x + 5.0 + 2.0 * np.sin(0.9 * x) + 0.12 * (x - 5.0) ** 2
+y = y_true + rng.normal(0, 1.8, size=n)
+
+def l2_error(y_true, y_pred):
+    # ||y - yhat||_2
+    return float(np.linalg.norm(y_true - y_pred, ord=2))
+
+def rmse(y_true, y_pred):
+    return float(np.sqrt(np.mean((y_true - y_pred) ** 2)))
+
+# ---- Fit models ----
+
+# Linear (closed-form OLS)
+x_mean = x.mean()
+y_mean = y.mean()
+b1 = np.sum((x - x_mean) * (y - y_mean)) / np.sum((x - x_mean) ** 2)
+b0 = y_mean - b1 * x_mean
+yhat_lin = b0 + b1 * x
+
+# Quadratic (least squares)
+X2 = np.column_stack([x**2, x, np.ones_like(x)])
+a2, a1, a0 = np.linalg.lstsq(X2, y, rcond=None)[0]
+yhat_quad = a2 * x**2 + a1 * x + a0
+
+# Cubic (least squares)
+X3 = np.column_stack([x**3, x**2, x, np.ones_like(x)])
+c3, c2, c1, c0 = np.linalg.lstsq(X3, y, rcond=None)[0]
+yhat_cub = c3 * x**3 + c2 * x**2 + c1 * x + c0
+
+# Degree-5 (least squares)
+X5 = np.column_stack([x**5, x**4, x**3, x**2, x, np.ones_like(x)])
+d5, d4, d3, d2, d1, d0 = np.linalg.lstsq(X5, y, rcond=None)[0]
+yhat_deg5 = d5 * x**5 + d4 * x**4 + d3 * x**3 + d2 * x**2 + d1 * x + d0
+
+models = [
+    ("Linear", yhat_lin),
+    ("Quadratic", yhat_quad),
+    ("Cubic", yhat_cub),
+    ("Degree-5", yhat_deg5),
+]
+
+# ---- Compute errors ----
+labels = []
+l2s = []
+rmses = []
+for name, yhat in models:
+    labels.append(name)
+    l2s.append(l2_error(y, yhat))
+    rmses.append(rmse(y, yhat))
+
+# Print a clean numeric summary
+print("Training-set errors (same data used to fit):")
+for name, l2v, rv in zip(labels, l2s, rmses):
+    print(f"{name:9s}  ||y - yhat||_2 = {l2v:8.3f}   RMSE = {rv:6.3f}")
+
+# Plot: L2 error bars
+plt.rcParams.update({
+    "figure.dpi": 140,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "font.size": 11,
+})
+
+fig, ax = plt.subplots(1, 1, figsize=(7.6, 3.6), layout="constrained")
+ax.bar(labels, l2s)
+ax.set_title("L2 error (training) across model classes")
+ax.set_ylabel(r"$\\|y - \\hat y\\|_2$")
+ax.grid(True, axis="y", alpha=0.25)
+plt.show()
+`}
+/>
+
 
 ---
 
