@@ -237,7 +237,7 @@ fig, ax = plt.subplots(4, 1, figsize=(8.4, 13.0), sharex=True, layout="constrain
 
 def draw_panel(ax_i, title, y_fit_line, eq_text):
     ax_i.scatter(x, y, s=34, alpha=0.78, edgecolors="white", linewidths=0.8, label="data")
-    ax_i.plot(x_line, y_fit_line, linewidth=2.6, color="goldenrod", label="fit")
+    ax_i.plot(x_line, y_fit_line, linewidth=2.6, label="fit")
     ax_i.set_title(title)
     ax_i.set_ylabel("y")
     ax_i.grid(True, alpha=0.25)
