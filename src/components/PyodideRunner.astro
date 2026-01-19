@@ -21,8 +21,13 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     <div class="py-body">
       <div class="py-editorwrap" style={`height:${height}px`}>
         <div class="py-gutter" aria-hidden="true"></div>
+
+        <!-- Syntax-highlight layer (non-editable) -->
+        <pre class="py-highlight" aria-hidden="true"><code class="language-python"></code></pre>
+
+        <!-- Editable layer -->
         <textarea class="py-editor" spellcheck="false">{initialCode}</textarea>
-      </div>
+      </div></div>
 
       <div class="py-actions">
         <button class="py-run" type="button">Run</button>
@@ -91,6 +96,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
   /* Editor with line numbers */
   .py-editorwrap {
+    position: relative;
     display: grid;
     grid-template-columns: 52px 1fr;
     border-radius: 12px;
@@ -112,6 +118,56 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     white-space: pre;
   }
 
+
+  /* Syntax-highlight overlay: a <pre><code> behind a transparent textarea */
+  .py-highlight, .py-editor {
+    margin: 0;
+    padding: 14px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    tab-size: 4;
+  }
+
+  .py-highlight {
+    position: absolute;
+    left: 52px;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    overflow: hidden;
+    pointer-events: none;
+    white-space: pre;
+    color: rgba(255,255,255,0.92);
+  }
+  .py-highlight code { display: block; }
+
+  .py-editor {
+    position: absolute;
+    left: 52px;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: auto;
+    height: auto;
+    resize: none;
+    border: 0;
+    outline: none;
+    background: transparent;
+    /* Make text transparent but keep caret + selection usable */
+    color: transparent;
+    caret-color: rgba(255,255,255,0.92);
+  }
+
+  /* Minimal Prism-ish token colors for Python */
+  .token.comment, .token.prolog, .token.doctype, .token.cdata { color: rgba(148,163,184,0.75); }
+  .token.punctuation { color: rgba(226,232,240,0.75); }
+  .token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol { color: #f59e0b; }
+  .token.selector, .token.attr-name, .token.string, .token.char, .token.builtin { color: #34d399; }
+  .token.operator, .token.entity, .token.url { color: rgba(226,232,240,0.85); }
+  .token.atrule, .token.attr-value, .token.keyword { color: #a78bfa; }
+  .token.function, .token.class-name { color: #60a5fa; }
+  .token.regex, .token.important, .token.variable { color: #fb7185; }
   .py-editor {
     width: 100%;
     height: 100%;
@@ -175,7 +231,26 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 </style>
 
 <script is:inline type="module" define:vars={{ uid }}>
-  function init() {
+  
+  async function ensurePrism() {
+    if (window.Prism?.languages?.python) return;
+
+    const loadScript = (src) => new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Failed to load " + src));
+      document.head.appendChild(s);
+    });
+
+    // Prism core + python grammar (loaded on-demand)
+    await loadScript("https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js");
+    await loadScript("https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js");
+    await loadScript("https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js");
+  }
+
+async function init() {
     window.__PYODIDE_RUNNERS__ ??= new Set();
     if (window.__PYODIDE_RUNNERS__.has(uid)) return;
     window.__PYODIDE_RUNNERS__.add(uid);
@@ -185,6 +260,8 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
     const editor = root.querySelector(".py-editor");
     const gutter = root.querySelector(".py-gutter");
+    const highlightPre = root.querySelector(".py-highlight");
+    const highlightCode = root.querySelector(".py-highlight code");
     const editorWrap = root.querySelector(".py-editorwrap");
     const btn = root.querySelector(".py-run");
     const copyBtn = root.querySelector(".py-copy");
@@ -231,11 +308,29 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       gutter.textContent = out;
     }
     function syncScroll() {
-      // Match gutter scroll visually to textarea scroll
       gutter.scrollTop = editor.scrollTop;
+      if (highlightPre) highlightPre.scrollTop = editor.scrollTop;
     }
 
-    editor.addEventListener("input", updateLineNumbers);
+
+    let prismReady = false;
+    async function renderHighlight() {
+      if (!highlightCode) return;
+      if (!prismReady) {
+        try {
+          await ensurePrism();
+          prismReady = true;
+        } catch (e) {
+          highlightCode.textContent = editor.value;
+          return;
+        }
+      }
+      const code = editor.value;
+      const html = window.Prism.highlight(code, window.Prism.languages.python, "python");
+      highlightCode.innerHTML = html;
+    }
+
+    editor.addEventListener("input", async () => { updateLineNumbers(); await renderHighlight(); });
     editor.addEventListener("scroll", syncScroll);
     // Also sync when resized by layout changes
     new ResizeObserver(() => syncScroll()).observe(editorWrap);
@@ -258,6 +353,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
     // Initialize UI
     updateLineNumbers();
+    await renderHighlight();
     syncScroll();
     refreshPanels();
 
