@@ -1,224 +1,36 @@
----
 layout: ../layouts/PostLayout.astro
-title: "Gradient Descent: From Derivation to Interactive Demos (Pyodide)"
+title: "Gradient Descent: First Interactive Cell"
 author: "Chahat Deep Singh"
-description: "A practical gradient descent walkthrough with an in-browser Python runner (Pyodide) for plots and experiments."
+description: "A minimal in-browser Python snippet: generate and plot points (the starting point for gradient descent demos)."
 date: "January 18, 2026"
 tags: ["optimization", "machine-learning", "gradient-descent", "pyodide"]
 featured: false
 ---
 
-## What this post is
+## Goal
 
-This note explains gradient descent at the level you actually need to implement it, then gives you an **interactive in-browser Python sandbox** (via Pyodide) so readers can run code and see plots directly on the page.
-
-If you only want the interactive part, jump to **Interactive demo**.
-
----
-
-## 1) Problem setup
-
-We want to minimize an objective function:
-
-$$
-\min_{\theta} \; J(\theta),
-$$
-
-where \(\theta\) is a parameter vector (e.g., model weights).
-
-**Gradient descent** iteratively updates \(\theta\) by moving in the direction of steepest decrease:
-
-$$
-\theta_{t+1} = \theta_t - \alpha \, \nabla J(\theta_t),
-$$
-
-- \(\alpha > 0\) is the learning rate (step size)
-- \(\nabla J(\theta_t)\) is the gradient at the current iterate
+Start with the smallest possible in-browser Python example that should work: **generate points and plot them**.  
+Once this renders reliably in your browser runner, we can add the gradient descent loop next.
 
 ---
 
-## 2) Example: linear regression with MSE
+## Minimal Python snippet: generate and plot points
 
-For data \(\{(x_i, y_i)\}_{i=1}^n\), a simple model is:
+Copy/paste this into your in-browser Python runner and click **Run**:
 
-$$
-\hat{y}_i = w x_i + b.
-$$
-
-Mean-squared error (MSE):
-
-$$
-J(w,b) = \frac{1}{n} \sum_{i=1}^{n} (w x_i + b - y_i)^2.
-$$
-
-Gradients:
-
-$$
-\frac{\partial J}{\partial w} = \frac{2}{n}\sum_{i=1}^{n} (w x_i + b - y_i) x_i, \qquad
-\frac{\partial J}{\partial b} = \frac{2}{n}\sum_{i=1}^{n} (w x_i + b - y_i).
-$$
-
-Update rule:
-
-$$
-w \leftarrow w - \alpha \frac{\partial J}{\partial w}, \qquad
-b \leftarrow b - \alpha \frac{\partial J}{\partial b}.
-$$
-
----
-
-## 3) What can go wrong
-
-- **Learning rate too large**: divergence or oscillation.
-- **Learning rate too small**: painfully slow convergence.
-- **Poor conditioning**: slow progress along “flat” directions; standardize features.
-- **Non-convex objectives**: local minima/saddles are possible; initialization matters.
-
-A useful diagnostic is to plot **loss vs. iteration**. If it increases or becomes NaN, your step size is wrong (or gradients are incorrect).
-
----
-
-## 4) Interactive demo (run Python in the browser)
-
-This page is designed to work with a Pyodide-based runner component.
-
-### Expected component
-
-Create a component at:
-
-- `src/components/PyodideRunner.astro` (or React/Svelte/Vue if you prefer)
-
-and use it from this MDX as:
-
-```mdx
-import PyodideRunner from "../components/PyodideRunner.astro";
-```
-
-Then render:
-
-```mdx
-<PyodideRunner />
-```
-
-Below, this MDX includes a ready-to-use demo script you can set as the runner's default code.
-
-> If you already have a working “run-python-in-browser” component (like in your screenshot), just wire its `initialCode` prop to the script below.
-
----
-
-import PyodideRunner from "../components/PyodideRunner.astro";
-
-<PyodideRunner
-  title="Gradient Descent on Linear Regression (in-browser Python)"
-  initialCode={`# Gradient Descent demo (Pyodide)
+```python
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Synthetic data
+# reproducible random points
 rng = np.random.default_rng(0)
 n = 200
 x = rng.uniform(0, 50, size=n)
-true_w, true_b = 0.35, 7.0
-y = true_w * x + true_b + rng.normal(0, 3.0, size=n)
-
-# Normalize x to improve conditioning (critical for GD stability)
-x_mu, x_std = x.mean(), x.std()
-xn = (x - x_mu) / (x_std + 1e-12)
-
-# Model: y_hat = w * xn + b
-w, b = 0.0, 0.0
-
-def mse(w, b):
-    r = (w * xn + b) - y
-    return np.mean(r**2)
-
-def grad(w, b):
-    r = (w * xn + b) - y
-    dw = 2.0 * np.mean(r * xn)
-    db = 2.0 * np.mean(r)
-    return dw, db
-
-alpha = 0.15          # try 0.5 (might diverge), 0.05 (slow), etc.
-steps = 200
-
-losses = []
-for t in range(steps):
-    dw, db = grad(w, b)
-    w -= alpha * dw
-    b -= alpha * db
-    losses.append(mse(w, b))
-
-print("Final (w,b) on normalized x:", w, b)
-print("Final loss:", losses[-1])
-
-# Convert back to original x-space: y ≈ (w/x_std) * x + (b - w*x_mu/x_std)
-w_orig = w / (x_std + 1e-12)
-b_orig = b - (w * x_mu) / (x_std + 1e-12)
-print("Equivalent line in original x-space: y ≈ %.4f * x + %.4f" % (w_orig, b_orig))
-
-# Plot: data + fit
-xx = np.linspace(x.min(), x.max(), 200)
-yy = w_orig * xx + b_orig
+y = 0.35 * x + 7.0 + rng.normal(0, 3.0, size=n)
 
 plt.figure()
 plt.scatter(x, y, alpha=0.35)
-plt.plot(xx, yy, linewidth=2)
-plt.title("Linear Regression Fit via Gradient Descent")
+plt.title("Synthetic points")
 plt.xlabel("x")
 plt.ylabel("y")
 plt.show()
-
-# Plot: loss curve
-plt.figure()
-plt.plot(losses)
-plt.title("MSE vs Iteration")
-plt.xlabel("iteration")
-plt.ylabel("MSE")
-plt.yscale("log")
-plt.show()
-`}
-/>
-
----
-
-## 5) Extensions readers can try immediately
-
-1. **Remove normalization** and watch training stability degrade.
-2. Switch to **polynomial regression** by adding features \([x, x^2]\).
-3. Implement **momentum**:
-
-$$
-v_{t+1} = \beta v_t + \nabla J(\theta_t), \qquad
-\theta_{t+1} = \theta_t - \alpha v_{t+1}.
-$$
-
-4. Implement **Adam** and compare convergence on noisy gradients.
-
----
-
-## 6) Implementation notes for the Pyodide runner (non-negotiable details)
-
-If you are embedding Python execution in the browser:
-
-- Use Pyodide's `micropip` to install pure-Python packages if needed, but avoid heavy installs on page load.
-- Matplotlib in Pyodide is slow; for better UX, prefer:
-  - `matplotlib` with `Agg` backend and render to PNG, or
-  - `plotly` (pure JS rendering) if you already have it.
-- Execute code in a **web worker** if you want the UI to remain responsive.
-- Always hard-limit execution time / memory if you let arbitrary code run.
-
----
-
-## Appendix: minimal API expected from the runner component
-
-If you want a clean interface, implement your runner with these props:
-
-- `title?: string`
-- `initialCode: string`
-- `height?: number`
-
-And render:
-- a code editor / textarea
-- a **Run** button
-- stdout/stderr panel
-- a plot output region (PNG or canvas)
