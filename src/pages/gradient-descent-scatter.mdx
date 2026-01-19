@@ -194,3 +194,33 @@ plt.tight_layout()
 plt.show()
 `}
 />
+
+---
+
+<PyodideRunner
+  id="gd_scatter_demo"
+  title="Generate + plot synthetic points"
+  height={240}
+  autoRun={true}
+  initialCode={`import numpy as np
+import matplotlib.pyplot as plt
+import io
+from pyodide.http import pyfetch
+
+# Fetch from your site (adjust path if needed)
+resp = await pyfetch("/data/REGRESSION-gradientDescent-data.txt")
+txt = await resp.string()
+
+# Parse: skip header row, use columns 2 and 4 (0-indexed)
+data = np.genfromtxt(io.StringIO(txt), delimiter=",", skip_header=1, usecols=(2, 4))
+x, y = data[:, 0], data[:, 1]
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.scatter(x, y, marker="o", alpha=0.25)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_title("Regression dataset")
+plt.show()
+`}
+/>
