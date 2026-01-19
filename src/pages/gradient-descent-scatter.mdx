@@ -435,74 +435,59 @@ models = [
 ]
 
 # ---- Compute errors ----
+# ---- Compute errors ----
 labels = []
 l2s = []
 rmses = []
 for name, yhat in models:
-  labels.append(name)
-  l2s.append(l2_error(y, yhat))
-  rmses.append(rmse(y, yhat))
+    labels.append(name)
+    l2s.append(l2_error(y, yhat))
+    rmses.append(rmse(y, yhat))
 
-# Print a clean numeric summary
 print("Training-set errors (same data used to fit):")
 for name, l2v, rv in zip(labels, l2s, rmses):
-  print(f"{name:9s}  ||y - yhat||_2 = {l2v:8.3f}   RMSE = {rv:6.3f}")
+    print(f"{name:9s}  ||y - yhat||_2 = {l2v:8.3f}   RMSE = {rv:6.3f}")
 
-# Plot: L2 error bars
-# ---- Print summary (compact; avoids Pyodide stdout weirdness) ----
 df = pd.DataFrame({
-  "Model": labels,
-  "L2 ||y-ŷ||2": l2s,
-  "RMSE": rmses,
+    "Model": labels,
+    "L2 ||y-ŷ||2": l2s,
+    "RMSE": rmses,
 }).round({"L2 ||y-ŷ||2": 3, "RMSE": 3})
-# print(df.to_string(index=False))
 
-# ---- Cleaner plot: RMSE + value labels ----
-# ---- Modern plot: RMSE line + markers (inspired by the reference style) ----
 plt.rcParams.update({
-  "figure.dpi": 170,
-  "font.size": 11
+    "figure.dpi": 170,
+    "font.size": 11
 })
 
 fig, ax = plt.subplots(figsize=(8.2, 3.4), layout="constrained")
-
 xpos = np.arange(len(labels))
 
-# line + round markers (use default matplotlib color cycle)
-ax.plot(
-    xpos, rmses,
-    linewidth=2.2,
-    marker="o",
-    markersize=6.5,
-)
+ax.plot(xpos, rmses, linewidth=2.2, marker="o", markersize=6.5)
 
 ax.set_title("Training RMSE across model classes", pad=10)
 ax.set_ylabel("RMSE")
 ax.set_xticks(xpos, labels)
 
-# Light grid (both directions) + softened axes
 ax.grid(True, which="major", axis="both", alpha=0.22, linewidth=1.0, color="#aaa")
 
 for spine in ["top", "right"]:
-  ax.spines[spine].set_visible(False)
+    ax.spines[spine].set_visible(False)
 
 for spine in ["left", "bottom"]:
-  ax.spines[spine].set_color("#C9C9C9")
-  ax.spines[spine].set_linewidth(1.2)
+    ax.spines[spine].set_color("#C9C9C9")
+    ax.spines[spine].set_linewidth(1.2)
 
 ax.tick_params(axis="both", colors="#6F6F6F")
 ax.tick_params(axis="y", length=0)
 
-# Tight y-range + headroom for labels
 ymin, ymax = float(min(rmses)), float(max(rmses))
 pad = 0.18 * (ymax - ymin + 1e-12)
 ax.set_ylim(max(0, ymin - 0.35 * pad), ymax + 1.25 * pad)
 
-# Value labels above points
 for x_i, v in zip(xpos, rmses):
-  ax.text(x_i, v + 0.22 * pad, f"{v:.2f}", ha="center", va="bottom", fontsize=10, color="#444444")
+    ax.text(x_i, v + 0.22 * pad, f"{v:.2f}",
+            ha="center", va="bottom", fontsize=10, color="#444444")
 
-# Legend along the bottom (like the reference)
 ax.legend(["RMSE"], loc="upper center", bbox_to_anchor=(0.5, -0.18),
           frameon=False, ncol=1, handlelength=2.5)
 
