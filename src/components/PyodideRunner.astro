@@ -183,12 +183,14 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   }
 
   .py-highlight {
-    overflow: auto;
-    scrollbar-gutter: stable;
+    /* Do NOT make the highlight layer an independent scroll container.
+       We translate the <code> element to match the textarea scroll offsets.
+       This avoids 1px/line drift under zoom/subpixel rendering. */
+    overflow: hidden;
     pointer-events: none;
     color: var(--py-text);
   }
-  .py-highlight code { display: block; }
+  .py-highlight code { display: block; will-change: transform; }
 
   /* Hide highlight scrollbars but keep the same scrollbar gutter as the textarea */
   .py-highlight::-webkit-scrollbar { width: 0; height: 0; }
@@ -380,8 +382,11 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       const y = editor.scrollTop;
       const x = editor.scrollLeft;
       // Keep highlight layer aligned with the textarea scroll.
-      highlightPre.scrollTop = y;
-      highlightPre.scrollLeft = x;
+      // Do not scroll the <pre>; translate the <code> instead. This keeps
+      // caret/click mapping stable under zoom and fractional line heights.
+      if (highlightCode) {
+        highlightCode.style.transform = `translate(${-x}px, ${-y}px)`;
+      }
     }
 
     let prismReady = false;
@@ -403,6 +408,22 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
     editor.addEventListener("input", async () => { await renderHighlight(); syncScroll(); });
     editor.addEventListener("scroll", syncScroll);
+
+    // Focus mode: show native textarea rendering for perfect caret/selection.
+    // Blur mode: show Prism highlighting (textarea text becomes transparent).
+    const showPlain = () => {
+      highlightPre.style.visibility = "hidden";
+      editor.style.color = "var(--py-text)";
+    };
+    const showHighlighted = async () => {
+      editor.style.color = "transparent";
+      highlightPre.style.visibility = "visible";
+      await renderHighlight();
+      syncScroll();
+    };
+
+    editor.addEventListener("focus", showPlain);
+    editor.addEventListener("blur", () => { void showHighlighted(); });
 
     copyBtn.addEventListener("click", async () => {
       try {
