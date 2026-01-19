@@ -1,5 +1,5 @@
 ---
-const { title = "Python (Pyodide)", initialCode = "", height = 240, id } = Astro.props;
+const { title = "Python (Pyodide)", initialCode = "", height = 240, id, autoRun = true } = Astro.props;
 const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 ---
 
@@ -350,6 +350,12 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     syncScroll();
     refreshPanels();
     setStatus("Ready to run. Click Run.");
+
+    if (autoRun) {
+      // Let the page paint first (avoids jank on load)
+      setTimeout(() => btn.click(), 0);
+    }
+
 
     // Pyodide
     const globalKey = "__PYODIDE_SINGLETON__";
