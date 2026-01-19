@@ -20,8 +20,6 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
     <div class="py-body">
       <div class="py-editorwrap" style={`height:${height}px`}>
-        <div class="py-gutter" aria-hidden="true"><pre class="py-gutter-inner"></pre></div>
-
         <div class="py-codepane">
           <!-- Highlight layer -->
           <pre class="py-highlight" aria-hidden="true"><code class="language-python"></code></pre>
@@ -156,37 +154,11 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
   .py-editorwrap {
     display: grid;
-    grid-template-columns: 52px 1fr;
+    grid-template-columns: 1fr;
     border-radius: 12px;
     border: 1px solid var(--py-border-2);
     background: var(--py-panel-2);
     overflow: hidden;
-  }
-
-  .py-gutter {
-    padding: 14px 10px;
-    color: color-mix(in srgb, var(--py-muted) 75%, transparent);
-    font-family: var(--py-mono);
-    font-size: 0.95rem;
-    line-height: 1.45;
-    text-align: right;
-    user-select: none;
-    border-right: 1px solid var(--py-border-2);
-    white-space: pre;
-    /* The gutter must NOT be independently scrollable.
-       We translate the inner <pre> to match the textarea scrollTop; otherwise the gutter can
-       scroll on its own (wheel / momentum) and drift by ~1 line relative to the code. */
-    overflow: hidden;
-  }
-
-  /* Prevent accidental interaction with the gutter; scrolling must be driven by the textarea. */
-  .py-gutter { pointer-events: none; }
-
-
-  .py-gutter-inner {
-    margin: 0;
-    padding: 0;
-    will-change: transform;
   }
 
   .py-codepane { position: relative; overflow: hidden; }
@@ -334,8 +306,6 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     if (!root) { requestAnimationFrame(() => init()); return; }
 
     const editor = root.querySelector(".py-editor");
-    const gutter = root.querySelector(".py-gutter");
-    const gutterInner = root.querySelector(".py-gutter-inner");
     const highlightPre = root.querySelector(".py-highlight");
     const highlightCode = root.querySelector(".py-highlight code");
 
@@ -383,14 +353,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       return (s) => { outEl.textContent += s + "\n"; refreshPanels(); };
     }
 
-    function updateLineNumbers() {
-      const lines = editor.value.split("\n").length || 1;
-      let out = "";
-      for (let i = 1; i <= lines; i++) out += i + "\n";
-      if (gutterInner) gutterInner.textContent = out; else gutter.textContent = out;
-    }
-
-    // Ensure the textarea, highlight layer, and gutter share identical *computed* metrics.
+    // Ensure the textarea and highlight layer share identical *computed* metrics.
     // Textareas can end up with different effective line-height/font metrics vs <pre> under
     // zoom/subpixel rendering; if they diverge, clicks appear to land on the wrong line.
     function syncMetrics() {
@@ -411,21 +374,12 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       highlightPre.style.paddingRight = pr;
       highlightPre.style.paddingBottom = pb;
       highlightPre.style.paddingLeft = pl;
-
-      // Gutter: match metrics, but keep vertical padding on the scrollport (like textarea).
-      gutter.style.lineHeight = lh;
-      gutter.style.fontSize = fs;
-      gutter.style.fontFamily = ff;
-      gutter.style.paddingTop = pt;
-      gutter.style.paddingBottom = pb;
     }
 
     function syncScroll() {
       const y = editor.scrollTop;
       const x = editor.scrollLeft;
-      // Keep gutter and highlight in the same scroll coordinate system as the textarea.
-      // The gutter is not scrollable; we translate its content to match the textarea.
-      if (gutterInner) gutterInner.style.transform = `translate3d(0, ${-y}px, 0)`;
+      // Keep highlight layer aligned with the textarea scroll.
       highlightPre.scrollTop = y;
       highlightPre.scrollLeft = x;
     }
@@ -447,7 +401,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       highlightCode.innerHTML = window.Prism.highlight(code, window.Prism.languages.python, "python");
     }
 
-    editor.addEventListener("input", async () => { updateLineNumbers(); await renderHighlight(); syncScroll(); });
+    editor.addEventListener("input", async () => { await renderHighlight(); syncScroll(); });
     editor.addEventListener("scroll", syncScroll);
 
     copyBtn.addEventListener("click", async () => {
@@ -466,7 +420,6 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
     // Initialize
     syncMetrics();
-    updateLineNumbers();
     await renderHighlight();
     syncScroll();
     refreshPanels();
