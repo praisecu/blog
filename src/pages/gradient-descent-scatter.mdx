@@ -450,18 +450,41 @@ for name, l2v, rv in zip(labels, l2s, rmses):
     print(f"{name:9s}  ||y - yhat||_2 = {l2v:8.3f}   RMSE = {rv:6.3f}")
 
 # Plot: L2 error bars
+# ---- Print summary (compact; avoids Pyodide stdout weirdness) ----
+df = pd.DataFrame({
+    "Model": labels,
+    "L2 ||y-ŷ||2": l2s,
+    "RMSE": rmses,
+}).round({"L2 ||y-ŷ||2": 3, "RMSE": 3})
+print(df.to_string(index=False))
+
+# ---- Cleaner plot: RMSE + value labels ----
 plt.rcParams.update({
-    "figure.dpi": 140,
+    "figure.dpi": 150,
     "axes.spines.top": False,
     "axes.spines.right": False,
     "font.size": 11,
 })
 
-fig, ax = plt.subplots(1, 1, figsize=(7.6, 3.6), layout="constrained")
-ax.bar(labels, l2s)
-ax.set_title("L2 error (training) across model classes")
-ax.set_ylabel(r"$\\|y - \\hat y\\|_2$")
+fig, ax = plt.subplots(figsize=(7.2, 3.6), layout="constrained")
+
+bars = ax.bar(labels, rmses)
+
+ax.set_title("Training RMSE across model classes")
+ax.set_ylabel("RMSE")
+ax.set_ylim(0, max(rmses) * 1.15)
 ax.grid(True, axis="y", alpha=0.25)
+
+for b, v in zip(bars, rmses):
+    ax.text(
+        b.get_x() + b.get_width() / 2,
+        b.get_height(),
+        f"{v:.2f}",
+        ha="center",
+        va="bottom",
+        fontsize=10,
+    )
+
 plt.show()
 `}
 />
