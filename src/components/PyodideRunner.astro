@@ -173,19 +173,20 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     user-select: none;
     border-right: 1px solid var(--py-border-2);
     white-space: pre;
-    /* Make the gutter itself the scroll container and sync its scrollTop to the textarea.
-       This avoids transform-based scrolling, which can drift under fractional line-heights/zoom. */
-    overflow: auto;
+    /* The gutter must NOT be independently scrollable.
+       We translate the inner <pre> to match the textarea scrollTop; otherwise the gutter can
+       scroll on its own (wheel / momentum) and drift by ~1 line relative to the code. */
+    overflow: hidden;
   }
 
-  /* Hide gutter scrollbars (it is driven programmatically by the textarea scroll) */
-  .py-gutter::-webkit-scrollbar { width: 0; height: 0; }
-  .py-gutter { scrollbar-width: none; pointer-events: none; }
+  /* Prevent accidental interaction with the gutter; scrolling must be driven by the textarea. */
+  .py-gutter { pointer-events: none; }
 
 
   .py-gutter-inner {
     margin: 0;
     padding: 0;
+    will-change: transform;
   }
 
   .py-codepane { position: relative; overflow: hidden; }
@@ -423,8 +424,8 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       const y = editor.scrollTop;
       const x = editor.scrollLeft;
       // Keep gutter and highlight in the same scroll coordinate system as the textarea.
-      // Using scrollTop (rather than CSS transforms) avoids caret/line-number drift.
-      gutter.scrollTop = y;
+      // The gutter is not scrollable; we translate its content to match the textarea.
+      if (gutterInner) gutterInner.style.transform = `translate3d(0, ${-y}px, 0)`;
       highlightPre.scrollTop = y;
       highlightPre.scrollLeft = x;
     }
