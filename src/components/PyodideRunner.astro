@@ -61,7 +61,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     --py-border-2: rgba(0,0,0,0.10);
     --py-text: rgba(17,24,39,0.94);
     --py-muted: rgba(17,24,39,0.60);
-    --py-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --py-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     --py-shadow: 0 12px 30px rgba(0,0,0,0.10);
     --py-selection: rgba(37, 99, 235, 0.22);
 
@@ -291,7 +291,8 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   .py-status { font-size: 0.95rem; color: var(--py-muted); }
 
   .py-stdout, .py-stderr {
-    white-space: pre-wrap;
+    white-space: pre;
+    overflow-x: auto;
     padding: 12px 14px;
     border-radius: 12px;
     border: 1px solid var(--py-border-2);
@@ -300,6 +301,9 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     font-family: var(--py-mono);
     font-size: 0.9rem;
     line-height: 1.4;
+  }
+  .py-stdout {
+    font-variant-numeric: tabular-nums;
   }
   .py-stderr {
     border-color: color-mix(in srgb, #ef4444 35%, var(--py-border-2));
