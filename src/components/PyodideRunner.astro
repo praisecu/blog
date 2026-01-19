@@ -1,12 +1,5 @@
 ---
-const {
-  title = "Python (Pyodide)",
-  initialCode = "",
-  height = 240,
-  id,
-  packages = ["numpy","matplotlib","scipy","pandas"],
-  autoRun = false,
-} = Astro.props;
+const { title = "Python (Pyodide)", initialCode = "", height = 240, id, packages = ["numpy","matplotlib","scipy","pandas"] } = Astro.props;
 const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 ---
 
@@ -70,15 +63,9 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     --py-shadow: 0 12px 30px rgba(0,0,0,0.10);
     --py-selection: rgba(37, 99, 235, 0.22);
 
-    /* Scrollbar colors (light)
-       - WebKit supports gradients for the thumb.
-       - Firefox only supports flat colors via scrollbar-color.
-    */
-    --py-scroll-track: color-mix(in srgb, var(--py-panel-2) 78%, transparent);
-    --py-scroll-thumb-a: color-mix(in srgb, var(--py-token-keyword) 78%, transparent);
-    --py-scroll-thumb-b: color-mix(in srgb, var(--py-token-function) 78%, transparent);
-    --py-scroll-thumb: color-mix(in srgb, var(--py-token-function) 32%, var(--py-text) 18%);
-    --py-scroll-thumb-hover: color-mix(in srgb, var(--py-token-function) 44%, var(--py-text) 22%);
+    --py-scroll-track: rgba(0,0,0,0.04);
+    --py-scroll-thumb: rgba(0,0,0,0.22);
+    --py-scroll-thumb-hover: rgba(0,0,0,0.32);
 
     /* Token colors (light) */
     --py-token-comment: rgba(100,116,139,0.85);
@@ -105,12 +92,9 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     --py-shadow: 0 12px 30px rgba(0,0,0,0.35);
     --py-selection: rgba(130,170,255,0.35);
 
-    /* Scrollbar colors (dark) */
-    --py-scroll-track: color-mix(in srgb, var(--py-panel-2) 68%, transparent);
-    --py-scroll-thumb-a: color-mix(in srgb, var(--py-token-keyword) 82%, transparent);
-    --py-scroll-thumb-b: color-mix(in srgb, var(--py-token-function) 82%, transparent);
-    --py-scroll-thumb: color-mix(in srgb, var(--py-token-function) 40%, rgba(255,255,255,0.75) 25%);
-    --py-scroll-thumb-hover: color-mix(in srgb, var(--py-token-function) 52%, rgba(255,255,255,0.85) 28%);
+    --py-scroll-track: rgba(255,255,255,0.04);
+    --py-scroll-thumb: rgba(255,255,255,0.28);
+    --py-scroll-thumb-hover: rgba(255,255,255,0.38);
 
     /* Token colors (dark) */
     --py-token-comment: rgba(148,163,184,0.80);
@@ -221,17 +205,22 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     -webkit-text-size-adjust: 100%;
   }
 
+  /*
+    IMPORTANT:
+    The syntax-highlight layer must not be independently scrollable.
+    If it has its own scroll container (even with hidden scrollbars), some browsers
+    will composite two scroll layers and you get the "stacked/blocked" artifact.
+    We clip it and translate the <code> element to match the textarea scroll.
+  */
   .py-highlight {
-    overflow: auto;
-    scrollbar-gutter: stable;
+    overflow: hidden;
     pointer-events: none;
     color: var(--py-text);
   }
-  .py-highlight code { display: block; }
-
-  /* Hide highlight scrollbars but keep the same scrollbar gutter as the textarea */
-  .py-highlight::-webkit-scrollbar { width: 0; height: 0; }
-  .py-highlight { scrollbar-width: none; }
+  .py-highlight code {
+    display: block;
+    will-change: transform;
+  }
 
   .py-editor { scrollbar-gutter: stable; }
 
@@ -247,31 +236,16 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   }
   .py-editor::selection { background: var(--py-selection); }
 
-  /* Modern scrollbars (editor only)
-     - WebKit: pill + gradient thumb.
-     - Firefox: falls back to flat colors.
-  */
-  .py-editor::-webkit-scrollbar { width: 12px; height: 12px; }
-  .py-editor::-webkit-scrollbar-track {
-    background: var(--py-scroll-track);
-    border-radius: 999px;
-    margin: 2px;
-  }
+  /* Modern scrollbars */
+  .py-editor::-webkit-scrollbar { width: 10px; height: 10px; }
+  .py-editor::-webkit-scrollbar-track { background: var(--py-scroll-track); border-radius: 999px; }
   .py-editor::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, var(--py-scroll-thumb-a), var(--py-scroll-thumb-b));
+    background: var(--py-scroll-thumb);
     border-radius: 999px;
-    border: 3px solid rgba(0,0,0,0);
-    background-clip: padding-box;
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--py-border) 55%, transparent);
-  }
-  .py-editor::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, color-mix(in srgb, var(--py-scroll-thumb-a) 92%, var(--py-text) 8%), color-mix(in srgb, var(--py-scroll-thumb-b) 92%, var(--py-text) 8%));
+    border: 2px solid rgba(0,0,0,0);
     background-clip: padding-box;
   }
-  .py-editor::-webkit-scrollbar-thumb:active {
-    background: var(--py-scroll-thumb-hover);
-    background-clip: padding-box;
-  }
+  .py-editor::-webkit-scrollbar-thumb:hover { background: var(--py-scroll-thumb-hover); background-clip: padding-box; }
   .py-editor::-webkit-scrollbar-corner { background: transparent; }
   .py-editor { scrollbar-width: thin; scrollbar-color: var(--py-scroll-thumb) var(--py-scroll-track); }
 
@@ -333,7 +307,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   .py-img { max-width: 100%; height: auto; display: none; border-radius: 8px; background: white; }
 </style>
 
-<script is:inline type="module" define:vars={{ uid, packages, autoRun }}>
+<script is:inline type="module" define:vars={{ uid, packages }}>
   async function ensurePrism() {
     if (window.Prism?.languages?.python) return;
 
@@ -420,8 +394,8 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       const y = Math.round(editor.scrollTop);
       const x = Math.round(editor.scrollLeft);
       if (gutterInner) gutterInner.style.transform = `translate3d(0, ${-y}px, 0)`;
-      highlightPre.scrollTop = y;
-      highlightPre.scrollLeft = x;
+      // The highlight layer is clipped (no overflow scroll). Translate code to match textarea scroll.
+      if (highlightCode) highlightCode.style.transform = `translate3d(${-x}px, ${-y}px, 0)`;
     }
 
     let prismReady = false;
@@ -478,17 +452,12 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
       setStatus(`Loading packages: ${pkgList.join(", ")}…`);
       await pyodide.loadPackage(pkgList);
-      window[globalKey] = pyodide;
+window[globalKey] = pyodide;
       setStatus("Ready.");
       return pyodide;
     }
 
-    // Run handler (optionally triggered automatically on page load)
-    let hasRun = false;
-    async function runCodeOnce() {
-      if (hasRun) return;
-      hasRun = true;
-
+    btn.addEventListener("click", async () => {
       btn.disabled = true;
       clearIO();
       try {
@@ -549,14 +518,7 @@ _png_b64
       } finally {
         btn.disabled = false;
       }
-    }
-
-    btn.addEventListener("click", runCodeOnce);
-
-    if (autoRun) {
-      // Avoid blocking init(); also ensures listeners/DOM are fully wired.
-      queueMicrotask(() => runCodeOnce());
-    }
+    });
   }
 
   if (document.readyState === "loading") {
