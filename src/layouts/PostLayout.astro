@@ -20,16 +20,37 @@ const date = frontmatter?.date ?? "";
   <body>
     <div class="container">
       <div class="topbar">
-        <div><a href="/blog/">Blog Home</a></div>
-        <div><a href="/"><b>PRAISe Lab Home</b></a></div>
-        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle theme">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M12 18a6 6 0 100-12 6 6 0 000 12z" stroke="currentColor" stroke-width="2"/>
-          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <span id="themeLabel">Theme</span>
-      </button>
+        <div class="topbar-left">
+          <a class="topbar-link topbar-link-muted" href="/blog/">Blog Home</a>
+        </div>
+
+        <div class="topbar-center">
+          <a class="topbar-link topbar-link-primary" href="/">PRAISe Lab Home</a>
+        </div>
+
+        <div class="topbar-right">
+          <button
+            id="themeToggle"
+            class="theme-toggle theme-toggle-icon"
+            type="button"
+            aria-label="Toggle theme"
+          >
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M12 18a6 6 0 100-12 6 6 0 000 12z"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span id="themeLabel">Theme</span>
+          </button>
+        </div>
       </div>
 
       <div class="layout">
@@ -52,46 +73,44 @@ const date = frontmatter?.date ?? "";
       </div>
     </div>
 
-<script is:inline>
-  (() => {
-    const STORAGE_KEY = "theme"; // "light" | "dark"
-    const root = document.documentElement;
+    <script is:inline>
+      (() => {
+        const STORAGE_KEY = "theme"; // "light" | "dark"
+        const root = document.documentElement;
 
-    const btn = document.getElementById("themeToggle");
-    const label = document.getElementById("themeLabel");
-    const icon = document.getElementById("themeIcon"); // optional
+        const btn = document.getElementById("themeToggle");
+        const label = document.getElementById("themeLabel");
+        const icon = document.getElementById("themeIcon"); // optional
 
-    if (!btn) return;
+        if (!btn) return;
 
-    const apply = (mode) => {
-      if (mode === "dark") root.setAttribute("data-theme", "dark");
-      else root.removeAttribute("data-theme");
+        const apply = (mode) => {
+          if (mode === "dark") root.setAttribute("data-theme", "dark");
+          else root.removeAttribute("data-theme");
 
-      // Button shows what you will switch TO
-      const next = mode === "dark" ? "Light" : "Dark";
-      if (label) label.textContent = next;
-      if (icon) icon.textContent = mode === "dark" ? "☀" : "☾";
+          // Button shows what you will switch TO
+          const next = mode === "dark" ? "Light" : "Dark";
+          if (label) label.textContent = next;
+          if (icon) icon.textContent = mode === "dark" ? "☀" : "☾";
 
-      btn.setAttribute(
-        "aria-label",
-        mode === "dark" ? "Switch to light mode" : "Switch to dark mode"
-      );
-    };
+          btn.setAttribute(
+            "aria-label",
+            mode === "dark" ? "Switch to light mode" : "Switch to dark mode"
+          );
+        };
 
-    // Default light unless user explicitly saved a preference
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const initial = (saved === "light" || saved === "dark") ? saved : "light";
-    apply(initial);
+        // Default light unless user explicitly saved a preference
+        const saved = localStorage.getItem(STORAGE_KEY);
+        const initial = (saved === "light" || saved === "dark") ? saved : "light";
+        apply(initial);
 
-    btn.addEventListener("click", () => {
-      const current = root.getAttribute("data-theme") === "dark" ? "dark" : "light";
-      const next = current === "dark" ? "light" : "dark";
-      localStorage.setItem(STORAGE_KEY, next);
-      apply(next);
-    });
-  })();
-</script>
-
-
+        btn.addEventListener("click", () => {
+          const current = root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+          const next = current === "dark" ? "light" : "dark";
+          localStorage.setItem(STORAGE_KEY, next);
+          apply(next);
+        });
+      })();
+    </script>
   </body>
 </html>

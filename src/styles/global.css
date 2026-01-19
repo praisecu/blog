@@ -499,3 +499,66 @@ html[data-theme="dark"] .theme-toggle {
 /* =========================================================
    End global styles
    ========================================================= */
+
+
+   /* Header layout: left / center / right */
+.topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.topbar-left { justify-self: start; display: inline-flex; gap: 10px; }
+.topbar-center { justify-self: center; }
+.topbar-right { justify-self: end; display: inline-flex; gap: 10px; }
+
+.topbar-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+
+.topbar-link-muted {
+  color: color-mix(in srgb, var(--fg) 55%, transparent);
+}
+.topbar-link-muted:hover {
+  background: color-mix(in srgb, var(--brand-wash) 55%, transparent);
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+  color: color-mix(in srgb, var(--fg) 78%, transparent);
+}
+
+.topbar-link-primary {
+  font-weight: 700;
+  color: color-mix(in srgb, var(--fg) 85%, transparent);
+  background: color-mix(in srgb, var(--brand-wash) 65%, transparent);
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+.topbar-link-primary:hover {
+  background: color-mix(in srgb, var(--brand-wash) 85%, transparent);
+}
+
+.theme-toggle-icon {
+  width: 42px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+.theme-toggle-icon #themeLabel {
+  display: none; /* keeps JS intact but hides the text */
+}
+
+/* Mobile: keep it simple */
+@media (max-width: 720px) {
+  .topbar {
+    grid-template-columns: 1fr auto;
+  }
+  .topbar-center { display: none; }
+}
