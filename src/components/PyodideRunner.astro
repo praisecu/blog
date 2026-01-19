@@ -196,14 +196,29 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     line-height: 1.45;
     tab-size: 4;
     white-space: pre;
+
+    /* Keep overlay layers pixel-identical */
+    box-sizing: border-box;
+    font-weight: 400;
+    letter-spacing: 0;
+    font-variant-ligatures: none;
+    -webkit-text-size-adjust: 100%;
   }
 
   .py-highlight {
-    overflow: hidden;
+    overflow: auto;
+    scrollbar-gutter: stable;
     pointer-events: none;
     color: var(--py-text);
   }
   .py-highlight code { display: block; }
+
+  /* Hide highlight scrollbars but keep the same scrollbar gutter as the textarea */
+  .py-highlight::-webkit-scrollbar { width: 0; height: 0; }
+  .py-highlight { scrollbar-width: none; }
+
+  .py-editor { scrollbar-gutter: stable; }
+
 
   .py-editor {
     border: 0;
