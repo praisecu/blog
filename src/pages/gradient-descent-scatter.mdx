@@ -1,16 +1,16 @@
 ---
 layout: ../layouts/PostLayout.astro
-title: "Gradient Descent: An Interactive In-Browser Python Way"
+title: "Linear vs. Polynomial Regression in the Browser (Pyodide)"
 author: "Chahat Deep Singh"
-description: "A minimal Pyodide-powered code cell: generate and plot points. This validates the Python runner before adding gradient descent."
+description: "Fit and visualize linear, quadratic, cubic, and degree-5 polynomial regressions on mildly nonlinear data using Pyodide."
 date: "January 18, 2026"
-tags: ["optimization", "machine-learning", "gradient-descent", "pyodide"]
+tags: ["machine-learning", "regression", "least-squares", "pyodide"]
 featured: true
 ---
 
 import PyodideRunner from "../components/PyodideRunner.astro";
 
-# Linear vs. Nonlinear Regression 
+# Linear vs. Nonlinear Regression
 
 This example demonstrates how increasingly flexible polynomial models behave when the underlying data-generating process is **mildly nonlinear**. The visualization consists of **four vertically stacked subplots**:
 
@@ -89,7 +89,7 @@ $$
 
 ### What to expect
 - Better captures curvature than the linear model.
-- Higher $R^2$ in this dataset.
+- Higher $R^2$ in this dataset (on training data).
 
 ---
 
@@ -111,7 +111,7 @@ It is also solved by linear least squares using an appropriate polynomial design
 
 ## 5. Degree-5 Polynomial (Used Here Instead of 1D “Bicubic”)
 
-Important clarification: **“bicubic” is a 2D interpolation concept**, typically for mapping a grid of values $(x, y) \mapsto z$ using a bicubic surface. With a single scalar input $x$, there is no distinct notion of “bicubic regression.”
+Important clarification: **bicubic interpolation is a 2D gridded interpolation method** and is not a standard term for 1D polynomial regression. With a single scalar input $x$, there is no distinct notion of “bicubic regression.”
 
 To satisfy the intent (a more flexible model than cubic) in a 1D setting, we use a degree-5 polynomial:
 
@@ -120,11 +120,11 @@ $$
 $$
 
 ### What to expect
-- Higher flexibility and potentially higher $R^2$ on training data.
+- Higher flexibility and typically higher $R^2$ on training data.
 - Increased risk of fitting noise rather than the underlying signal.
 - This model is included to illustrate the bias–variance tradeoff.
 
-If you actually have 2D inputs $(x, y)$ and want a true bicubic surface model $z=f(x,y)$, the model must be changed accordingly.
+If you actually have 2D inputs $(x, y)$ and want a true bicubic surface, you need a 2D gridded model/interpolant (or a 2D regression surface) rather than a 1D polynomial.
 
 ---
 
@@ -147,32 +147,24 @@ Interpretation:
 - Linear regression underfits when $E[y|x]$ is nonlinear.
 - Polynomial features reduce bias by expanding the model class.
 - Higher-degree polynomials can overfit, especially when noise is nontrivial.
-- “Bicubic” is not a meaningful label in 1D regression; it is fundamentally a 2D interpolation/surface-fitting concept.
-
+- “Bicubic” is not a meaningful label in 1D regression; it is fundamentally a 2D gridded interpolation concept.
 
 ---
 
-
-
-
 <PyodideRunner
-  id="gd_scatter_demo"
-  title="Generate + plot synthetic points"
-  height={240}
+  id="poly_reg_demo"
+  title="Linear vs polynomial regression (4 fits)"
+  height={480}
   autoRun={true}
-  initialCode={`import warnings
-warnings.filterwarnings("ignore")
-
-import numpy as np
+  initialCode={`import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# ---------------------------
-# data (nonlinear ground truth)
-# ---------------------------
+# Reproducibility
 rng = np.random.default_rng(0)
 n = 220
 
+# Data: x in [0, 10], mildly nonlinear y with noise
 df = pd.DataFrame({"x": np.sort(rng.uniform(0, 10, size=n))})
 x = df["x"].to_numpy()
 
@@ -180,52 +172,43 @@ y_true = 2.4 * x + 5.0 + 2.0 * np.sin(0.9 * x) + 0.12 * (x - 5.0) ** 2
 y = y_true + rng.normal(0, 1.8, size=n)
 df["y"] = y
 
-# ---------------------------
-# model fits
-# ---------------------------
+def r2_score(y_true, y_pred):
+    y_bar = np.mean(y_true)
+    ss_tot = np.sum((y_true - y_bar) ** 2)
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    return 1.0 - ss_res / ss_tot
+
+# Linear (closed-form OLS)
 x_mean = x.mean()
 y_mean = y.mean()
-ss_tot = np.sum((y - y_mean) ** 2)
-
-def r2_score(y_true, y_pred):
-    return 1.0 - np.sum((y_true - y_pred) ** 2) / ss_tot
-
-# 1) Linear: y = b1 x + b0
 b1 = np.sum((x - x_mean) * (y - y_mean)) / np.sum((x - x_mean) ** 2)
 b0 = y_mean - b1 * x_mean
 
-# 2) Quadratic: y = a2 x^2 + a1 x + a0
+# Quadratic (least squares)
 X2 = np.column_stack([x**2, x, np.ones_like(x)])
 a2, a1, a0 = np.linalg.lstsq(X2, y, rcond=None)[0]
 
-# 3) Cubic: y = c3 x^3 + c2 x^2 + c1 x + c0
+# Cubic (least squares)
 X3 = np.column_stack([x**3, x**2, x, np.ones_like(x)])
 c3, c2, c1, c0 = np.linalg.lstsq(X3, y, rcond=None)[0]
 
-# 4) "Bicubic" in 1D is not a distinct model.
-# Bicubic interpolation is a 2D method (x,y -> z) on a grid.
-# Here we interpret your request as a higher-order polynomial in 1D.
-# We'll use degree-5 as a reasonable "more flexible than cubic" model:
-# y = d5 x^5 + d4 x^4 + d3 x^3 + d2 x^2 + d1 x + d0
+# Degree-5 (stand-in for 1D "bicubic")
 X5 = np.column_stack([x**5, x**4, x**3, x**2, x, np.ones_like(x)])
 d5, d4, d3, d2, d1, d0 = np.linalg.lstsq(X5, y, rcond=None)[0]
 
-# prediction grid
+# Smooth line for plotting
 x_line = np.linspace(x.min(), x.max(), 600)
 y_lin  = b0 + b1 * x_line
 y_quad = a2 * x_line**2 + a1 * x_line + a0
 y_cub  = c3 * x_line**3 + c2 * x_line**2 + c1 * x_line + c0
 y_deg5 = d5 * x_line**5 + d4 * x_line**4 + d3 * x_line**3 + d2 * x_line**2 + d1 * x_line + d0
 
-# R^2 on training data
+# Training R^2 (on the same data used to fit)
 r2_lin  = r2_score(y, b0 + b1 * x)
 r2_quad = r2_score(y, a2 * x**2 + a1 * x + a0)
 r2_cub  = r2_score(y, c3 * x**3 + c2 * x**2 + c1 * x + c0)
 r2_deg5 = r2_score(y, d5 * x**5 + d4 * x**4 + d3 * x**3 + d2 * x**2 + d1 * x + d0)
 
-# ---------------------------
-# plotting (4 stacked subplots)
-# ---------------------------
 plt.rcParams.update({
     "figure.dpi": 140,
     "axes.spines.top": False,
@@ -236,8 +219,13 @@ plt.rcParams.update({
 fig, ax = plt.subplots(4, 1, figsize=(8.4, 13.0), sharex=True, layout="constrained")
 
 def draw_panel(ax_i, title, y_fit_line, eq_text):
-    ax_i.scatter(x, y, s=34, alpha=0.78, edgecolors="white", linewidths=0.8, label="data")
-    ax_i.plot(x_line, y_fit_line, linewidth=2.6, label="fit")
+    ax_i.scatter(
+        x, y,
+        s=34, alpha=0.78,
+        edgecolors="white", linewidths=0.8,
+        label="data"
+    )
+    ax_i.plot(x_line, y_fit_line, linewidth=2.6, color="goldenrod", label="fit")
     ax_i.set_title(title)
     ax_i.set_ylabel("y")
     ax_i.grid(True, alpha=0.25)
@@ -253,34 +241,33 @@ draw_panel(
     ax[0],
     "Linear Regression (OLS)",
     y_lin,
-    f"$\\hat y = {b1:.3f}x + {b0:.3f}$\n$R^2 = {r2_lin:.3f}$",
+    f"$\\\\hat y = {b1:.3f}x + {b0:.3f}$\\n$R^2 = {r2_lin:.3f}$",
 )
 
 draw_panel(
     ax[1],
     "Quadratic Regression (Least Squares)",
     y_quad,
-    f"$\\hat y = {a2:.3f}x^2 + {a1:.3f}x + {a0:.3f}$\n$R^2 = {r2_quad:.3f}$",
+    f"$\\\\hat y = {a2:.3f}x^2 + {a1:.3f}x + {a0:.3f}$\\n$R^2 = {r2_quad:.3f}$",
 )
 
 draw_panel(
     ax[2],
     "Cubic Regression (Least Squares)",
     y_cub,
-    f"$\\hat y = {c3:.3f}x^3 + {c2:.3f}x^2 + {c1:.3f}x + {c0:.3f}$\n$R^2 = {r2_cub:.3f}$",
+    f"$\\\\hat y = {c3:.3f}x^3 + {c2:.3f}x^2 + {c1:.3f}x + {c0:.3f}$\\n$R^2 = {r2_cub:.3f}$",
 )
 
 draw_panel(
     ax[3],
     "Degree-5 Polynomial (used here in place of 1D 'bicubic')",
     y_deg5,
-    f"$\\hat y = {d5:.3f}x^5 + {d4:.3f}x^4 + {d3:.3f}x^3 + {d2:.3f}x^2 + {d1:.3f}x + {d0:.3f}$\n$R^2 = {r2_deg5:.3f}$",
+    f"$\\\\hat y = {d5:.3f}x^5 + {d4:.3f}x^4 + {d3:.3f}x^3 + {d2:.3f}x^2 + {d1:.3f}x + {d0:.3f}$\\n$R^2 = {r2_deg5:.3f}$",
 )
 
 ax[3].set_xlabel("x")
 plt.show()
-
 `}
-/>
+ />
 
 ---
