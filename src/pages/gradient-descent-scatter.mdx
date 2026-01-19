@@ -15,6 +15,7 @@ import PyodideRunner from "../components/PyodideRunner.astro";
 If this cell works on your site, your Pyodide integration is functioning. Then we can add gradient descent on top.
 
 <PyodideRunner
+  client:load
   title="Generate + plot synthetic points"
   height={240}
   initialCode={`import numpy as np
