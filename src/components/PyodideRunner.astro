@@ -243,12 +243,17 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     caret-color: var(--py-text);
     z-index: 2;
   }
+
   /*
-    Selection rendering in a transparent-text textarea often looks like a
-    second “layer” (blocky stair-steps) over the highlight overlay.
-    Hide native selection fill to avoid the double-layer artifact.
+    Editing mode:
+    A textarea over a syntax-highlight layer is fine for display, but native
+    selection rendering (and IME composition) will visually fight the Prism
+    layer when textarea text is transparent. The robust fix is: while focused,
+    show the textarea text and hide Prism; on blur, restore Prism.
   */
-  .py-editor::selection { background: transparent; }
+  .py-codepane.is-editing .py-highlight { opacity: 0; }
+  .py-codepane.is-editing .py-editor { color: var(--py-text); }
+  .py-editor::selection { background: var(--py-selection); }
 
   /* Modern scrollbars */
   .py-editor::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -350,6 +355,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     const editor = root.querySelector(".py-editor");
     const gutter = root.querySelector(".py-gutter");
     const gutterInner = root.querySelector(".py-gutter-inner");
+    const codepane = root.querySelector(".py-codepane");
     const highlightPre = root.querySelector(".py-highlight");
     const highlightCode = root.querySelector(".py-highlight code");
 
@@ -431,6 +437,17 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
     editor.addEventListener("input", async () => { updateLineNumbers(); await renderHighlight(); });
     editor.addEventListener("scroll", syncScroll);
+
+    // Robust editing UX: while focused, show raw textarea text (selection works normally)
+    // and hide Prism layer. On blur, restore Prism rendering.
+    editor.addEventListener("focus", () => {
+      codepane?.classList.add("is-editing");
+    });
+    editor.addEventListener("blur", async () => {
+      codepane?.classList.remove("is-editing");
+      await renderHighlight();
+      syncScroll();
+    });
 
     copyBtn.addEventListener("click", async () => {
       try {
