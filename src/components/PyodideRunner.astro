@@ -32,7 +32,8 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   .py-actions { display: flex; align-items: center; gap: 0.75rem; }
   .py-run { padding: 0.45rem 0.85rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.2); cursor: pointer; }
   .py-status { opacity: 0.8; font-size: 0.95rem; }
-  .py-stdout, .py-stderr { white-space: pre-wrap; padding: 0.75rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.15); min-height: 3.5rem; }
+  .py-stdout, .py-stderr { white-space: pre-wrap; padding: 0.75rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.15); }
+  .py-stdout.is-empty, .py-stderr.is-empty { display: none; }
   .py-stderr { border-color: rgba(255,0,0,0.25); }
   .py-figure { padding: 0.75rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.15); }
   .py-img { max-width: 100%; height: auto; display: none; }
@@ -66,6 +67,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       errEl.textContent = "";
       imgEl.style.display = "none";
       imgEl.removeAttribute("src");
+      refreshPanels();
     }
     function logErr(e) {
       const msg = (e && (e.stack || e.message)) ? (e.stack || e.message) : String(e);
@@ -95,6 +97,8 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
     setStatus("Ready to run. Click Run.");
 
+    refreshPanels();
+
     btn.addEventListener("click", async () => {
       btn.disabled = true;
       clearIO();
@@ -110,11 +114,6 @@ import sys, io, base64
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import warnings
-warnings.filterwarnings(
-    "ignore",
-    message="Matplotlib is currently using agg"
-)
 class _Writer:
     def write(self, s):
         if s is None: return
@@ -150,10 +149,12 @@ _png_b64
           imgEl.style.display = "block";
         }
         setStatus("Done.");
+        refreshPanels();
       } catch (e) {
         setStatus("Error.");
         logErr(e);
         errEl.textContent += "\n\nIf you see network/CSP errors in DevTools, GitHub Pages must allow cdn.jsdelivr.net and wasm downloads.";
+        refreshPanels();
       } finally {
         btn.disabled = false;
       }
