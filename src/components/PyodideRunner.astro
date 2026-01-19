@@ -1,5 +1,12 @@
 ---
-const { title = "Python (Pyodide)", initialCode = "", height = 240, id, packages = ["numpy","matplotlib","scipy","pandas"] } = Astro.props;
+const {
+  title = "Python (Pyodide)",
+  initialCode = "",
+  height = 240,
+  id,
+  packages = ["numpy", "matplotlib", "scipy", "pandas"],
+} = Astro.props;
+
 const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 ---
 
@@ -20,14 +27,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
     <div class="py-body">
       <div class="py-editorwrap" style={`height:${height}px`}>
-        <div class="py-gutter" aria-hidden="true"><pre class="py-gutter-inner"></pre></div>
-
-        <div class="py-codepane">
-          <!-- Highlight layer -->
-          <pre class="py-highlight" aria-hidden="true"><code class="language-python"></code></pre>
-          <!-- Input layer -->
-          <textarea class="py-editor" wrap="off" spellcheck="false">{initialCode}</textarea>
-        </div>
+        <div class="py-cm" data-initial-code={initialCode}></div>
       </div>
 
       <div class="py-actions">
@@ -46,10 +46,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 </section>
 
 <style>
-  /* Theme bridge:
-     Your site uses <html data-theme="dark"> for dark mode and removes it for light mode.
-     We define CSS variables for light on :root, then override for [data-theme="dark"].
-  */
+  /* Theme variables (same as your theme-aware runner) */
   :global(:root) {
     --py-surface: #ffffff;
     --py-surface-2: #f6f7f9;
@@ -61,25 +58,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     --py-muted: rgba(17,24,39,0.60);
     --py-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     --py-shadow: 0 12px 30px rgba(0,0,0,0.10);
-    --py-selection: rgba(37, 99, 235, 0.22);
-
-    --py-scroll-track: rgba(0,0,0,0.04);
-    --py-scroll-thumb: rgba(0,0,0,0.22);
-    --py-scroll-thumb-hover: rgba(0,0,0,0.32);
-
-    /* Token colors (light) */
-    --py-token-comment: rgba(100,116,139,0.85);
-    --py-token-keyword: #6d28d9;
-    --py-token-string: #047857;
-    --py-token-number: #b45309;
-    --py-token-function: #1d4ed8;
-    --py-token-operator: rgba(17,24,39,0.85);
-    --py-token-punctuation: rgba(17,24,39,0.65);
-    --py-token-builtin: #047857;
-    --py-token-class: #1d4ed8;
-    --py-token-boolean: #b45309;
   }
-
   :global([data-theme="dark"]) {
     --py-surface: #0f1117;
     --py-surface-2: #0b0d12;
@@ -90,23 +69,6 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     --py-text: rgba(255,255,255,0.92);
     --py-muted: rgba(255,255,255,0.68);
     --py-shadow: 0 12px 30px rgba(0,0,0,0.35);
-    --py-selection: rgba(130,170,255,0.35);
-
-    --py-scroll-track: rgba(255,255,255,0.04);
-    --py-scroll-thumb: rgba(255,255,255,0.28);
-    --py-scroll-thumb-hover: rgba(255,255,255,0.38);
-
-    /* Token colors (dark) */
-    --py-token-comment: rgba(148,163,184,0.80);
-    --py-token-keyword: #a78bfa;
-    --py-token-string: #34d399;
-    --py-token-number: #f59e0b;
-    --py-token-function: #60a5fa;
-    --py-token-operator: rgba(226,232,240,0.85);
-    --py-token-punctuation: rgba(226,232,240,0.75);
-    --py-token-builtin: #34d399;
-    --py-token-class: #60a5fa;
-    --py-token-boolean: #f59e0b;
   }
 
   .py-runner { margin: 1.5rem 0; }
@@ -155,111 +117,30 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   .py-body { padding: 14px; display: grid; gap: 12px; }
 
   .py-editorwrap {
-    display: grid;
-    grid-template-columns: 52px 1fr;
     border-radius: 12px;
     border: 1px solid var(--py-border-2);
     background: var(--py-panel-2);
     overflow: hidden;
   }
 
-  .py-gutter {
-    padding: 0;
-    color: color-mix(in srgb, var(--py-muted) 75%, transparent);
+  .py-cm { height: 100%; }
+
+  /* CodeMirror theme bridging */
+  :global(.cm-editor) {
+    height: 100%;
     font-family: var(--py-mono);
     font-size: 0.95rem;
-    line-height: 1.45;
-    text-align: right;
-    user-select: none;
+  }
+  :global(.cm-scroller) { font-family: var(--py-mono); }
+
+  /* Make CM blend with container */
+  :global(.cm-editor.cm-focused) { outline: none; }
+  :global(.cm-editor) { background: transparent; }
+  :global(.cm-gutters) {
+    background: transparent !important;
     border-right: 1px solid var(--py-border-2);
-    white-space: pre;
-    overflow: hidden;
+    color: color-mix(in srgb, var(--py-muted) 75%, transparent);
   }
-
-
-  .py-gutter-inner {
-    margin: 0;
-    padding: 14px 10px;
-    transform: translate3d(0, 0, 0);
-    will-change: transform;
-  }
-
-  .py-codepane { position: relative; overflow: hidden; }
-
-  .py-highlight, .py-editor {
-    position: absolute;
-    inset: 0;
-    margin: 0;
-    padding: 14px 14px;
-    font-family: var(--py-mono);
-    font-size: 0.95rem;
-    line-height: 1.45;
-    tab-size: 4;
-    white-space: pre;
-
-    /* Keep overlay layers pixel-identical */
-    box-sizing: border-box;
-    font-weight: 400;
-    letter-spacing: 0;
-    font-variant-ligatures: none;
-    -webkit-text-size-adjust: 100%;
-  }
-
-  .py-highlight {
-    overflow: auto;
-    scrollbar-gutter: stable;
-    pointer-events: none;
-    color: var(--py-text);
-  }
-  .py-highlight code { display: block; }
-
-  /* Hide highlight scrollbars but keep the same scrollbar gutter as the textarea */
-  .py-highlight::-webkit-scrollbar { width: 0; height: 0; }
-  .py-highlight { scrollbar-width: none; }
-
-  .py-editor { scrollbar-gutter: stable; }
-
-
-  .py-editor {
-    border: 0;
-    outline: none;
-    resize: none;
-    background: transparent;
-    overflow: auto;
-    color: transparent;
-    caret-color: var(--py-text);
-  }
-  .py-editor::selection { background: var(--py-selection); }
-
-  /* Modern scrollbars */
-  .py-editor::-webkit-scrollbar { width: 10px; height: 10px; }
-  .py-editor::-webkit-scrollbar-track { background: var(--py-scroll-track); border-radius: 999px; }
-  .py-editor::-webkit-scrollbar-thumb {
-    background: var(--py-scroll-thumb);
-    border-radius: 999px;
-    border: 2px solid rgba(0,0,0,0);
-    background-clip: padding-box;
-  }
-  .py-editor::-webkit-scrollbar-thumb:hover { background: var(--py-scroll-thumb-hover); background-clip: padding-box; }
-  .py-editor::-webkit-scrollbar-corner { background: transparent; }
-  .py-editor { scrollbar-width: thin; scrollbar-color: var(--py-scroll-thumb) var(--py-scroll-track); }
-
-  .py-editorwrap:has(.py-editor:focus) {
-    border-color: color-mix(in srgb, var(--py-token-function) 55%, transparent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--py-token-function) 18%, transparent);
-  }
-
-  /* Prism token colors must be global (Prism inserts spans without Astro scope attrs) */
-  :global(.token.comment) { color: var(--py-token-comment); }
-  :global(.token.keyword) { color: var(--py-token-keyword); }
-  :global(.token.string) { color: var(--py-token-string); }
-  :global(.token.number) { color: var(--py-token-number); }
-  :global(.token.function) { color: var(--py-token-function); }
-  :global(.token.operator) { color: var(--py-token-operator); }
-  :global(.token.punctuation) { color: var(--py-token-punctuation); }
-  :global(.token.builtin) { color: var(--py-token-builtin); }
-  :global(.token.class-name) { color: var(--py-token-class); }
-  :global(.token.boolean) { color: var(--py-token-boolean); }
 
   .py-actions { display: flex; align-items: center; gap: 10px; }
   .py-run {
@@ -303,23 +184,6 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 </style>
 
 <script is:inline type="module" define:vars={{ uid, packages }}>
-  async function ensurePrism() {
-    if (window.Prism?.languages?.python) return;
-
-    const loadScript = (src) => new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = src;
-      s.async = true;
-      s.onload = () => resolve();
-      s.onerror = () => reject(new Error("Failed to load " + src));
-      document.head.appendChild(s);
-    });
-
-    // Use prism.min.js (full core) + python grammar
-    await loadScript("https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js");
-    await loadScript("https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js");
-  }
-
   async function init() {
     window.__PYODIDE_RUNNERS__ ??= new Set();
     if (window.__PYODIDE_RUNNERS__.has(uid)) return;
@@ -328,12 +192,14 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     const root = document.querySelector(`[data-py-runner="${uid}"]`);
     if (!root) { requestAnimationFrame(() => init()); return; }
 
-    const editor = root.querySelector(".py-editor");
-    const gutter = root.querySelector(".py-gutter");
-    const gutterInner = root.querySelector(".py-gutter-inner");
-    const highlightPre = root.querySelector(".py-highlight");
-    const highlightCode = root.querySelector(".py-highlight code");
+    // Normalize packages (Astro may serialize as JSON string)
+    let pkgList = packages;
+    if (!Array.isArray(pkgList)) {
+      try { pkgList = JSON.parse(String(pkgList)); } catch { pkgList = ["numpy","matplotlib","scipy","pandas"]; }
+    }
+    pkgList = pkgList.filter((p) => typeof p === "string" && p.trim().length > 0);
 
+    const cmHost = root.querySelector(".py-cm");
     const btn = root.querySelector(".py-run");
     const copyBtn = root.querySelector(".py-copy");
     const copyText = root.querySelector(".py-copytext");
@@ -342,23 +208,11 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     const errEl = root.querySelector(".py-stderr");
     const imgEl = root.querySelector(".py-img");
 
-    let pkgList = packages;
-    // Normalize packages prop (Astro may serialize it as JSON)
-    if (!Array.isArray(pkgList)) {
-      try { pkgList = JSON.parse(String(pkgList)); } catch { pkgList = ["numpy","matplotlib","scipy","pandas"]; }
-    }
-    pkgList = pkgList.filter((p) => typeof p === "string" && p.trim().length > 0);
-
     function setStatus(s) { statusEl.textContent = s; }
-
     function refreshPanels() {
-      if (outEl.textContent.trim() === "") outEl.classList.add("is-empty");
-      else outEl.classList.remove("is-empty");
-
-      if (errEl.textContent.trim() === "") errEl.classList.add("is-empty");
-      else errEl.classList.remove("is-empty");
+      if (outEl.textContent.trim() === "") outEl.classList.add("is-empty"); else outEl.classList.remove("is-empty");
+      if (errEl.textContent.trim() === "") errEl.classList.add("is-empty"); else errEl.classList.remove("is-empty");
     }
-
     function clearIO() {
       outEl.textContent = "";
       errEl.textContent = "";
@@ -366,75 +220,117 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       imgEl.removeAttribute("src");
       refreshPanels();
     }
-
     function logErr(e) {
       const msg = (e && (e.stack || e.message)) ? (e.stack || e.message) : String(e);
       errEl.textContent += (errEl.textContent ? "\n" : "") + msg;
       console.error(e);
       refreshPanels();
     }
+    function makeStdout() { return (s) => { outEl.textContent += s + "\n"; refreshPanels(); }; }
 
-    function makeStdout() {
-      return (s) => { outEl.textContent += s + "\n"; refreshPanels(); };
-    }
+    // --- CodeMirror 6 setup (CDN via esm.sh) ---
+    setStatus("Loading editor…");
+    const [
+      cmState,
+      cmView,
+      cmCommands,
+      cmLangPython,
+      cmLanguage,
+      cmOneDark
+    ] = await Promise.all([
+      import("https://esm.sh/@codemirror/state@6.4.1"),
+      import("https://esm.sh/@codemirror/view@6.26.3"),
+      import("https://esm.sh/@codemirror/commands@6.6.2"),
+      import("https://esm.sh/@codemirror/lang-python@6.1.6"),
+      import("https://esm.sh/@codemirror/language@6.10.1"),
+      import("https://esm.sh/@codemirror/theme-one-dark@6.1.2"),
+    ]);
 
-    function updateLineNumbers() {
-      const lines = editor.value.split("\n").length || 1;
-      let out = "";
-      for (let i = 1; i <= lines; i++) out += i + "\n";
-      if (gutterInner) gutterInner.textContent = out; else gutter.textContent = out;
-    }
+    const { EditorState } = cmState;
+    const { EditorView, keymap, highlightActiveLine, drawSelection, lineNumbers, highlightSpecialChars } = cmView;
+    const { defaultKeymap, history, historyKeymap, indentWithTab } = cmCommands;
+    const { python } = cmLangPython;
+    const { indentOnInput, bracketMatching, foldGutter } = cmLanguage;
+    const { oneDark } = cmOneDark;
 
-    function syncScroll() {
-      const y = Math.round(editor.scrollTop);
-      const x = Math.round(editor.scrollLeft);
-      if (gutterInner) gutterInner.style.transform = `translate3d(0, ${-y}px, 0)`;
-      highlightPre.scrollTop = y;
-      highlightPre.scrollLeft = x;
-    }
+    // Light theme (minimal) that inherits your CSS variables
+    const lightTheme = EditorView.theme({
+      "&": { color: "var(--py-text)", backgroundColor: "transparent" },
+      ".cm-content": { caretColor: "var(--py-text)" },
+      ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--py-text)" },
+      "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection": {
+        backgroundColor: "color-mix(in srgb, var(--py-text) 16%, transparent)"
+      },
+      ".cm-activeLine": { backgroundColor: "color-mix(in srgb, var(--py-text) 6%, transparent)" },
+      ".cm-gutters": { backgroundColor: "transparent", color: "var(--py-muted)", borderRight: "1px solid var(--py-border-2)" },
+    }, { dark: false });
 
-    let prismReady = false;
-    async function renderHighlight() {
-      if (!highlightCode) return;
+    const isDark = () => document.documentElement.dataset.theme === "dark";
 
-      if (!prismReady) {
-        try {
-          await ensurePrism();
-          prismReady = true;
-        } catch (e) {
-          highlightCode.textContent = editor.value;
-          return;
-        }
-      }
-      const code = editor.value;
-      highlightCode.innerHTML = window.Prism.highlight(code, window.Prism.languages.python, "python");
-    }
+    const startDoc = cmHost.getAttribute("data-initial-code") ?? "";
+    let view = new EditorView({
+      state: EditorState.create({
+        doc: startDoc,
+        extensions: [
+          lineNumbers(),
+          highlightSpecialChars(),
+          history(),
+          foldGutter(),
+          drawSelection(),
+          indentOnInput(),
+          bracketMatching(),
+          highlightActiveLine(),
+          keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
+          python(),
+          isDark() ? oneDark : lightTheme,
+          EditorView.lineWrapping,
+        ],
+      }),
+      parent: cmHost,
+    });
 
-    editor.addEventListener("input", async () => { updateLineNumbers(); await renderHighlight(); });
-    editor.addEventListener("scroll", syncScroll);
+    // Update theme on toggle (MutationObserver on <html data-theme>)
+    const mo = new MutationObserver(() => {
+      view.dispatch({
+        effects: EditorView.reconfigure.of([
+          lineNumbers(),
+          highlightSpecialChars(),
+          history(),
+          foldGutter(),
+          drawSelection(),
+          indentOnInput(),
+          bracketMatching(),
+          highlightActiveLine(),
+          keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
+          python(),
+          isDark() ? oneDark : lightTheme,
+          EditorView.lineWrapping,
+        ]),
+      });
+    });
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+    const getCode = () => view.state.doc.toString();
 
     copyBtn.addEventListener("click", async () => {
       try {
-        await navigator.clipboard.writeText(editor.value);
+        await navigator.clipboard.writeText(getCode());
         const prev = copyText.textContent;
         copyText.textContent = "Copied";
         copyBtn.disabled = true;
         setTimeout(() => { copyText.textContent = prev; copyBtn.disabled = false; }, 900);
-      } catch (e) {
-        editor.select();
+      } catch {
+        // Fallback: create temp textarea
+        const t = document.createElement("textarea");
+        t.value = getCode();
+        document.body.appendChild(t);
+        t.select();
         document.execCommand("copy");
-        editor.setSelectionRange(editor.value.length, editor.value.length);
+        document.body.removeChild(t);
       }
     });
 
-    // Initialize
-    updateLineNumbers();
-    await renderHighlight();
-    syncScroll();
-    refreshPanels();
-    setStatus("Ready to run. Click Run.");
-
-    // Pyodide
+    // --- Pyodide ---
     const globalKey = "__PYODIDE_SINGLETON__";
     async function getPyodide() {
       if (window[globalKey]) return window[globalKey];
@@ -447,10 +343,14 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
       setStatus(`Loading packages: ${pkgList.join(", ")}…`);
       await pyodide.loadPackage(pkgList);
-window[globalKey] = pyodide;
+
+      window[globalKey] = pyodide;
       setStatus("Ready.");
       return pyodide;
     }
+
+    setStatus("Ready to run. Click Run.");
+    refreshPanels();
 
     btn.addEventListener("click", async () => {
       btn.disabled = true;
@@ -460,7 +360,7 @@ window[globalKey] = pyodide;
         setStatus("Running…");
 
         pyodide.globals.set("__js_stdout__", makeStdout());
-        const userCode = editor.value;
+        const userCode = getCode();
 
         const wrapped = `
 import sys, io, base64, warnings
@@ -508,7 +408,7 @@ _png_b64
       } catch (e) {
         setStatus("Error.");
         logErr(e);
-        errEl.textContent += "\n\nIf you see network/CSP errors in DevTools, GitHub Pages must allow cdn.jsdelivr.net and wasm downloads.";
+        errEl.textContent += "\n\nIf you see network/CSP errors in DevTools, GitHub Pages must allow cdn.jsdelivr.net, esm.sh and wasm downloads.";
         refreshPanels();
       } finally {
         btn.disabled = false;
@@ -517,7 +417,7 @@ _png_b64
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => { init(); }, { once: true });
+    document.addEventListener("DOMContentLoaded", init, { once: true });
   } else {
     init();
   }
