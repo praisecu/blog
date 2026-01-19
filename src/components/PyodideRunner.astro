@@ -20,13 +20,11 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
     <div class="py-body">
       <div class="py-editorwrap" style={`height:${height}px`}>
-        <div class="py-codepane">
-          <!-- Line numbers (non-interactive, synced to textarea scroll via transform) -->
-          <div class="py-gutter" aria-hidden="true"><pre class="py-linenos"></pre></div>
+        <div class="py-gutter" aria-hidden="true"><pre class="py-gutter-inner"></pre></div>
 
+        <div class="py-codepane">
           <!-- Highlight layer -->
           <pre class="py-highlight" aria-hidden="true"><code class="language-python"></code></pre>
-
           <!-- Input layer -->
           <textarea class="py-editor" wrap="off" spellcheck="false">{initialCode}</textarea>
         </div>
@@ -65,11 +63,6 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     --py-shadow: 0 12px 30px rgba(0,0,0,0.10);
     --py-selection: rgba(37, 99, 235, 0.22);
 
-    --py-pad-x: 14px;
-    --py-pad-y: 14px;
-    --py-gutter-w: 3.25rem;
-    --py-linenum: color-mix(in srgb, var(--py-muted) 78%, var(--py-token-function) 22%);
-
     --py-scroll-track: rgba(0,0,0,0.04);
     --py-scroll-thumb: rgba(0,0,0,0.22);
     --py-scroll-thumb-hover: rgba(0,0,0,0.32);
@@ -98,8 +91,6 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     --py-muted: rgba(255,255,255,0.68);
     --py-shadow: 0 12px 30px rgba(0,0,0,0.35);
     --py-selection: rgba(130,170,255,0.35);
-
-    --py-linenum: color-mix(in srgb, var(--py-muted) 78%, var(--py-token-function) 22%);
 
     --py-scroll-track: rgba(255,255,255,0.04);
     --py-scroll-thumb: rgba(255,255,255,0.28);
@@ -165,44 +156,41 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
   .py-editorwrap {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 52px 1fr;
     border-radius: 12px;
     border: 1px solid var(--py-border-2);
     background: var(--py-panel-2);
     overflow: hidden;
   }
 
-  .py-codepane { position: relative; overflow: hidden; }
-
   .py-gutter {
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: var(--py-gutter-w);
-    border-right: 1px solid var(--py-border-2);
-    background: color-mix(in srgb, var(--py-panel-2) 92%, transparent);
-    pointer-events: none;
-    overflow: hidden; /* prevent independent scrolling */
-    z-index: 2;
-  }
-  .py-linenos {
-    margin: 0;
-    padding: var(--py-pad-y) 10px var(--py-pad-y) 10px;
+    padding: 0;
+    color: color-mix(in srgb, var(--py-muted) 75%, transparent);
     font-family: var(--py-mono);
     font-size: 0.95rem;
     line-height: 1.45;
-    tab-size: 4;
-    white-space: pre;
     text-align: right;
-    color: var(--py-linenum);
     user-select: none;
+    border-right: 1px solid var(--py-border-2);
+    white-space: pre;
+    overflow: hidden;
+  }
+
+
+  .py-gutter-inner {
+    margin: 0;
+    padding: 14px 10px;
+    transform: translate3d(0, 0, 0);
     will-change: transform;
   }
+
+  .py-codepane { position: relative; overflow: hidden; }
 
   .py-highlight, .py-editor {
     position: absolute;
     inset: 0;
     margin: 0;
-    padding: var(--py-pad-y) var(--py-pad-x) var(--py-pad-y) calc(var(--py-pad-x) + var(--py-gutter-w));
+    padding: 14px 14px;
     font-family: var(--py-mono);
     font-size: 0.95rem;
     line-height: 1.45;
@@ -218,18 +206,14 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   }
 
   .py-highlight {
-    /* Do NOT make the highlight layer an independent scroll container.
-       We translate the <code> element to match the textarea scroll offsets.
-       This avoids 1px/line drift under zoom/subpixel rendering. */
-    overflow: hidden;
+    overflow: hidden; /* never scroll independently */
     pointer-events: none;
     color: var(--py-text);
   }
-  .py-highlight code { display: block; will-change: transform; }
-
-  /* Hide highlight scrollbars but keep the same scrollbar gutter as the textarea */
-  .py-highlight::-webkit-scrollbar { width: 0; height: 0; }
-  .py-highlight { scrollbar-width: none; }
+  .py-highlight code {
+    display: block;
+    will-change: transform;
+  }
 
   .py-editor { scrollbar-gutter: stable; }
 
@@ -244,6 +228,15 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     caret-color: var(--py-text);
   }
   .py-editor::selection { background: var(--py-selection); }
+
+  /* While editing, prefer native textarea rendering to keep caret/selection perfect. */
+  .py-runner.is-editing .py-editor { color: var(--py-text); }
+  .py-runner.is-editing .py-highlight { display: none; }
+
+  /* While focused, render native textarea text and hide the highlight layer.
+     This guarantees correct caret + selection behavior across browsers/zooms. */
+  .py-runner.is-editing .py-editor { color: var(--py-text); }
+  .py-runner.is-editing .py-highlight { display: none; }
 
   /* Modern scrollbars */
   .py-editor::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -316,7 +309,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   .py-img { max-width: 100%; height: auto; display: none; border-radius: 8px; background: white; }
 </style>
 
-<script is:inline type="module" define:vars={{ uid, packages }}>
+<script is:inline type="module" define:vars={{ uid, packages, autoRun, fps }}>
   async function ensurePrism() {
     if (window.Prism?.languages?.python) return;
 
@@ -343,9 +336,10 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     if (!root) { requestAnimationFrame(() => init()); return; }
 
     const editor = root.querySelector(".py-editor");
+    const gutter = root.querySelector(".py-gutter");
+    const linenosPre = root.querySelector(".py-linenos");
     const highlightPre = root.querySelector(".py-highlight");
     const highlightCode = root.querySelector(".py-highlight code");
-    const gutterPre = root.querySelector(".py-linenos");
 
     const btn = root.querySelector(".py-run");
     const copyBtn = root.querySelector(".py-copy");
@@ -377,6 +371,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       errEl.textContent = "";
       imgEl.style.display = "none";
       imgEl.removeAttribute("src");
+      stopAnimation();
       refreshPanels();
     }
 
@@ -391,64 +386,66 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       return (s) => { outEl.textContent += s + "\n"; refreshPanels(); };
     }
 
-    // Ensure the textarea and highlight layer share identical *computed* metrics.
-    // Textareas can end up with different effective line-height/font metrics vs <pre> under
-    // zoom/subpixel rendering; if they diverge, clicks appear to land on the wrong line.
-    function syncMetrics() {
-      const cs = getComputedStyle(editor);
-      const lh = cs.lineHeight;
-      const fs = cs.fontSize;
-      const ff = cs.fontFamily;
-      const pt = cs.paddingTop;
-      const pr = cs.paddingRight;
-      const pb = cs.paddingBottom;
-      const pl = cs.paddingLeft;
-
-      // Highlight layer: match the textarea exactly.
-      highlightPre.style.lineHeight = lh;
-      highlightPre.style.fontSize = fs;
-      highlightPre.style.fontFamily = ff;
-      highlightPre.style.paddingTop = pt;
-      highlightPre.style.paddingRight = pr;
-      highlightPre.style.paddingBottom = pb;
-      highlightPre.style.paddingLeft = pl;
-
-      // Gutter should match vertical metrics (but not the text padding-left that
-      // includes the gutter width).
-      if (gutterPre) {
-        gutterPre.style.lineHeight = lh;
-        gutterPre.style.fontSize = fs;
-        gutterPre.style.fontFamily = ff;
-        gutterPre.style.paddingTop = pt;
-        gutterPre.style.paddingBottom = pb;
-      }
-    }
-
-    let lastLineCount = 0;
     function updateLineNumbers() {
-      if (!gutterPre) return;
-      // Split preserves trailing empty line when text ends with \n
-      const n = editor.value.split("\n").length;
-      if (n === lastLineCount) return;
-      lastLineCount = n;
+      const lines = editor.value.split("\n").length || 1;
       let out = "";
-      for (let i = 1; i <= n; i++) out += i + "\n";
-      gutterPre.textContent = out;
+      for (let i = 1; i <= lines; i++) out += i + "\n";
+      if (linenosPre) linenosPre.textContent = out;
     }
 
     function syncScroll() {
       const y = editor.scrollTop;
       const x = editor.scrollLeft;
-      // Keep highlight layer aligned with the textarea scroll.
-      // Do not scroll the <pre>; translate the <code> instead. This keeps
-      // caret/click mapping stable under zoom and fractional line heights.
+
       if (highlightCode) {
         highlightCode.style.transform = `translate(${-x}px, ${-y}px)`;
       }
-
-      if (gutterPre) {
-        gutterPre.style.transform = `translateY(${-y}px)`;
+      if (linenosPre) {
+        linenosPre.style.transform = `translateY(${-y}px)`;
       }
+    }
+
+    // Animation: user prints a JSON list of base64 PNG frames prefixed by this sentinel.
+    const FRAME_PREFIX = "__PYODIDE_FRAMES__";
+    let animTimer = null;
+    let animFrames = null;
+    let animIdx = 0;
+
+    function stopAnimation() {
+      if (animTimer) {
+        clearInterval(animTimer);
+        animTimer = null;
+      }
+      animFrames = null;
+      animIdx = 0;
+    }
+
+    function maybeStartAnimationFromStdout() {
+      const txt = outEl.textContent;
+      const i = txt.lastIndexOf(FRAME_PREFIX);
+      if (i < 0) return false;
+      const payload = txt.slice(i + FRAME_PREFIX.length).trim();
+      let frames;
+      try {
+        frames = JSON.parse(payload);
+      } catch {
+        return false;
+      }
+      if (!Array.isArray(frames) || frames.length === 0) return false;
+
+      stopAnimation();
+      animFrames = frames;
+      animIdx = 0;
+      imgEl.style.display = "block";
+      imgEl.src = "data:image/png;base64," + animFrames[0];
+
+      const fpsNum = Math.max(1, Math.min(60, Number(fps) || 12));
+      animTimer = setInterval(() => {
+        if (!animFrames || animFrames.length === 0) return;
+        animIdx = (animIdx + 1) % animFrames.length;
+        imgEl.src = "data:image/png;base64," + animFrames[animIdx];
+      }, Math.round(1000 / fpsNum));
+      return true;
     }
 
     let prismReady = false;
@@ -468,28 +465,19 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       highlightCode.innerHTML = window.Prism.highlight(code, window.Prism.languages.python, "python");
     }
 
-    editor.addEventListener("input", async () => {
-      updateLineNumbers();
+    editor.addEventListener("input", async () => { updateLineNumbers(); await renderHighlight(); });
+    editor.addEventListener("scroll", syncScroll);
+
+    // While the editor is focused, let the textarea render its own text so
+    // caret/selection are natively correct. On blur, restore the highlight layer.
+    editor.addEventListener("focus", () => {
+      root.classList.add("is-editing");
+    });
+    editor.addEventListener("blur", async () => {
+      root.classList.remove("is-editing");
       await renderHighlight();
       syncScroll();
     });
-    editor.addEventListener("scroll", syncScroll);
-
-    // Focus mode: show native textarea rendering for perfect caret/selection.
-    // Blur mode: show Prism highlighting (textarea text becomes transparent).
-    const showPlain = () => {
-      highlightPre.style.visibility = "hidden";
-      editor.style.color = "var(--py-text)";
-    };
-    const showHighlighted = async () => {
-      editor.style.color = "transparent";
-      highlightPre.style.visibility = "visible";
-      await renderHighlight();
-      syncScroll();
-    };
-
-    editor.addEventListener("focus", showPlain);
-    editor.addEventListener("blur", () => { void showHighlighted(); });
 
     copyBtn.addEventListener("click", async () => {
       try {
@@ -506,17 +494,14 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     });
 
     // Initialize
-    syncMetrics();
     updateLineNumbers();
     await renderHighlight();
     syncScroll();
     refreshPanels();
     setStatus("Ready to run. Click Run.");
 
-    // Re-sync if fonts/zoom/layout change.
-    window.addEventListener("resize", () => { syncMetrics(); syncScroll(); });
-    if (document.fonts?.ready) {
-      document.fonts.ready.then(() => { syncMetrics(); syncScroll(); }).catch(() => {});
+    if (autoRun) {
+      queueMicrotask(() => btn.click());
     }
 
     // Pyodide
@@ -584,7 +569,10 @@ except Exception:
 _png_b64
 `;
         const b64 = await pyodide.runPythonAsync(wrapped);
-        if (b64 && typeof b64 === "string") {
+
+        // Prefer frame-based animations if the user printed them.
+        const startedAnim = maybeStartAnimationFromStdout();
+        if (!startedAnim && b64 && typeof b64 === "string") {
           imgEl.src = "data:image/png;base64," + b64;
           imgEl.style.display = "block";
         }
