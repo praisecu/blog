@@ -20,21 +20,11 @@ const date = frontmatter?.date ?? "";
   <body>
     <div class="container">
       <div class="topbar">
-        <div class="topbar-left">
-          <a class="topbar-link topbar-link-muted" href="/blog/">Blog Home</a>
-        </div>
+        <div><a href="/blog/">Blog Home</a></div>
+        <div><a href="/">PRAISe Lab Home</a></div>
 
-        <div class="topbar-center">
-          <a class="topbar-link topbar-link-primary" href="/">PRAISe Lab Home</a>
-        </div>
-
-        <div class="topbar-right">
-          <button
-            id="themeToggle"
-            class="theme-toggle theme-toggle-icon"
-            type="button"
-            aria-label="Toggle theme"
-          >
+        <div class="topbar-actions">
+          <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle theme">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
                 d="M12 18a6 6 0 100-12 6 6 0 000 12z"
@@ -49,6 +39,17 @@ const date = frontmatter?.date ?? "";
               />
             </svg>
             <span id="themeLabel">Theme</span>
+          </button>
+
+          <button
+            id="paperToggle"
+            class="theme-toggle mode-toggle"
+            type="button"
+            aria-label="Toggle paper mode"
+            title="Paper mode"
+          >
+            <span aria-hidden="true">⟡</span>
+            <span id="paperLabel">Paper</span>
           </button>
         </div>
       </div>
@@ -65,9 +66,7 @@ const date = frontmatter?.date ?? "";
             <div>
               By <a href="#">{author}</a>
             </div>
-            <div>{date}
-                <span id="rt" class="rt" aria-label="Estimated reading time"></span>
-            </div>
+            <div>{date}</div>
           </div>
 
           <slot />
@@ -77,6 +76,7 @@ const date = frontmatter?.date ?? "";
 
     <script is:inline>
       (() => {
+        // ---- Theme (light/dark) ----
         const STORAGE_KEY = "theme"; // "light" | "dark"
         const root = document.documentElement;
 
@@ -101,20 +101,6 @@ const date = frontmatter?.date ?? "";
           );
         };
 
-        const el = document.getElementById("rt");
-        const article = document.querySelector("main");
-        if (!el || !article) return;
-
-        // Avoid counting nav/TOC text if they ever end up in main
-        const text = article.innerText || "";
-        const words = (text.trim().match(/\S+/g) || []).length;
-
-        // Conservative academic reading speed
-        const WPM = 220;
-        const minutes = Math.max(1, Math.round(words / WPM));
-
-        el.textContent = ` · ${minutes} min read`;
-
         // Default light unless user explicitly saved a preference
         const saved = localStorage.getItem(STORAGE_KEY);
         const initial = (saved === "light" || saved === "dark") ? saved : "light";
@@ -123,6 +109,43 @@ const date = frontmatter?.date ?? "";
         btn.addEventListener("click", () => {
           const current = root.getAttribute("data-theme") === "dark" ? "dark" : "light";
           const next = current === "dark" ? "light" : "dark";
+          localStorage.setItem(STORAGE_KEY, next);
+          apply(next);
+        });
+      })();
+    </script>
+
+    <script is:inline>
+      (() => {
+        // ---- Paper mode (default/paper) ----
+        const STORAGE_KEY = "mode"; // "default" | "paper"
+        const root = document.documentElement;
+
+        const btn = document.getElementById("paperToggle");
+        const label = document.getElementById("paperLabel");
+        if (!btn) return;
+
+        const apply = (mode) => {
+          if (mode === "paper") root.setAttribute("data-mode", "paper");
+          else root.removeAttribute("data-mode");
+
+          // Button shows what you will switch TO
+          const next = mode === "paper" ? "Default" : "Paper";
+          if (label) label.textContent = next;
+
+          btn.setAttribute(
+            "aria-label",
+            mode === "paper" ? "Switch to default mode" : "Switch to paper mode"
+          );
+        };
+
+        const saved = localStorage.getItem(STORAGE_KEY);
+        const initial = saved === "paper" ? "paper" : "default";
+        apply(initial);
+
+        btn.addEventListener("click", () => {
+          const current = root.getAttribute("data-mode") === "paper" ? "paper" : "default";
+          const next = current === "paper" ? "default" : "paper";
           localStorage.setItem(STORAGE_KEY, next);
           apply(next);
         });
