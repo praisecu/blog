@@ -1,0 +1,35 @@
+---
+layout: ../layouts/PostLayout.astro
+title: "Gradient Descent: Minimal In-Browser Python (Scatter Plot)"
+author: "Chahat Deep Singh"
+description: "A minimal Pyodide-powered code cell: generate and plot points. This validates the Python runner before adding gradient descent."
+date: "January 18, 2026"
+tags: ["optimization", "machine-learning", "gradient-descent", "pyodide"]
+featured: false
+---
+
+import PyodideRunner from "../components/PyodideRunner.astro";
+
+## Minimal interactive cell
+
+If this cell works on your site, your Pyodide integration is functioning. Then we can add gradient descent on top.
+
+<PyodideRunner
+  title="Generate + plot synthetic points"
+  height={240}
+  initialCode={`import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(0)
+n = 200
+x = rng.uniform(0, 50, size=n)
+y = 0.35 * x + 7.0 + rng.normal(0, 3.0, size=n)
+
+plt.figure()
+plt.scatter(x, y, alpha=0.35)
+plt.title("Synthetic points")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.show()
+`}
+/>
