@@ -1,5 +1,5 @@
 ---
-const { title = "Python (Pyodide)", initialCode = "", height = 240, id, smoothScroll = true } = Astro.props;
+const { title = "Python (Pyodide)", initialCode = "", height = 240, id, packages = ["numpy","matplotlib","scipy","pandas"] } = Astro.props;
 const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 ---
 
@@ -287,7 +287,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   .py-img { max-width: 100%; height: auto; display: none; border-radius: 8px; background: white; }
 </style>
 
-<script is:inline type="module" define:vars={{ uid, smoothScroll }}>
+<script is:inline type="module" define:vars={{ uid, packages }}>
   async function ensurePrism() {
     if (window.Prism?.languages?.python) return;
 
@@ -326,6 +326,13 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     const outEl = root.querySelector(".py-stdout");
     const errEl = root.querySelector(".py-stderr");
     const imgEl = root.querySelector(".py-img");
+
+    let pkgList = packages;
+    // Normalize packages prop (Astro may serialize it as JSON)
+    if (!Array.isArray(pkgList)) {
+      try { pkgList = JSON.parse(String(pkgList)); } catch { pkgList = ["numpy","matplotlib","scipy","pandas"]; }
+    }
+    pkgList = pkgList.filter((p) => typeof p === "string" && p.trim().length > 0);
 
     function setStatus(s) { statusEl.textContent = s; }
 
@@ -371,48 +378,6 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       highlightPre.scrollLeft = x;
     }
 
-    // Optional smooth wheel scrolling (native scrolling is already fine on trackpads).
-    // This only affects mouse-wheel style deltas; it keeps gutter/highlight perfectly synced.
-    let _targetScrollTop = 0;
-    let _animating = false;
-
-    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-
-    function startScrollAnim() {
-      if (_animating) return;
-      _animating = true;
-
-      const step = () => {
-        const cur = editor.scrollTop;
-        const next = cur + (_targetScrollTop - cur) * 0.25; // easing
-        // Stop when close enough
-        if (Math.abs(_targetScrollTop - cur) < 0.5) {
-          editor.scrollTop = _targetScrollTop;
-          _animating = false;
-          syncScroll();
-          return;
-        }
-        editor.scrollTop = next;
-        syncScroll();
-        requestAnimationFrame(step);
-      };
-
-      requestAnimationFrame(step);
-    }
-
-    function onWheel(e) {
-      if (!smoothScroll) return;
-      // Let the browser handle touchpads (usually small deltas) and pinch/zoom.
-      if (e.ctrlKey) return;
-      if (Math.abs(e.deltaY) < 12 && Math.abs(e.deltaX) < 12) return;
-
-      e.preventDefault();
-      const maxY = editor.scrollHeight - editor.clientHeight;
-      _targetScrollTop = clamp(((_animating ? _targetScrollTop : editor.scrollTop) + e.deltaY), 0, Math.max(0, maxY));
-      startScrollAnim();
-    }
-
-
     let prismReady = false;
     async function renderHighlight() {
       if (!highlightCode) return;
@@ -431,8 +396,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     }
 
     editor.addEventListener("input", async () => { updateLineNumbers(); await renderHighlight(); });
-    editor.addEventListener("scroll", () => { _targetScrollTop = editor.scrollTop; syncScroll(); });
-    editor.addEventListener("wheel", onWheel, { passive: false });
+    editor.addEventListener("scroll", syncScroll);
 
     copyBtn.addEventListener("click", async () => {
       try {
@@ -466,10 +430,9 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       setStatus("Downloading Pyodide runtime…");
       const pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/" });
 
-      setStatus("Loading numpy + matplotlib…");
-      await pyodide.loadPackage(["numpy", "matplotlib"]);
-
-      window[globalKey] = pyodide;
+      setStatus(`Loading packages: ${pkgList.join(", ")}…`);
+      await pyodide.loadPackage(pkgList);
+window[globalKey] = pyodide;
       setStatus("Ready.");
       return pyodide;
     }
