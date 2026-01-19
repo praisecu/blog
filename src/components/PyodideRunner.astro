@@ -164,7 +164,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   }
 
   .py-gutter {
-    padding: 0;              /* IMPORTANT: no padding here */
+    padding: 0;
     color: color-mix(in srgb, var(--py-muted) 75%, transparent);
     font-family: var(--py-mono);
     font-size: 0.95rem;
@@ -176,9 +176,11 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     overflow: hidden;
   }
 
+
   .py-gutter-inner {
     margin: 0;
-    padding: 14px 10px;      /* padding lives HERE */
+    padding: 14px 10px;
+    transform: translate3d(0, 0, 0);
     will-change: transform;
   }
 
@@ -362,9 +364,11 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     }
 
     function syncScroll() {
-      if (gutterInner) gutterInner.style.transform = `translateY(${-editor.scrollTop}px)`;
-      highlightPre.scrollTop = editor.scrollTop;
-      highlightPre.scrollLeft = editor.scrollLeft;
+      const y = Math.round(editor.scrollTop);
+      const x = Math.round(editor.scrollLeft);
+      if (gutterInner) gutterInner.style.transform = `translate3d(0, ${-y}px, 0)`;
+      highlightPre.scrollTop = y;
+      highlightPre.scrollLeft = x;
     }
 
     let prismReady = false;
