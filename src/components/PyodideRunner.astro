@@ -1,5 +1,5 @@
 ---
-const { title = "Python (Pyodide)", initialCode = "", height = 240, id, packages = ["numpy","matplotlib","scipy","pandas"] } = Astro.props;
+const { title = "Python (Pyodide)", initialCode = "", height = 240, id, autoRun = false, packages = ["numpy","matplotlib","scipy","pandas"] } = Astro.props;
 const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 ---
 
@@ -316,7 +316,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   .py-img { max-width: 100%; height: auto; display: none; border-radius: 8px; background: white; }
 </style>
 
-<script is:inline type="module" define:vars={{ uid, packages }}>
+<script is:inline type="module" define:vars={{ uid, packages, autoRun }}>
   async function ensurePrism() {
     if (window.Prism?.languages?.python) return;
 
@@ -512,6 +512,13 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     syncScroll();
     refreshPanels();
     setStatus("Ready to run. Click Run.");
+
+    // Auto-run if enabled
+    const shouldAutoRun = (autoRun === true) || (String(autoRun) === "true");
+    if (shouldAutoRun) {
+      // ensure layout/paint done, then run once
+      requestAnimationFrame(() => btn.click());
+    }
 
     // Re-sync if fonts/zoom/layout change.
     window.addEventListener("resize", () => { syncMetrics(); syncScroll(); });
