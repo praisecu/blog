@@ -171,7 +171,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   }
 
   .py-gutter {
-    padding: 0;
+    padding: 14px 10px;
     color: color-mix(in srgb, var(--py-muted) 75%, transparent);
     font-family: var(--py-mono);
     font-size: 0.95rem;
@@ -186,7 +186,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
   .py-gutter-inner {
     margin: 0;
-    padding: 14px 10px;
+    padding: 0;
     transform: translate3d(0, 0, 0);
     will-change: transform;
   }
