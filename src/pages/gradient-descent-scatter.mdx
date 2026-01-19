@@ -157,7 +157,7 @@ $$
   id="poly_reg_quadratic"
   title="Quadratic regression (least squares)"
   height={380}
-  autoRun={true}
+  autoRun={false}
   initialCode={`import warnings
 warnings.filterwarnings("ignore")
 
@@ -231,7 +231,7 @@ It is also solved by linear least squares using an appropriate polynomial design
   id="poly_reg_cubic"
   title="Cubic regression (least squares)"
   height={380}
-  autoRun={true}
+  autoRun={false}
   initialCode={`import warnings
 warnings.filterwarnings("ignore")
 
@@ -308,7 +308,7 @@ If you actually have 2D inputs $(x, y)$ and want a true bicubic surface, you nee
   id="poly_reg_deg5"
   title="Degree-5 polynomial regression (least squares)"
   height={380}
-  autoRun={true}
+  autoRun={false}
   initialCode={`import warnings
 warnings.filterwarnings("ignore")
 
@@ -381,7 +381,7 @@ Interpretation:
   id="poly_reg_l2_compare"
   title="Compare L2 error across models (same data)"
   height={340}
-  autoRun={true}
+  autoRun={false}
   initialCode={`import warnings
 warnings.filterwarnings("ignore")
 
@@ -398,11 +398,11 @@ y_true = 2.4 * x + 5.0 + 2.0 * np.sin(0.9 * x) + 0.12 * (x - 5.0) ** 2
 y = y_true + rng.normal(0, 1.8, size=n)
 
 def l2_error(y_true, y_pred):
-    # ||y - yhat||_2
-    return float(np.linalg.norm(y_true - y_pred, ord=2))
+  # ||y - yhat||_2
+  return float(np.linalg.norm(y_true - y_pred, ord=2))
 
 def rmse(y_true, y_pred):
-    return float(np.sqrt(np.mean((y_true - y_pred) ** 2)))
+  return float(np.sqrt(np.mean((y_true - y_pred) ** 2)))
 
 # ---- Fit models ----
 
@@ -429,10 +429,10 @@ d5, d4, d3, d2, d1, d0 = np.linalg.lstsq(X5, y, rcond=None)[0]
 yhat_deg5 = d5 * x**5 + d4 * x**4 + d3 * x**3 + d2 * x**2 + d1 * x + d0
 
 models = [
-    ("Linear", yhat_lin),
-    ("Quadratic", yhat_quad),
-    ("Cubic", yhat_cub),
-    ("Degree-5", yhat_deg5),
+  ("Linear", yhat_lin),
+  ("Quadratic", yhat_quad),
+  ("Cubic", yhat_cub),
+  ("Degree-5", yhat_deg5),
 ]
 
 # ---- Compute errors ----
@@ -440,75 +440,73 @@ labels = []
 l2s = []
 rmses = []
 for name, yhat in models:
-    labels.append(name)
-    l2s.append(l2_error(y, yhat))
-    rmses.append(rmse(y, yhat))
+  labels.append(name)
+  l2s.append(l2_error(y, yhat))
+  rmses.append(rmse(y, yhat))
 
 # Print a clean numeric summary
 print("Training-set errors (same data used to fit):")
 for name, l2v, rv in zip(labels, l2s, rmses):
-    print(f"{name:9s}  ||y - yhat||_2 = {l2v:8.3f}   RMSE = {rv:6.3f}")
+  print(f"{name:9s}  ||y - yhat||_2 = {l2v:8.3f}   RMSE = {rv:6.3f}")
 
 # Plot: L2 error bars
 # ---- Print summary (compact; avoids Pyodide stdout weirdness) ----
 df = pd.DataFrame({
-    "Model": labels,
-    "L2 ||y-ŷ||2": l2s,
-    "RMSE": rmses,
+  "Model": labels,
+  "L2 ||y-ŷ||2": l2s,
+  "RMSE": rmses,
 }).round({"L2 ||y-ŷ||2": 3, "RMSE": 3})
-print(df.to_string(index=False))
+# print(df.to_string(index=False))
 
 # ---- Cleaner plot: RMSE + value labels ----
-# ---- Modern thin bar plot: RMSE ----
+# ---- Modern plot: RMSE line + markers (inspired by the reference style) ----
 plt.rcParams.update({
-    "figure.dpi": 170,
-    "font.size": 11,
+  "figure.dpi": 170,
+  "font.size": 11
 })
 
-fig, ax = plt.subplots(figsize=(7.4, 3.0), layout="constrained")
+fig, ax = plt.subplots(figsize=(8.2, 3.4), layout="constrained")
 
 xpos = np.arange(len(labels))
-bars = ax.bar(xpos, rmses, width=0.38)  # thinner bars
+
+# line + round markers (use default matplotlib color cycle)
+ax.plot(
+    xpos, rmses,
+    linewidth=2.2,
+    marker="o",
+    markersize=6.5,
+)
 
 ax.set_title("Training RMSE across model classes", pad=10)
 ax.set_ylabel("RMSE")
 ax.set_xticks(xpos, labels)
 
-# Minimal spines
-for spine in ["top", "right", "left"]:
-    ax.spines[spine].set_visible(False)
+# Light grid (both directions) + softened axes
+ax.grid(True, which="major", axis="both", alpha=0.22, linewidth=1.0, color="#aaa")
 
-# Subtle y-grid only
-ax.grid(True, axis="y", alpha=0.18, linewidth=0.8)
+for spine in ["top", "right"]:
+  ax.spines[spine].set_visible(False)
+
+for spine in ["left", "bottom"]:
+  ax.spines[spine].set_color("#C9C9C9")
+  ax.spines[spine].set_linewidth(1.2)
+
+ax.tick_params(axis="both", colors="#6F6F6F")
 ax.tick_params(axis="y", length=0)
 
-# Headroom + value labels
-ymax = max(rmses)
-ax.set_ylim(0, ymax * 1.22)
+# Tight y-range + headroom for labels
+ymin, ymax = float(min(rmses)), float(max(rmses))
+pad = 0.18 * (ymax - ymin + 1e-12)
+ax.set_ylim(max(0, ymin - 0.35 * pad), ymax + 1.25 * pad)
 
-for b, v in zip(bars, rmses):
-    ax.text(
-        b.get_x() + b.get_width() / 2,
-        b.get_height() + ymax * 0.03,
-        f"{v:.2f}",
-        ha="center",
-        va="bottom",
-        fontsize=10,
-    )
+# Value labels above points
+for x_i, v in zip(xpos, rmses):
+  ax.text(x_i, v + 0.22 * pad, f"{v:.2f}", ha="center", va="bottom", fontsize=10, color="#444444")
+
+# Legend along the bottom (like the reference)
+ax.legend(["RMSE"], loc="upper center", bbox_to_anchor=(0.5, -0.18),
+          frameon=False, ncol=1, handlelength=2.5)
 
 plt.show()
-
 `}
 />
-
-
----
-
-## 7. Takeaways
-
-- Linear regression underfits when $E[y|x]$ is nonlinear.
-- Polynomial features reduce bias by expanding the model class.
-- Higher-degree polynomials can overfit, especially when noise is nontrivial.
-- “Bicubic” is not a meaningful label in 1D regression; it is fundamentally a 2D gridded interpolation concept.
-
----
