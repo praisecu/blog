@@ -9,18 +9,20 @@ function indent(depth) {
 
 <!-- Desktop TOC -->
 <nav class="toc toc-desktop" aria-label="Table of contents">
-  <div class="toc-title">CONTENTS</div>
+  <div class="toc-inner">
+    <div class="toc-title">CONTENTS</div>
 
-  {filtered.map((h) => (
-    <a
-      class="toc-link"
-      href={`#${h.slug}`}
-      style={`margin-left:${indent(h.depth)};`}
-      data-toc-link
-    >
-      {h.text}
-    </a>
-  ))}
+    {filtered.map((h) => (
+      <a
+        class="toc-link"
+        href={`#${h.slug}`}
+        style={`margin-left:${indent(h.depth)};`}
+        data-toc-link
+      >
+        {h.text}
+      </a>
+    ))}
+  </div>
 </nav>
 
 <!-- Mobile TOC (collapsible) -->
@@ -95,13 +97,25 @@ function indent(depth) {
   }
 
   /* ------- Responsive TOC behavior ------- */
-  .toc-desktop { display: block;
+  .toc-desktop {
+    display: block;
+
+    /* Sticky sidebar that vertically centers its contents (desktop only). */
     position: sticky;
-    top: 50vh;
-    transform: translateY(-50%);
-    max-height: calc(100vh - 2rem);
+    top: 0;
+    height: 100vh;
+    padding: 16px 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .toc-inner {
+    max-height: calc(100vh - 32px);
     overflow: auto;
-   }
+  }
+
   .toc-mobile { display: none; }
 
   @media (max-width: 980px) {
