@@ -1,8 +1,8 @@
 ---
 layout: ../layouts/PostLayout.astro
-title: "Linear vs. Polynomial Regression in the Browser"
+title: "Linear/Non-Linear Regression in the Browser"
 author: "Chahat Deep Singh"
-description: "Fit and visualize linear, quadratic, cubic, and degree-5 polynomial regressions on mildly nonlinear data using Pyodide."
+description: "Fit and visualize linear, quadratic, cubic, and degree-5 polynomial regressions on mildly nonlinear data"
 date: "January 18, 2026"
 tags: ["machine-learning", "regression", "least-squares", "pyodide"]
 featured: true
@@ -17,9 +17,9 @@ This example demonstrates how increasingly flexible polynomial models behave whe
 1. Linear regression (ordinary least squares)
 2. Quadratic regression (least squares)
 3. Cubic regression (least squares)
-4. Degree-5 polynomial regression (used here in place of 1D “bicubic”)
+4. Degree-5 polynomial regression
 
-All models are fitted to the *same dataset* (same RNG seed and generation procedure). In every plot, the fitted curve is drawn in a **golden line** (Matplotlib color name `goldenrod`) to visually distinguish it from the scatter.
+All models are fitted to the *same dataset* (same RNG seed and generation procedure). In every plot, the fitted curve is drawn in a **golden line** to visually distinguish it from the scatter.
 
 ---
 
@@ -48,7 +48,7 @@ $$
 \hat y = \beta_1 x + \beta_0
 $$
 
-Parameters are computed using the closed-form OLS solution:
+Parameters are computed using the closed-form least square solution:
 
 $$
 \beta_1 = \frac{\sum (x_i - \bar x)(y_i - \bar y)}{\sum (x_i - \bar x)^2},
@@ -63,7 +63,7 @@ $$
 
 <PyodideRunner
   id="poly_reg_linear"
-  title="Linear regression (OLS)"
+  title="Linear regression"
   height={380}
   autoRun={true}
   initialCode={`import warnings
@@ -87,7 +87,7 @@ def r2_score(y_true, y_pred):
     ss_res = np.sum((y_true - y_pred) ** 2)
     return 1.0 - ss_res / ss_tot
 
-# Closed-form OLS
+# Closed-form LEast Square Solution:
 x_mean = x.mean()
 y_mean = y.mean()
 b1 = np.sum((x - x_mean) * (y - y_mean)) / np.sum((x - x_mean) ** 2)
@@ -108,7 +108,7 @@ plt.rcParams.update({
 fig, ax = plt.subplots(1, 1, figsize=(8.4, 4.6), layout="constrained")
 ax.scatter(x, y, s=34, alpha=0.78, edgecolors="white", linewidths=0.8, label="data")
 ax.plot(x_line, y_line, linewidth=2.6, color="goldenrod", label="fit")
-ax.set_title("Linear Regression (OLS)")
+ax.set_title("Linear Regression")
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.grid(True, alpha=0.25)
@@ -287,9 +287,7 @@ plt.show()
 
 ---
 
-## 5. Degree-5 Polynomial (Used Here Instead of 1D “Bicubic”)
-
-Important clarification: **bicubic interpolation is a 2D gridded interpolation method** and is not a standard term for 1D polynomial regression. With a single scalar input $x$, there is no distinct notion of “bicubic regression.”
+## 5. Degree-5 Polynomial 
 
 To satisfy the intent (a more flexible model than cubic) in a 1D setting, we use a degree-5 polynomial:
 
@@ -302,7 +300,6 @@ $$
 - Increased risk of fitting noise rather than the underlying signal.
 - This model is included to illustrate the bias–variance tradeoff.
 
-If you actually have 2D inputs $(x, y)$ and want a true bicubic surface, you need a 2D gridded model/interpolant (or a 2D regression surface) rather than a 1D polynomial.
 
 <PyodideRunner
   id="poly_reg_deg5"
@@ -405,7 +402,7 @@ def rmse(y_true, y_pred):
 
 # ---- Fit models ----
 
-# Linear (closed-form OLS)
+# Linear (closed-form Least Square Solution)
 x_mean = x.mean()
 y_mean = y.mean()
 b1 = np.sum((x - x_mean) * (y - y_mean)) / np.sum((x - x_mean) ** 2)
