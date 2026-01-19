@@ -21,8 +21,12 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     <div class="py-body">
       <div class="py-editorwrap" style={`height:${height}px`}>
         <div class="py-codepane">
+          <!-- Line numbers (non-interactive, synced to textarea scroll via transform) -->
+          <div class="py-gutter" aria-hidden="true"><pre class="py-linenos"></pre></div>
+
           <!-- Highlight layer -->
           <pre class="py-highlight" aria-hidden="true"><code class="language-python"></code></pre>
+
           <!-- Input layer -->
           <textarea class="py-editor" wrap="off" spellcheck="false">{initialCode}</textarea>
         </div>
@@ -61,6 +65,11 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     --py-shadow: 0 12px 30px rgba(0,0,0,0.10);
     --py-selection: rgba(37, 99, 235, 0.22);
 
+    --py-pad-x: 14px;
+    --py-pad-y: 14px;
+    --py-gutter-w: 3.25rem;
+    --py-linenum: color-mix(in srgb, var(--py-muted) 78%, var(--py-token-function) 22%);
+
     --py-scroll-track: rgba(0,0,0,0.04);
     --py-scroll-thumb: rgba(0,0,0,0.22);
     --py-scroll-thumb-hover: rgba(0,0,0,0.32);
@@ -89,6 +98,8 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     --py-muted: rgba(255,255,255,0.68);
     --py-shadow: 0 12px 30px rgba(0,0,0,0.35);
     --py-selection: rgba(130,170,255,0.35);
+
+    --py-linenum: color-mix(in srgb, var(--py-muted) 78%, var(--py-token-function) 22%);
 
     --py-scroll-track: rgba(255,255,255,0.04);
     --py-scroll-thumb: rgba(255,255,255,0.28);
@@ -163,11 +174,35 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
   .py-codepane { position: relative; overflow: hidden; }
 
+  .py-gutter {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--py-gutter-w);
+    border-right: 1px solid var(--py-border-2);
+    background: color-mix(in srgb, var(--py-panel-2) 92%, transparent);
+    pointer-events: none;
+    overflow: hidden; /* prevent independent scrolling */
+    z-index: 2;
+  }
+  .py-linenos {
+    margin: 0;
+    padding: var(--py-pad-y) 10px var(--py-pad-y) 10px;
+    font-family: var(--py-mono);
+    font-size: 0.95rem;
+    line-height: 1.45;
+    tab-size: 4;
+    white-space: pre;
+    text-align: right;
+    color: var(--py-linenum);
+    user-select: none;
+    will-change: transform;
+  }
+
   .py-highlight, .py-editor {
     position: absolute;
     inset: 0;
     margin: 0;
-    padding: 14px 14px;
+    padding: var(--py-pad-y) var(--py-pad-x) var(--py-pad-y) calc(var(--py-pad-x) + var(--py-gutter-w));
     font-family: var(--py-mono);
     font-size: 0.95rem;
     line-height: 1.45;
@@ -310,6 +345,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     const editor = root.querySelector(".py-editor");
     const highlightPre = root.querySelector(".py-highlight");
     const highlightCode = root.querySelector(".py-highlight code");
+    const gutterPre = root.querySelector(".py-linenos");
 
     const btn = root.querySelector(".py-run");
     const copyBtn = root.querySelector(".py-copy");
@@ -376,6 +412,28 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       highlightPre.style.paddingRight = pr;
       highlightPre.style.paddingBottom = pb;
       highlightPre.style.paddingLeft = pl;
+
+      // Gutter should match vertical metrics (but not the text padding-left that
+      // includes the gutter width).
+      if (gutterPre) {
+        gutterPre.style.lineHeight = lh;
+        gutterPre.style.fontSize = fs;
+        gutterPre.style.fontFamily = ff;
+        gutterPre.style.paddingTop = pt;
+        gutterPre.style.paddingBottom = pb;
+      }
+    }
+
+    let lastLineCount = 0;
+    function updateLineNumbers() {
+      if (!gutterPre) return;
+      // Split preserves trailing empty line when text ends with \n
+      const n = editor.value.split("\n").length;
+      if (n === lastLineCount) return;
+      lastLineCount = n;
+      let out = "";
+      for (let i = 1; i <= n; i++) out += i + "\n";
+      gutterPre.textContent = out;
     }
 
     function syncScroll() {
@@ -386,6 +444,10 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       // caret/click mapping stable under zoom and fractional line heights.
       if (highlightCode) {
         highlightCode.style.transform = `translate(${-x}px, ${-y}px)`;
+      }
+
+      if (gutterPre) {
+        gutterPre.style.transform = `translateY(${-y}px)`;
       }
     }
 
@@ -406,7 +468,11 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       highlightCode.innerHTML = window.Prism.highlight(code, window.Prism.languages.python, "python");
     }
 
-    editor.addEventListener("input", async () => { await renderHighlight(); syncScroll(); });
+    editor.addEventListener("input", async () => {
+      updateLineNumbers();
+      await renderHighlight();
+      syncScroll();
+    });
     editor.addEventListener("scroll", syncScroll);
 
     // Focus mode: show native textarea rendering for perfect caret/selection.
@@ -441,6 +507,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
     // Initialize
     syncMetrics();
+    updateLineNumbers();
     await renderHighlight();
     syncScroll();
     refreshPanels();
