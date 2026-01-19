@@ -578,7 +578,7 @@ class _Writer:
         s = str(s)
         if not s:
             return
-        __js_stdout__(s)  # preserve exactly what Python emits (including \n)
+        __js_stdout__(s)  # preserve exactly what Python emits (including \\n)
     def flush(self):
         return
 
