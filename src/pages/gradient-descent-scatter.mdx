@@ -10,9 +10,128 @@ featured: false
 
 import PyodideRunner from "../components/PyodideRunner.astro";
 
-## Minimal interactive cell
+# From Two Points → Linear Regression → Polynomial Regression (Degree 2 vs Degree 6)
 
-If this cell works on your site, your Pyodide integration is functioning. Then we can add gradient descent on top.
+This mini-demo shows three increasingly general ways to model a relationship between **x** and **y**:
+
+1. **A line from two exact points** (deterministic geometry)
+2. **Linear regression on noisy data** (best-fit line)
+3. **Polynomial regression on noisy quadratic data** (best-fit curve), comparing **degree 2** (correct model class) vs **degree 6** (more flexible)
+
+---
+
+## 1) Line through two points (no learning)
+
+Given two points \((x_1, y_1)\) and \((x_2, y_2)\), the unique line (if \(x_1 \neq x_2\)) is:
+
+\[
+m = \frac{y_2 - y_1}{x_2 - x_1}, \quad b = y_1 - mx_1, \quad y = mx + b
+\]
+
+This is *not* regression—there is no notion of noise or “best fit.” The line is fully determined.
+
+**Important edge case:** if \(x_1 = x_2\), the line is vertical and cannot be written as \(y = mx + b\).
+
+---
+
+## 2) Linear regression (degree 1) on 100 noisy samples
+
+Now we assume the data is noisy, e.g.
+
+\[
+y = 3x - 1 + \epsilon,\quad \epsilon \sim \mathcal{N}(0,\sigma^2)
+\]
+
+A line won’t pass through all points (because of noise), so we learn parameters \(\theta = [b, m]^T\) that minimize squared error:
+
+\[
+\min_{\theta} \|X\theta - y\|_2^2
+\]
+
+with the design matrix:
+
+\[
+X = \begin{bmatrix}
+1 & x_1 \\
+1 & x_2 \\
+\vdots & \vdots \\
+1 & x_N
+\end{bmatrix}
+\]
+
+This is the classic least-squares solution (computed via `np.linalg.lstsq`).
+
+---
+
+## 3) Quadratic regression (degree 2) on quadratic data
+
+Next we generate data from a quadratic ground truth:
+
+\[
+y = ax^2 + bx + c + \epsilon
+\]
+
+Polynomial regression of degree 2 fits:
+
+\[
+y \approx c + bx + ax^2
+\]
+
+with design matrix:
+
+\[
+X = \begin{bmatrix}
+1 & x_1 & x_1^2 \\
+1 & x_2 & x_2^2 \\
+\vdots & \vdots & \vdots \\
+1 & x_N & x_N^2
+\end{bmatrix}
+\]
+
+This model class matches the data-generating process, so it typically fits well and generalizes well.
+
+---
+
+## 4) Degree-6 polynomial regression on the same quadratic data
+
+We then fit a higher-degree model:
+
+\[
+y \approx \theta_0 + \theta_1 x + \theta_2 x^2 + \cdots + \theta_6 x^6
+\]
+
+This is still solved with the same least-squares machinery—only the feature map changes to include higher powers of \(x\).
+
+### Why do this?
+Because it illustrates a key point:
+
+- **Higher degree ⇒ more flexibility**
+- More flexibility can reduce training error
+- But it can also fit noise (unnecessary wiggles), i.e., **overfitting**
+
+Even when the *true* relationship is quadratic, a 6th-degree polynomial can start modeling random fluctuations rather than the underlying signal—especially near the boundaries of the sampled x-range.
+
+---
+
+## What the 4 subplots show
+
+1. **Line through two points**: exact geometric line.
+2. **Linear regression**: best-fit line through noisy linear samples.
+3. **Degree-2 polynomial regression**: best-fit quadratic curve through noisy quadratic samples.
+4. **Degree-6 polynomial regression**: a more flexible curve fit to the same data (may overfit).
+
+---
+
+## Key conceptual punchline
+
+Polynomial regression is still “linear regression” in the *parameter* sense:
+
+- The model can be nonlinear in \(x\)
+- But it is linear in the coefficients \(\theta\)
+- So we can solve it with linear least squares as long as we build the right feature matrix \(X\)
+
+---
+
 
 <PyodideRunner
   id="gd_scatter_demo"
