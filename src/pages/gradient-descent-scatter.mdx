@@ -12,14 +12,14 @@ import PyodideRunner from "../components/PyodideRunner.astro";
 
 # Linear vs. Nonlinear Regression
 
-This example demonstrates how increasingly flexible polynomial models behave when the underlying data-generating process is **mildly nonlinear**. The visualization consists of **four vertically stacked subplots**:
+This example demonstrates how increasingly flexible polynomial models behave when the underlying data-generating process is **mildly nonlinear**. Instead of one stacked figure, we place a plot immediately after each model section:
 
 1. Linear regression (ordinary least squares)
 2. Quadratic regression (least squares)
 3. Cubic regression (least squares)
 4. Degree-5 polynomial regression (used here in place of 1D “bicubic”)
 
-All models are fitted to the *same dataset*. In every subplot, the fitted curve is drawn in a **golden line** (Matplotlib color name `goldenrod`) to visually distinguish it from the scatter.
+All models are fitted to the *same dataset* (same RNG seed and generation procedure). In every plot, the fitted curve is drawn in a **golden line** (Matplotlib color name `goldenrod`) to visually distinguish it from the scatter.
 
 ---
 
@@ -61,6 +61,68 @@ $$
 - Leaves structured residuals due to misspecification (nonlinearity).
 - Typically exhibits lower $R^2$ than higher-order polynomials here.
 
+<PyodideRunner
+  id="poly_reg_linear"
+  title="Linear regression (OLS)"
+  height={380}
+  autoRun={true}
+  initialCode={`import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Data (same in every section)
+rng = np.random.default_rng(0)
+n = 220
+x = np.sort(rng.uniform(0, 10, size=n))
+
+y_true = 2.4 * x + 5.0 + 2.0 * np.sin(0.9 * x) + 0.12 * (x - 5.0) ** 2
+y = y_true + rng.normal(0, 1.8, size=n)
+
+def r2_score(y_true, y_pred):
+    y_bar = np.mean(y_true)
+    ss_tot = np.sum((y_true - y_bar) ** 2)
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    return 1.0 - ss_res / ss_tot
+
+# Closed-form OLS
+x_mean = x.mean()
+y_mean = y.mean()
+b1 = np.sum((x - x_mean) * (y - y_mean)) / np.sum((x - x_mean) ** 2)
+b0 = y_mean - b1 * x_mean
+
+# Predictions
+x_line = np.linspace(x.min(), x.max(), 600)
+y_line = b0 + b1 * x_line
+r2 = r2_score(y, b0 + b1 * x)
+
+plt.rcParams.update({
+    "figure.dpi": 140,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "font.size": 11,
+})
+
+fig, ax = plt.subplots(1, 1, figsize=(8.4, 4.6), layout="constrained")
+ax.scatter(x, y, s=34, alpha=0.78, edgecolors="white", linewidths=0.8, label="data")
+ax.plot(x_line, y_line, linewidth=2.6, color="goldenrod", label="fit")
+ax.set_title("Linear Regression (OLS)")
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.grid(True, alpha=0.25)
+ax.text(
+    0.02, 0.98,
+    f"$\\\\hat y = {b1:.3f}x + {b0:.3f}$\\n$R^2 = {r2:.3f}$",
+    transform=ax.transAxes, va="top", ha="left",
+    bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.92, linewidth=0.0),
+)
+ax.legend(frameon=False, loc="lower right")
+plt.show()
+`}
+/>
+
 ---
 
 ## 3. Quadratic Regression
@@ -91,6 +153,64 @@ $$
 - Better captures curvature than the linear model.
 - Higher $R^2$ in this dataset (on training data).
 
+<PyodideRunner
+  id="poly_reg_quadratic"
+  title="Quadratic regression (least squares)"
+  height={380}
+  autoRun={true}
+  initialCode={`import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Data (same in every section)
+rng = np.random.default_rng(0)
+n = 220
+x = np.sort(rng.uniform(0, 10, size=n))
+
+y_true = 2.4 * x + 5.0 + 2.0 * np.sin(0.9 * x) + 0.12 * (x - 5.0) ** 2
+y = y_true + rng.normal(0, 1.8, size=n)
+
+def r2_score(y_true, y_pred):
+    y_bar = np.mean(y_true)
+    ss_tot = np.sum((y_true - y_bar) ** 2)
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    return 1.0 - ss_res / ss_tot
+
+# Least squares quadratic
+X2 = np.column_stack([x**2, x, np.ones_like(x)])
+a2, a1, a0 = np.linalg.lstsq(X2, y, rcond=None)[0]
+
+x_line = np.linspace(x.min(), x.max(), 600)
+y_line = a2 * x_line**2 + a1 * x_line + a0
+r2 = r2_score(y, a2 * x**2 + a1 * x + a0)
+
+plt.rcParams.update({
+    "figure.dpi": 140,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "font.size": 11,
+})
+
+fig, ax = plt.subplots(1, 1, figsize=(8.4, 4.6), layout="constrained")
+ax.scatter(x, y, s=34, alpha=0.78, edgecolors="white", linewidths=0.8, label="data")
+ax.plot(x_line, y_line, linewidth=2.6, color="goldenrod", label="fit")
+ax.set_title("Quadratic Regression (Least Squares)")
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.grid(True, alpha=0.25)
+ax.text(
+    0.02, 0.98,
+    f"$\\\\hat y = {a2:.3f}x^2 + {a1:.3f}x + {a0:.3f}$\\n$R^2 = {r2:.3f}$",
+    transform=ax.transAxes, va="top", ha="left",
+    bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.92, linewidth=0.0),
+)
+ax.legend(frameon=False, loc="lower right")
+plt.show()
+`}
+/>
+
 ---
 
 ## 4. Cubic Regression
@@ -106,6 +226,64 @@ It is also solved by linear least squares using an appropriate polynomial design
 ### What to expect
 - More flexible than quadratic.
 - Can follow subtle structure better, but increased flexibility can also fit noise if pushed too far.
+
+<PyodideRunner
+  id="poly_reg_cubic"
+  title="Cubic regression (least squares)"
+  height={380}
+  autoRun={true}
+  initialCode={`import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Data (same in every section)
+rng = np.random.default_rng(0)
+n = 220
+x = np.sort(rng.uniform(0, 10, size=n))
+
+y_true = 2.4 * x + 5.0 + 2.0 * np.sin(0.9 * x) + 0.12 * (x - 5.0) ** 2
+y = y_true + rng.normal(0, 1.8, size=n)
+
+def r2_score(y_true, y_pred):
+    y_bar = np.mean(y_true)
+    ss_tot = np.sum((y_true - y_bar) ** 2)
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    return 1.0 - ss_res / ss_tot
+
+# Least squares cubic
+X3 = np.column_stack([x**3, x**2, x, np.ones_like(x)])
+c3, c2, c1, c0 = np.linalg.lstsq(X3, y, rcond=None)[0]
+
+x_line = np.linspace(x.min(), x.max(), 600)
+y_line = c3 * x_line**3 + c2 * x_line**2 + c1 * x_line + c0
+r2 = r2_score(y, c3 * x**3 + c2 * x**2 + c1 * x + c0)
+
+plt.rcParams.update({
+    "figure.dpi": 140,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "font.size": 11,
+})
+
+fig, ax = plt.subplots(1, 1, figsize=(8.4, 4.6), layout="constrained")
+ax.scatter(x, y, s=34, alpha=0.78, edgecolors="white", linewidths=0.8, label="data")
+ax.plot(x_line, y_line, linewidth=2.6, color="goldenrod", label="fit")
+ax.set_title("Cubic Regression (Least Squares)")
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.grid(True, alpha=0.25)
+ax.text(
+    0.02, 0.98,
+    f"$\\\\hat y = {c3:.3f}x^3 + {c2:.3f}x^2 + {c1:.3f}x + {c0:.3f}$\\n$R^2 = {r2:.3f}$",
+    transform=ax.transAxes, va="top", ha="left",
+    bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.92, linewidth=0.0),
+)
+ax.legend(frameon=False, loc="lower right")
+plt.show()
+`}
+/>
 
 ---
 
@@ -126,11 +304,69 @@ $$
 
 If you actually have 2D inputs $(x, y)$ and want a true bicubic surface, you need a 2D gridded model/interpolant (or a 2D regression surface) rather than a 1D polynomial.
 
+<PyodideRunner
+  id="poly_reg_deg5"
+  title="Degree-5 polynomial regression (least squares)"
+  height={380}
+  autoRun={true}
+  initialCode={`import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Data (same in every section)
+rng = np.random.default_rng(0)
+n = 220
+x = np.sort(rng.uniform(0, 10, size=n))
+
+y_true = 2.4 * x + 5.0 + 2.0 * np.sin(0.9 * x) + 0.12 * (x - 5.0) ** 2
+y = y_true + rng.normal(0, 1.8, size=n)
+
+def r2_score(y_true, y_pred):
+    y_bar = np.mean(y_true)
+    ss_tot = np.sum((y_true - y_bar) ** 2)
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    return 1.0 - ss_res / ss_tot
+
+# Least squares degree-5
+X5 = np.column_stack([x**5, x**4, x**3, x**2, x, np.ones_like(x)])
+d5, d4, d3, d2, d1, d0 = np.linalg.lstsq(X5, y, rcond=None)[0]
+
+x_line = np.linspace(x.min(), x.max(), 600)
+y_line = d5 * x_line**5 + d4 * x_line**4 + d3 * x_line**3 + d2 * x_line**2 + d1 * x_line + d0
+r2 = r2_score(y, d5 * x**5 + d4 * x**4 + d3 * x**3 + d2 * x**2 + d1 * x + d0)
+
+plt.rcParams.update({
+    "figure.dpi": 140,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "font.size": 11,
+})
+
+fig, ax = plt.subplots(1, 1, figsize=(8.4, 4.6), layout="constrained")
+ax.scatter(x, y, s=34, alpha=0.78, edgecolors="white", linewidths=0.8, label="data")
+ax.plot(x_line, y_line, linewidth=2.6, color="goldenrod", label="fit")
+ax.set_title("Degree-5 Polynomial Regression (Least Squares)")
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.grid(True, alpha=0.25)
+ax.text(
+    0.02, 0.98,
+    f"$\\\\hat y = {d5:.3f}x^5 + {d4:.3f}x^4 + {d3:.3f}x^3 + {d2:.3f}x^2 + {d1:.3f}x + {d0:.3f}$\\n$R^2 = {r2:.3f}$",
+    transform=ax.transAxes, va="top", ha="left",
+    bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.92, linewidth=0.0),
+)
+ax.legend(frameon=False, loc="lower right")
+plt.show()
+`}
+/>
+
 ---
 
 ## 6. Evaluation Metric: $R^2$
 
-Each subplot reports $R^2$:
+Each plot reports **training** $R^2$ on the same data used to fit:
 
 $$
 R^2 = 1 - \frac{\sum (y_i - \hat y_i)^2}{\sum (y_i - \bar y)^2}
@@ -148,126 +384,5 @@ Interpretation:
 - Polynomial features reduce bias by expanding the model class.
 - Higher-degree polynomials can overfit, especially when noise is nontrivial.
 - “Bicubic” is not a meaningful label in 1D regression; it is fundamentally a 2D gridded interpolation concept.
-
----
-
-<PyodideRunner
-  id="poly_reg_demo"
-  title="Linear vs polynomial regression (4 fits)"
-  height={480}
-  autoRun={true}
-  initialCode={`import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
-# Reproducibility
-rng = np.random.default_rng(0)
-n = 220
-
-# Data: x in [0, 10], mildly nonlinear y with noise
-df = pd.DataFrame({"x": np.sort(rng.uniform(0, 10, size=n))})
-x = df["x"].to_numpy()
-
-y_true = 2.4 * x + 5.0 + 2.0 * np.sin(0.9 * x) + 0.12 * (x - 5.0) ** 2
-y = y_true + rng.normal(0, 1.8, size=n)
-df["y"] = y
-
-def r2_score(y_true, y_pred):
-    y_bar = np.mean(y_true)
-    ss_tot = np.sum((y_true - y_bar) ** 2)
-    ss_res = np.sum((y_true - y_pred) ** 2)
-    return 1.0 - ss_res / ss_tot
-
-# Linear (closed-form OLS)
-x_mean = x.mean()
-y_mean = y.mean()
-b1 = np.sum((x - x_mean) * (y - y_mean)) / np.sum((x - x_mean) ** 2)
-b0 = y_mean - b1 * x_mean
-
-# Quadratic (least squares)
-X2 = np.column_stack([x**2, x, np.ones_like(x)])
-a2, a1, a0 = np.linalg.lstsq(X2, y, rcond=None)[0]
-
-# Cubic (least squares)
-X3 = np.column_stack([x**3, x**2, x, np.ones_like(x)])
-c3, c2, c1, c0 = np.linalg.lstsq(X3, y, rcond=None)[0]
-
-# Degree-5 (stand-in for 1D "bicubic")
-X5 = np.column_stack([x**5, x**4, x**3, x**2, x, np.ones_like(x)])
-d5, d4, d3, d2, d1, d0 = np.linalg.lstsq(X5, y, rcond=None)[0]
-
-# Smooth line for plotting
-x_line = np.linspace(x.min(), x.max(), 600)
-y_lin  = b0 + b1 * x_line
-y_quad = a2 * x_line**2 + a1 * x_line + a0
-y_cub  = c3 * x_line**3 + c2 * x_line**2 + c1 * x_line + c0
-y_deg5 = d5 * x_line**5 + d4 * x_line**4 + d3 * x_line**3 + d2 * x_line**2 + d1 * x_line + d0
-
-# Training R^2 (on the same data used to fit)
-r2_lin  = r2_score(y, b0 + b1 * x)
-r2_quad = r2_score(y, a2 * x**2 + a1 * x + a0)
-r2_cub  = r2_score(y, c3 * x**3 + c2 * x**2 + c1 * x + c0)
-r2_deg5 = r2_score(y, d5 * x**5 + d4 * x**4 + d3 * x**3 + d2 * x**2 + d1 * x + d0)
-
-plt.rcParams.update({
-    "figure.dpi": 140,
-    "axes.spines.top": False,
-    "axes.spines.right": False,
-    "font.size": 11,
-})
-
-fig, ax = plt.subplots(4, 1, figsize=(8.4, 13.0), sharex=True, layout="constrained")
-
-def draw_panel(ax_i, title, y_fit_line, eq_text):
-    ax_i.scatter(
-        x, y,
-        s=34, alpha=0.78,
-        edgecolors="white", linewidths=0.8,
-        label="data"
-    )
-    ax_i.plot(x_line, y_fit_line, linewidth=2.6, color="goldenrod", label="fit")
-    ax_i.set_title(title)
-    ax_i.set_ylabel("y")
-    ax_i.grid(True, alpha=0.25)
-    ax_i.text(
-        0.02, 0.98, eq_text,
-        transform=ax_i.transAxes,
-        va="top", ha="left",
-        bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.92, linewidth=0.0),
-    )
-    ax_i.legend(frameon=False, loc="lower right")
-
-draw_panel(
-    ax[0],
-    "Linear Regression (OLS)",
-    y_lin,
-    f"$\\\\hat y = {b1:.3f}x + {b0:.3f}$\\n$R^2 = {r2_lin:.3f}$",
-)
-
-draw_panel(
-    ax[1],
-    "Quadratic Regression (Least Squares)",
-    y_quad,
-    f"$\\\\hat y = {a2:.3f}x^2 + {a1:.3f}x + {a0:.3f}$\\n$R^2 = {r2_quad:.3f}$",
-)
-
-draw_panel(
-    ax[2],
-    "Cubic Regression (Least Squares)",
-    y_cub,
-    f"$\\\\hat y = {c3:.3f}x^3 + {c2:.3f}x^2 + {c1:.3f}x + {c0:.3f}$\\n$R^2 = {r2_cub:.3f}$",
-)
-
-draw_panel(
-    ax[3],
-    "Degree-5 Polynomial (used here in place of 1D 'bicubic')",
-    y_deg5,
-    f"$\\\\hat y = {d5:.3f}x^5 + {d4:.3f}x^4 + {d3:.3f}x^3 + {d2:.3f}x^2 + {d1:.3f}x + {d0:.3f}$\\n$R^2 = {r2_deg5:.3f}$",
-)
-
-ax[3].set_xlabel("x")
-plt.show()
-`}
- />
 
 ---
