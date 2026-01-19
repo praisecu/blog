@@ -1,12 +1,5 @@
 ---
-const {
-  title = "Python (Pyodide)",
-  initialCode = "",
-  height = 240,
-  id,
-  packages = ["numpy", "matplotlib", "scipy", "pandas"],
-} = Astro.props;
-
+const { title = "Python (Pyodide)", initialCode = "", height = 240, id } = Astro.props;
 const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 ---
 
@@ -27,7 +20,14 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
     <div class="py-body">
       <div class="py-editorwrap" style={`height:${height}px`}>
-        <div class="py-cm" data-initial-code={initialCode}></div>
+        <div class="py-gutter" aria-hidden="true"></div>
+
+        <div class="py-codepane">
+          <!-- Highlight layer -->
+          <pre class="py-highlight" aria-hidden="true"><code class="language-python"></code></pre>
+          <!-- Input layer -->
+          <textarea class="py-editor" wrap="off" spellcheck="false">{initialCode}</textarea>
+        </div>
       </div>
 
       <div class="py-actions">
@@ -46,40 +46,19 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 </section>
 
 <style>
-  /* Theme variables (same as your theme-aware runner) */
-  :global(:root) {
-    --py-surface: #ffffff;
-    --py-surface-2: #f6f7f9;
-    --py-panel: #ffffff;
-    --py-panel-2: #f3f4f6;
-    --py-border: rgba(0,0,0,0.12);
-    --py-border-2: rgba(0,0,0,0.10);
-    --py-text: rgba(17,24,39,0.94);
-    --py-muted: rgba(17,24,39,0.60);
-    --py-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --py-shadow: 0 12px 30px rgba(0,0,0,0.10);
-  }
-  :global([data-theme="dark"]) {
-    --py-surface: #0f1117;
-    --py-surface-2: #0b0d12;
-    --py-panel: #0f1117;
-    --py-panel-2: #0b0d12;
-    --py-border: rgba(255,255,255,0.14);
-    --py-border-2: rgba(255,255,255,0.10);
-    --py-text: rgba(255,255,255,0.92);
-    --py-muted: rgba(255,255,255,0.68);
-    --py-shadow: 0 12px 30px rgba(0,0,0,0.35);
-  }
-
   .py-runner { margin: 1.5rem 0; }
   .py-title { margin: 0 0 0.75rem 0; }
 
   .py-window {
     border-radius: 14px;
-    border: 1px solid var(--py-border);
+    border: 1px solid rgba(0,0,0,0.16);
     overflow: hidden;
-    background: var(--py-surface);
-    box-shadow: var(--py-shadow);
+    background: #0f1117;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+  }
+  :global([data-theme="dark"]) .py-window {
+    border-color: rgba(255,255,255,0.14);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
   }
 
   .py-windowbar {
@@ -87,14 +66,14 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     align-items: center;
     justify-content: space-between;
     padding: 10px 12px;
-    background: color-mix(in srgb, var(--py-surface) 92%, transparent);
-    border-bottom: 1px solid var(--py-border-2);
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
   }
 
   .py-windowtitle {
     font-size: 0.85rem;
     letter-spacing: 0.02em;
-    color: var(--py-muted);
+    color: rgba(255,255,255,0.72);
     user-select: none;
   }
 
@@ -104,86 +83,154 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     gap: 8px;
     padding: 6px 10px;
     border-radius: 999px;
-    border: 1px solid var(--py-border-2);
-    background: color-mix(in srgb, var(--py-surface) 90%, transparent);
-    color: var(--py-text);
+    border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.9);
     cursor: pointer;
     font-weight: 600;
     font-size: 0.9rem;
   }
-  .py-copy:hover { background: color-mix(in srgb, var(--py-surface) 82%, transparent); }
+  .py-copy:hover { background: rgba(255,255,255,0.10); }
   .py-copy:disabled { opacity: 0.7; cursor: default; }
 
   .py-body { padding: 14px; display: grid; gap: 12px; }
 
+  /* Editor frame */
   .py-editorwrap {
+    display: grid;
+    grid-template-columns: 52px 1fr;
     border-radius: 12px;
-    border: 1px solid var(--py-border-2);
-    background: var(--py-panel-2);
+    border: 1px solid rgba(255,255,255,0.10);
+    background: #0b0d12;
     overflow: hidden;
   }
 
-  .py-cm { height: 100%; }
-
-  /* CodeMirror theme bridging */
-  :global(.cm-editor) {
-    height: 100%;
-    font-family: var(--py-mono);
+  .py-gutter {
+    padding: 14px 10px;
+    color: rgba(255,255,255,0.42);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 0.95rem;
+    line-height: 1.45;
+    text-align: right;
+    user-select: none;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    white-space: pre;
+    overflow: hidden;
   }
-  :global(.cm-scroller) { font-family: var(--py-mono); }
 
-  /* Make CM blend with container */
-  :global(.cm-editor.cm-focused) { outline: none; }
-  :global(.cm-editor) { background: transparent; }
-  :global(.cm-gutters) {
-    background: transparent !important;
-    border-right: 1px solid var(--py-border-2);
-    color: color-mix(in srgb, var(--py-muted) 75%, transparent);
+  .py-codepane {
+    position: relative;
+    overflow: hidden;
   }
+
+  .py-highlight, .py-editor {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 14px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    tab-size: 4;
+    white-space: pre;
+  }
+
+  .py-highlight {
+    overflow: hidden;
+    pointer-events: none;
+    color: rgba(255,255,255,0.92);
+  }
+  .py-highlight code { display: block; }
+
+  .py-editor {
+    border: 0;
+    outline: none;
+    resize: none;
+    background: transparent;
+    overflow: auto;
+    /* hide text but keep caret/selection */
+    color: transparent;
+    caret-color: rgba(255,255,255,0.92);
+  }
+  .py-editor::selection { background: rgba(130,170,255,0.35); }
+
+  .py-editorwrap:has(.py-editor:focus) {
+    border-color: rgba(130,170,255,0.55);
+    box-shadow: 0 0 0 3px rgba(130,170,255,0.18);
+  }
+
+    /* Token colors (Python-ish) — must be global because Prism injects spans without Astro scope attrs */
+  :global(.token.comment) { color: rgba(148,163,184,0.80); }
+  :global(.token.keyword) { color: #a78bfa; }
+  :global(.token.string) { color: #34d399; }
+  :global(.token.number) { color: #f59e0b; }
+  :global(.token.function) { color: #60a5fa; }
+  :global(.token.operator) { color: rgba(226,232,240,0.85); }
+  :global(.token.punctuation) { color: rgba(226,232,240,0.75); }
+  :global(.token.builtin) { color: #34d399; }
+  :global(.token.class-name) { color: #60a5fa; }
+  :global(.token.boolean) { color: #f59e0b; }
+
 
   .py-actions { display: flex; align-items: center; gap: 10px; }
   .py-run {
     padding: 0.45rem 0.9rem;
     border-radius: 999px;
-    border: 1px solid var(--py-border-2);
-    background: color-mix(in srgb, var(--py-surface) 90%, transparent);
-    color: var(--py-text);
+    border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.9);
     cursor: pointer;
     font-weight: 600;
   }
-  .py-run:hover { background: color-mix(in srgb, var(--py-surface) 82%, transparent); }
+  .py-run:hover { background: rgba(255,255,255,0.10); }
   .py-run:disabled { opacity: 0.6; cursor: not-allowed; }
 
-  .py-status { font-size: 0.95rem; color: var(--py-muted); }
+  .py-status { font-size: 0.95rem; color: rgba(255,255,255,0.68); }
 
   .py-stdout, .py-stderr {
     white-space: pre-wrap;
     padding: 12px 14px;
     border-radius: 12px;
-    border: 1px solid var(--py-border-2);
-    background: var(--py-panel-2);
-    color: var(--py-text);
-    font-family: var(--py-mono);
+    border: 1px solid rgba(255,255,255,0.10);
+    background: #0b0d12;
+    color: rgba(255,255,255,0.88);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 0.9rem;
     line-height: 1.4;
   }
   .py-stderr {
-    border-color: color-mix(in srgb, #ef4444 35%, var(--py-border-2));
-    color: color-mix(in srgb, #ef4444 70%, var(--py-text));
+    border-color: rgba(255, 90, 90, 0.35);
+    color: rgba(255, 185, 185, 0.92);
   }
   .py-stdout.is-empty, .py-stderr.is-empty { display: none; }
 
   .py-figure {
     padding: 12px;
     border-radius: 12px;
-    border: 1px solid var(--py-border-2);
-    background: color-mix(in srgb, var(--py-surface) 92%, transparent);
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.03);
   }
   .py-img { max-width: 100%; height: auto; display: none; border-radius: 8px; background: white; }
 </style>
 
-<script is:inline type="module" define:vars={{ uid, packages }}>
+<script is:inline type="module" define:vars={{ uid }}>
+  async function ensurePrism() {
+    if (window.Prism?.languages?.python) return;
+
+    const loadScript = (src) => new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Failed to load " + src));
+      document.head.appendChild(s);
+    });
+
+    // Use prism.min.js (full core) + python grammar
+    await loadScript("https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js");
+    await loadScript("https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js");
+  }
+
   async function init() {
     window.__PYODIDE_RUNNERS__ ??= new Set();
     if (window.__PYODIDE_RUNNERS__.has(uid)) return;
@@ -192,14 +239,11 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     const root = document.querySelector(`[data-py-runner="${uid}"]`);
     if (!root) { requestAnimationFrame(() => init()); return; }
 
-    // Normalize packages (Astro may serialize as JSON string)
-    let pkgList = packages;
-    if (!Array.isArray(pkgList)) {
-      try { pkgList = JSON.parse(String(pkgList)); } catch { pkgList = ["numpy","matplotlib","scipy","pandas"]; }
-    }
-    pkgList = pkgList.filter((p) => typeof p === "string" && p.trim().length > 0);
+    const editor = root.querySelector(".py-editor");
+    const gutter = root.querySelector(".py-gutter");
+    const highlightPre = root.querySelector(".py-highlight");
+    const highlightCode = root.querySelector(".py-highlight code");
 
-    const cmHost = root.querySelector(".py-cm");
     const btn = root.querySelector(".py-run");
     const copyBtn = root.querySelector(".py-copy");
     const copyText = root.querySelector(".py-copytext");
@@ -209,10 +253,15 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     const imgEl = root.querySelector(".py-img");
 
     function setStatus(s) { statusEl.textContent = s; }
+
     function refreshPanels() {
-      if (outEl.textContent.trim() === "") outEl.classList.add("is-empty"); else outEl.classList.remove("is-empty");
-      if (errEl.textContent.trim() === "") errEl.classList.add("is-empty"); else errEl.classList.remove("is-empty");
+      if (outEl.textContent.trim() === "") outEl.classList.add("is-empty");
+      else outEl.classList.remove("is-empty");
+
+      if (errEl.textContent.trim() === "") errEl.classList.add("is-empty");
+      else errEl.classList.remove("is-empty");
     }
+
     function clearIO() {
       outEl.textContent = "";
       errEl.textContent = "";
@@ -220,117 +269,73 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       imgEl.removeAttribute("src");
       refreshPanels();
     }
+
     function logErr(e) {
       const msg = (e && (e.stack || e.message)) ? (e.stack || e.message) : String(e);
       errEl.textContent += (errEl.textContent ? "\n" : "") + msg;
       console.error(e);
       refreshPanels();
     }
-    function makeStdout() { return (s) => { outEl.textContent += s + "\n"; refreshPanels(); }; }
 
-    // --- CodeMirror 6 setup (CDN via esm.sh) ---
-    setStatus("Loading editor…");
-    const [
-      cmState,
-      cmView,
-      cmCommands,
-      cmLangPython,
-      cmLanguage,
-      cmOneDark
-    ] = await Promise.all([
-      import("https://esm.sh/@codemirror/state@6.4.1"),
-      import("https://esm.sh/@codemirror/view@6.26.3"),
-      import("https://esm.sh/@codemirror/commands@6.6.2"),
-      import("https://esm.sh/@codemirror/lang-python@6.1.6"),
-      import("https://esm.sh/@codemirror/language@6.10.1"),
-      import("https://esm.sh/@codemirror/theme-one-dark@6.1.2"),
-    ]);
+    function makeStdout() {
+      return (s) => { outEl.textContent += s + "\n"; refreshPanels(); };
+    }
 
-    const { EditorState } = cmState;
-    const { EditorView, keymap, highlightActiveLine, drawSelection, lineNumbers, highlightSpecialChars } = cmView;
-    const { defaultKeymap, history, historyKeymap, indentWithTab } = cmCommands;
-    const { python } = cmLangPython;
-    const { indentOnInput, bracketMatching, foldGutter } = cmLanguage;
-    const { oneDark } = cmOneDark;
+    function updateLineNumbers() {
+      const lines = editor.value.split("\n").length || 1;
+      let out = "";
+      for (let i = 1; i <= lines; i++) out += i + "\n";
+      gutter.textContent = out;
+    }
 
-    // Light theme (minimal) that inherits your CSS variables
-    const lightTheme = EditorView.theme({
-      "&": { color: "var(--py-text)", backgroundColor: "transparent" },
-      ".cm-content": { caretColor: "var(--py-text)" },
-      ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--py-text)" },
-      "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection": {
-        backgroundColor: "color-mix(in srgb, var(--py-text) 16%, transparent)"
-      },
-      ".cm-activeLine": { backgroundColor: "color-mix(in srgb, var(--py-text) 6%, transparent)" },
-      ".cm-gutters": { backgroundColor: "transparent", color: "var(--py-muted)", borderRight: "1px solid var(--py-border-2)" },
-    }, { dark: false });
+    function syncScroll() {
+      gutter.scrollTop = editor.scrollTop;
+      highlightPre.scrollTop = editor.scrollTop;
+      highlightPre.scrollLeft = editor.scrollLeft;
+    }
 
-    const isDark = () => document.documentElement.dataset.theme === "dark";
+    let prismReady = false;
+    async function renderHighlight() {
+      if (!highlightCode) return;
 
-    const startDoc = cmHost.getAttribute("data-initial-code") ?? "";
-    let view = new EditorView({
-      state: EditorState.create({
-        doc: startDoc,
-        extensions: [
-          lineNumbers(),
-          highlightSpecialChars(),
-          history(),
-          foldGutter(),
-          drawSelection(),
-          indentOnInput(),
-          bracketMatching(),
-          highlightActiveLine(),
-          keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
-          python(),
-          isDark() ? oneDark : lightTheme,
-          EditorView.lineWrapping,
-        ],
-      }),
-      parent: cmHost,
-    });
+      if (!prismReady) {
+        try {
+          await ensurePrism();
+          prismReady = true;
+        } catch (e) {
+          highlightCode.textContent = editor.value;
+          return;
+        }
+      }
+      const code = editor.value;
+      highlightCode.innerHTML = window.Prism.highlight(code, window.Prism.languages.python, "python");
+    }
 
-    // Update theme on toggle (MutationObserver on <html data-theme>)
-    const mo = new MutationObserver(() => {
-      view.dispatch({
-        effects: EditorView.reconfigure.of([
-          lineNumbers(),
-          highlightSpecialChars(),
-          history(),
-          foldGutter(),
-          drawSelection(),
-          indentOnInput(),
-          bracketMatching(),
-          highlightActiveLine(),
-          keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
-          python(),
-          isDark() ? oneDark : lightTheme,
-          EditorView.lineWrapping,
-        ]),
-      });
-    });
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-
-    const getCode = () => view.state.doc.toString();
+    editor.addEventListener("input", async () => { updateLineNumbers(); await renderHighlight(); });
+    editor.addEventListener("scroll", syncScroll);
 
     copyBtn.addEventListener("click", async () => {
       try {
-        await navigator.clipboard.writeText(getCode());
+        await navigator.clipboard.writeText(editor.value);
         const prev = copyText.textContent;
         copyText.textContent = "Copied";
         copyBtn.disabled = true;
         setTimeout(() => { copyText.textContent = prev; copyBtn.disabled = false; }, 900);
-      } catch {
-        // Fallback: create temp textarea
-        const t = document.createElement("textarea");
-        t.value = getCode();
-        document.body.appendChild(t);
-        t.select();
+      } catch (e) {
+        editor.select();
         document.execCommand("copy");
-        document.body.removeChild(t);
+        editor.setSelectionRange(editor.value.length, editor.value.length);
       }
     });
 
-    // --- Pyodide ---
+    // Initialize
+    updateLineNumbers();
+    await renderHighlight();
+    syncScroll();
+    refreshPanels();
+    setStatus("Ready to run. Click Run.");
+
+    // Pyodide
     const globalKey = "__PYODIDE_SINGLETON__";
     async function getPyodide() {
       if (window[globalKey]) return window[globalKey];
@@ -341,16 +346,13 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       setStatus("Downloading Pyodide runtime…");
       const pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/" });
 
-      setStatus(`Loading packages: ${pkgList.join(", ")}…`);
-      await pyodide.loadPackage(pkgList);
+      setStatus("Loading numpy + matplotlib…");
+      await pyodide.loadPackage(["numpy", "matplotlib"]);
 
       window[globalKey] = pyodide;
       setStatus("Ready.");
       return pyodide;
     }
-
-    setStatus("Ready to run. Click Run.");
-    refreshPanels();
 
     btn.addEventListener("click", async () => {
       btn.disabled = true;
@@ -360,7 +362,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
         setStatus("Running…");
 
         pyodide.globals.set("__js_stdout__", makeStdout());
-        const userCode = getCode();
+        const userCode = editor.value;
 
         const wrapped = `
 import sys, io, base64, warnings
@@ -408,7 +410,7 @@ _png_b64
       } catch (e) {
         setStatus("Error.");
         logErr(e);
-        errEl.textContent += "\n\nIf you see network/CSP errors in DevTools, GitHub Pages must allow cdn.jsdelivr.net, esm.sh and wasm downloads.";
+        errEl.textContent += "\n\nIf you see network/CSP errors in DevTools, GitHub Pages must allow cdn.jsdelivr.net and wasm downloads.";
         refreshPanels();
       } finally {
         btn.disabled = false;
@@ -417,7 +419,7 @@ _png_b64
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init, { once: true });
+    document.addEventListener("DOMContentLoaded", () => { init(); }, { once: true });
   } else {
     init();
   }
