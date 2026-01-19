@@ -76,6 +76,22 @@ const rest = posts.filter((p) => p !== featured);
         --accent-2: rgba(200,178,119,0.07);
       }
 
+      /* Paper mode tokens for THIS page’s local surfaces */
+      :global(html[data-theme="paper"]) {
+        --surface: rgba(255,255,255,0.62);
+        --surface-strong: rgba(255,255,255,0.80);
+        --surface-border: rgba(42, 36, 0, 0.14);
+
+        --ink-strong: rgba(17,24,39,0.92);
+        --ink: rgba(17,24,39,0.78);
+        --ink-muted: rgba(17,24,39,0.58);
+
+        --shadow: 0 18px 55px rgba(15,23,42,0.06);
+
+        --accent-1: rgba(65,56,0,0.10);
+        --accent-2: rgba(65,56,0,0.06);
+      }
+
       body {
         background:
           radial-gradient(900px 520px at 15% 10%, var(--accent-1), rgba(255,255,255,0)),
@@ -87,7 +103,12 @@ const rest = posts.filter((p) => p !== featured);
       .wrap {
         max-width: 980px;
         margin: 0 auto;
-        padding: 34px 18px 70px;
+        padding: 22px 18px 70px; /* a bit tighter because topbar is present */
+      }
+
+      /* Give the topbar some breathing room on index */
+      .topbar {
+        margin-bottom: 18px;
       }
 
       .hero {
@@ -113,29 +134,6 @@ const rest = posts.filter((p) => p !== featured);
         font-size: 14px;
         line-height: 1.55;
       }
-
-      .top-actions {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        flex-shrink: 0;
-      }
-
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 9px 12px;
-        border-radius: 10px;
-        border: 1px solid var(--surface-border);
-        color: var(--ink);
-        text-decoration: none;
-        font-size: 13px;
-        background: var(--surface);
-        box-shadow: 0 8px 22px rgba(15,23,42,0.05);
-        cursor: pointer;
-      }
-      .btn:hover { background: var(--surface-strong); }
 
       .toolbar {
         display: flex;
@@ -383,6 +381,30 @@ const rest = posts.filter((p) => p !== featured);
 
   <body>
     <div class="wrap">
+      <!-- NEW: topbar like post pages -->
+      <div class="topbar">
+        <div class="topbar-left">
+          <a class="topbar-link topbar-link-muted" href="/blog/">Blog Home</a>
+        </div>
+
+        <div class="topbar-center">
+          <a class="topbar-link topbar-link-primary" href="/">PRAISe Lab Home</a>
+        </div>
+
+        <div class="topbar-right">
+          <button
+            id="themeToggle"
+            class="theme-toggle theme-toggle-icon"
+            type="button"
+            aria-label="Theme: Light. Click to change."
+            title="Theme: Light (click to change)"
+          >
+            <span id="themeIcon" aria-hidden="true">☀</span>
+            <span id="themeLabel">Light</span>
+          </button>
+        </div>
+      </div>
+
       <div class="hero">
         <div>
           <h1>PRAISe Lab Blogs</h1>
@@ -390,12 +412,6 @@ const rest = posts.filter((p) => p !== featured);
             Technical notes with derivations, implementation details, and visualizations.
             Geometry, estimation, robotics perception, and generative models.
           </p>
-        </div>
-        <div class="top-actions">
-          <button class="btn" id="themeToggle" type="button" aria-label="Toggle theme">
-            <span id="themeIcon" aria-hidden="true">☾</span>
-            <span id="themeLabel">Dark</span>
-          </button>
         </div>
       </div>
 
@@ -488,33 +504,38 @@ const rest = posts.filter((p) => p !== featured);
       )}
 
       <script is:inline>
-        // ---- Theme (default light) ----
-        (function () {
+        // ---- Theme (3-state): Light -> Dark -> Paper -> Light ----
+        (() => {
+          const STORAGE_KEY = "theme"; // "light" | "dark" | "paper"
           const root = document.documentElement;
+
           const btn = document.getElementById("themeToggle");
           const icon = document.getElementById("themeIcon");
           const label = document.getElementById("themeLabel");
+          if (!btn) return;
+
+          const ORDER = ["light", "dark", "paper"];
+          const NAME = { light: "Light", dark: "Dark", paper: "Paper" };
+          const ICON = { light: "☀", dark: "☾", paper: "⟡" };
+
+          const normalize = (v) => (ORDER.includes(v) ? v : "light");
 
           const apply = (t) => {
             root.dataset.theme = t;
-            // Button shows what you will switch TO
-            const next = t === "dark" ? "Light" : "Dark";
-            if (label) label.textContent = next;
-            if (icon) icon.textContent = t === "dark" ? "☀" : "☾";
+            if (label) label.textContent = NAME[t];
+            if (icon) icon.textContent = ICON[t];
+            btn.setAttribute("aria-label", `Theme: ${NAME[t]}. Click to change.`);
+            btn.setAttribute("title", `Theme: ${NAME[t]} (click to change)`);
           };
 
-          const saved = localStorage.getItem("theme");
-          const theme = saved ? saved : "light"; // default light
-          apply(theme);
+          apply(normalize(localStorage.getItem(STORAGE_KEY)));
 
-          if (btn) {
-            btn.addEventListener("click", () => {
-              const cur = root.dataset.theme === "dark" ? "dark" : "light";
-              const next = cur === "dark" ? "light" : "dark";
-              localStorage.setItem("theme", next);
-              apply(next);
-            });
-          }
+          btn.addEventListener("click", () => {
+            const cur = normalize(root.dataset.theme);
+            const next = ORDER[(ORDER.indexOf(cur) + 1) % ORDER.length];
+            localStorage.setItem(STORAGE_KEY, next);
+            apply(next);
+          });
         })();
       </script>
 
