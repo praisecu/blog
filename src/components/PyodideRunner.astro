@@ -164,7 +164,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   }
 
   .py-gutter {
-    padding: 0;
+    padding: 14px 10px;
     color: color-mix(in srgb, var(--py-muted) 75%, transparent);
     font-family: var(--py-mono);
     font-size: 0.95rem;
@@ -185,7 +185,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
   .py-gutter-inner {
     margin: 0;
-    padding: 14px 10px;
+    padding: 0;
   }
 
   .py-codepane { position: relative; overflow: hidden; }
@@ -411,14 +411,12 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       highlightPre.style.paddingBottom = pb;
       highlightPre.style.paddingLeft = pl;
 
-      // Gutter: match line height + top/bottom padding so numbers align with code lines.
+      // Gutter: match metrics, but keep vertical padding on the scrollport (like textarea).
       gutter.style.lineHeight = lh;
       gutter.style.fontSize = fs;
       gutter.style.fontFamily = ff;
-      if (gutterInner) {
-        gutterInner.style.paddingTop = pt;
-        gutterInner.style.paddingBottom = pb;
-      }
+      gutter.style.paddingTop = pt;
+      gutter.style.paddingBottom = pb;
     }
 
     function syncScroll() {
