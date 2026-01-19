@@ -1,5 +1,12 @@
 ---
-const { title = "Python (Pyodide)", initialCode = "", height = 240, id, packages = ["numpy","matplotlib","scipy","pandas"] } = Astro.props;
+const {
+  title = "Python (Pyodide)",
+  initialCode = "",
+  height = 240,
+  id,
+  packages = ["numpy", "matplotlib", "scipy", "pandas"],
+  autoRun = false,
+} = Astro.props;
 const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 ---
 
@@ -216,6 +223,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     overflow: hidden;
     pointer-events: none;
     color: var(--py-text);
+    z-index: 1;
   }
   .py-highlight code {
     display: block;
@@ -233,8 +241,14 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     overflow: auto;
     color: transparent;
     caret-color: var(--py-text);
+    z-index: 2;
   }
-  .py-editor::selection { background: var(--py-selection); }
+  /*
+    Selection rendering in a transparent-text textarea often looks like a
+    second “layer” (blocky stair-steps) over the highlight overlay.
+    Hide native selection fill to avoid the double-layer artifact.
+  */
+  .py-editor::selection { background: transparent; }
 
   /* Modern scrollbars */
   .py-editor::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -307,7 +321,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   .py-img { max-width: 100%; height: auto; display: none; border-radius: 8px; background: white; }
 </style>
 
-<script is:inline type="module" define:vars={{ uid, packages }}>
+<script is:inline type="module" define:vars={{ uid, packages, autoRun }}>
   async function ensurePrism() {
     if (window.Prism?.languages?.python) return;
 
@@ -457,7 +471,11 @@ window[globalKey] = pyodide;
       return pyodide;
     }
 
-    btn.addEventListener("click", async () => {
+    let hasRun = false;
+    async function runCodeOnce() {
+      if (hasRun) return;
+      hasRun = true;
+
       btn.disabled = true;
       clearIO();
       try {
@@ -518,7 +536,14 @@ _png_b64
       } finally {
         btn.disabled = false;
       }
-    });
+    }
+
+    btn.addEventListener("click", runCodeOnce);
+
+    // Optional auto-run on page load
+    if (autoRun) {
+      queueMicrotask(() => runCodeOnce());
+    }
   }
 
   if (document.readyState === "loading") {
