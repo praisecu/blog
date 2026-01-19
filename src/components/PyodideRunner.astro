@@ -117,7 +117,7 @@ class _Writer:
         if s is None: return
         s = str(s)
         if s == "": return
-        __js_stdout__(s.rstrip("\n"))
+        __js_stdout__(s.rstrip("\\n"))
     def flush(self):
         return
 
