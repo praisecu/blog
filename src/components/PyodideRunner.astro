@@ -1,5 +1,5 @@
 ---
-const { title = "Python (Pyodide)", initialCode = "", height = 240, id } = Astro.props;
+const { title = "Python (Pyodide)", initialCode = "", height = 240, id, smoothScroll = true } = Astro.props;
 const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 ---
 
@@ -287,7 +287,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   .py-img { max-width: 100%; height: auto; display: none; border-radius: 8px; background: white; }
 </style>
 
-<script is:inline type="module" define:vars={{ uid }}>
+<script is:inline type="module" define:vars={{ uid, smoothScroll }}>
   async function ensurePrism() {
     if (window.Prism?.languages?.python) return;
 
@@ -371,6 +371,48 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       highlightPre.scrollLeft = x;
     }
 
+    // Optional smooth wheel scrolling (native scrolling is already fine on trackpads).
+    // This only affects mouse-wheel style deltas; it keeps gutter/highlight perfectly synced.
+    let _targetScrollTop = 0;
+    let _animating = false;
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    function startScrollAnim() {
+      if (_animating) return;
+      _animating = true;
+
+      const step = () => {
+        const cur = editor.scrollTop;
+        const next = cur + (_targetScrollTop - cur) * 0.25; // easing
+        // Stop when close enough
+        if (Math.abs(_targetScrollTop - cur) < 0.5) {
+          editor.scrollTop = _targetScrollTop;
+          _animating = false;
+          syncScroll();
+          return;
+        }
+        editor.scrollTop = next;
+        syncScroll();
+        requestAnimationFrame(step);
+      };
+
+      requestAnimationFrame(step);
+    }
+
+    function onWheel(e) {
+      if (!smoothScroll) return;
+      // Let the browser handle touchpads (usually small deltas) and pinch/zoom.
+      if (e.ctrlKey) return;
+      if (Math.abs(e.deltaY) < 12 && Math.abs(e.deltaX) < 12) return;
+
+      e.preventDefault();
+      const maxY = editor.scrollHeight - editor.clientHeight;
+      _targetScrollTop = clamp(((_animating ? _targetScrollTop : editor.scrollTop) + e.deltaY), 0, Math.max(0, maxY));
+      startScrollAnim();
+    }
+
+
     let prismReady = false;
     async function renderHighlight() {
       if (!highlightCode) return;
@@ -389,7 +431,8 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     }
 
     editor.addEventListener("input", async () => { updateLineNumbers(); await renderHighlight(); });
-    editor.addEventListener("scroll", syncScroll);
+    editor.addEventListener("scroll", () => { _targetScrollTop = editor.scrollTop; syncScroll(); });
+    editor.addEventListener("wheel", onWheel, { passive: false });
 
     copyBtn.addEventListener("click", async () => {
       try {
