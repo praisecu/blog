@@ -301,6 +301,12 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     font-family: var(--py-mono);
     font-size: 0.9rem;
     line-height: 1.4;
+    display: block;
+    width: 100%;
+    max-width: none;
+    margin: 0;          /* prevents centering rules from global pre styles */
+    justify-self: stretch; /* grid item: force stretch */
+    box-sizing: border-box;
   }
   .py-stdout {
     font-variant-numeric: tabular-nums;
