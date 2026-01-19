@@ -1,16 +1,16 @@
 ---
 layout: ../layouts/PostLayout.astro
-title: "Linear vs. Polynomial Regression in the Browser"
+title: "Gradient Descent: An Interactive In-Browser Python Way"
 author: "Chahat Deep Singh"
-description: "Fit and visualize linear, quadratic, cubic, and degree-5 polynomial regressions on mildly nonlinear data using Pyodide."
+description: "A minimal Pyodide-powered code cell: generate and plot points. This validates the Python runner before adding gradient descent."
 date: "January 18, 2026"
-tags: ["machine-learning", "regression", "least-squares", "pyodide"]
+tags: ["optimization", "machine-learning", "gradient-descent", "pyodide"]
 featured: true
 ---
 
 import PyodideRunner from "../components/PyodideRunner.astro";
 
-# Linear vs. Nonlinear Regression
+# Linear vs. Nonlinear Regression 
 
 This example demonstrates how increasingly flexible polynomial models behave when the underlying data-generating process is **mildly nonlinear**. The visualization consists of **four vertically stacked subplots**:
 
@@ -60,97 +60,6 @@ $$
 - Captures the average trend.
 - Leaves structured residuals due to misspecification (nonlinearity).
 - Typically exhibits lower $R^2$ than higher-order polynomials here.
-
-
-
-<PyodideRunner
-  id="poly_reg_demo"
-  title="Linear vs polynomial regression (4 fits)"
-  height={480}
-  autoRun={true}
-  initialCode={`import warnings
-warnings.filterwarnings("ignore")
-
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
-rng = np.random.default_rng(0)
-n = 220
-
-df = pd.DataFrame({"x": np.sort(rng.uniform(0, 10, size=n))})
-x = df["x"].to_numpy()
-
-y_true = 2.4 * x + 5.0 + 2.0 * np.sin(0.9 * x) + 0.12 * (x - 5.0) ** 2
-y = y_true + rng.normal(0, 1.8, size=n)
-df["y"] = y
-
-x_mean = x.mean()
-y_mean = y.mean()
-ss_tot = np.sum((y - y_mean) ** 2)
-
-def r2_score(y_true, y_pred):
-    return 1.0 - np.sum((y_true - y_pred) ** 2) / ss_tot
-
-# Linear
-b1 = np.sum((x - x_mean) * (y - y_mean)) / np.sum((x - x_mean) ** 2)
-b0 = y_mean - b1 * x_mean
-
-# Quadratic
-X2 = np.column_stack([x**2, x, np.ones_like(x)])
-a2, a1, a0 = np.linalg.lstsq(X2, y, rcond=None)[0]
-
-# Cubic
-X3 = np.column_stack([x**3, x**2, x, np.ones_like(x)])
-c3, c2, c1, c0 = np.linalg.lstsq(X3, y, rcond=None)[0]
-
-# Degree-5 (stand-in for 1D "bicubic")
-X5 = np.column_stack([x**5, x**4, x**3, x**2, x, np.ones_like(x)])
-d5, d4, d3, d2, d1, d0 = np.linalg.lstsq(X5, y, rcond=None)[0]
-
-x_line = np.linspace(x.min(), x.max(), 600)
-y_lin  = b0 + b1 * x_line
-y_quad = a2 * x_line**2 + a1 * x_line + a0
-y_cub  = c3 * x_line**3 + c2 * x_line**2 + c1 * x_line + c0
-y_deg5 = d5 * x_line**5 + d4 * x_line**4 + d3 * x_line**3 + d2 * x_line**2 + d1 * x_line + d0
-
-r2_lin  = r2_score(y, b0 + b1 * x)
-r2_quad = r2_score(y, a2 * x**2 + a1 * x + a0)
-r2_cub  = r2_score(y, c3 * x**3 + c2 * x**2 + c1 * x + c0)
-r2_deg5 = r2_score(y, d5 * x**5 + d4 * x**4 + d3 * x**3 + d2 * x**2 + d1 * x + d0)
-
-plt.rcParams.update({
-    "figure.dpi": 140,
-    "axes.spines.top": False,
-    "axes.spines.right": False,
-    "font.size": 11,
-})
-
-fig, ax = plt.subplots(4, 1, figsize=(8.4, 13.0), sharex=True, layout="constrained")
-
-def draw_panel(ax_i, title, y_fit_line, eq_text):
-    ax_i.scatter(x, y, s=34, alpha=0.78, edgecolors="white", linewidths=0.8, label="data")
-    ax_i.plot(x_line, y_fit_line, linewidth=2.6, color="goldenrod", label="fit")
-    ax_i.set_title(title)
-    ax_i.set_ylabel("y")
-    ax_i.grid(True, alpha=0.25)
-    ax_i.text(
-        0.02, 0.98, eq_text,
-        transform=ax_i.transAxes,
-        va="top", ha="left",
-        bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.92, linewidth=0.0),
-    )
-    ax_i.legend(frameon=False, loc="lower right")
-
-draw_panel(
-    ax[0],
-    "Linear Regression (OLS)",
-    y_lin,
-    f"$\\hat y = {b1:.3f}x + {b0:.3f}$\\n$R^2 = {r2_lin:.3f}$",
-)
-plt.show()
-`}
-/>
 
 ---
 
@@ -240,12 +149,16 @@ Interpretation:
 - Higher-degree polynomials can overfit, especially when noise is nontrivial.
 - “Bicubic” is not a meaningful label in 1D regression; it is fundamentally a 2D interpolation/surface-fitting concept.
 
+
 ---
 
+
+
+
 <PyodideRunner
-  id="poly_reg_demo"
-  title="Linear vs polynomial regression (4 fits)"
-  height={480}
+  id="gd_scatter_demo"
+  title="Generate + plot synthetic points"
+  height={240}
   autoRun={true}
   initialCode={`import warnings
 warnings.filterwarnings("ignore")
@@ -254,6 +167,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# ---------------------------
+# data (nonlinear ground truth)
+# ---------------------------
 rng = np.random.default_rng(0)
 n = 220
 
@@ -264,6 +180,9 @@ y_true = 2.4 * x + 5.0 + 2.0 * np.sin(0.9 * x) + 0.12 * (x - 5.0) ** 2
 y = y_true + rng.normal(0, 1.8, size=n)
 df["y"] = y
 
+# ---------------------------
+# model fits
+# ---------------------------
 x_mean = x.mean()
 y_mean = y.mean()
 ss_tot = np.sum((y - y_mean) ** 2)
@@ -271,33 +190,42 @@ ss_tot = np.sum((y - y_mean) ** 2)
 def r2_score(y_true, y_pred):
     return 1.0 - np.sum((y_true - y_pred) ** 2) / ss_tot
 
-# Linear
+# 1) Linear: y = b1 x + b0
 b1 = np.sum((x - x_mean) * (y - y_mean)) / np.sum((x - x_mean) ** 2)
 b0 = y_mean - b1 * x_mean
 
-# Quadratic
+# 2) Quadratic: y = a2 x^2 + a1 x + a0
 X2 = np.column_stack([x**2, x, np.ones_like(x)])
 a2, a1, a0 = np.linalg.lstsq(X2, y, rcond=None)[0]
 
-# Cubic
+# 3) Cubic: y = c3 x^3 + c2 x^2 + c1 x + c0
 X3 = np.column_stack([x**3, x**2, x, np.ones_like(x)])
 c3, c2, c1, c0 = np.linalg.lstsq(X3, y, rcond=None)[0]
 
-# Degree-5 (stand-in for 1D "bicubic")
+# 4) "Bicubic" in 1D is not a distinct model.
+# Bicubic interpolation is a 2D method (x,y -> z) on a grid.
+# Here we interpret your request as a higher-order polynomial in 1D.
+# We'll use degree-5 as a reasonable "more flexible than cubic" model:
+# y = d5 x^5 + d4 x^4 + d3 x^3 + d2 x^2 + d1 x + d0
 X5 = np.column_stack([x**5, x**4, x**3, x**2, x, np.ones_like(x)])
 d5, d4, d3, d2, d1, d0 = np.linalg.lstsq(X5, y, rcond=None)[0]
 
+# prediction grid
 x_line = np.linspace(x.min(), x.max(), 600)
 y_lin  = b0 + b1 * x_line
 y_quad = a2 * x_line**2 + a1 * x_line + a0
 y_cub  = c3 * x_line**3 + c2 * x_line**2 + c1 * x_line + c0
 y_deg5 = d5 * x_line**5 + d4 * x_line**4 + d3 * x_line**3 + d2 * x_line**2 + d1 * x_line + d0
 
+# R^2 on training data
 r2_lin  = r2_score(y, b0 + b1 * x)
 r2_quad = r2_score(y, a2 * x**2 + a1 * x + a0)
 r2_cub  = r2_score(y, c3 * x**3 + c2 * x**2 + c1 * x + c0)
 r2_deg5 = r2_score(y, d5 * x**5 + d4 * x**4 + d3 * x**3 + d2 * x**2 + d1 * x + d0)
 
+# ---------------------------
+# plotting (4 stacked subplots)
+# ---------------------------
 plt.rcParams.update({
     "figure.dpi": 140,
     "axes.spines.top": False,
@@ -309,7 +237,7 @@ fig, ax = plt.subplots(4, 1, figsize=(8.4, 13.0), sharex=True, layout="constrain
 
 def draw_panel(ax_i, title, y_fit_line, eq_text):
     ax_i.scatter(x, y, s=34, alpha=0.78, edgecolors="white", linewidths=0.8, label="data")
-    ax_i.plot(x_line, y_fit_line, linewidth=2.6, color="goldenrod", label="fit")
+    ax_i.plot(x_line, y_fit_line, linewidth=2.6, label="fit")
     ax_i.set_title(title)
     ax_i.set_ylabel("y")
     ax_i.grid(True, alpha=0.25)
@@ -325,32 +253,33 @@ draw_panel(
     ax[0],
     "Linear Regression (OLS)",
     y_lin,
-    f"$\\hat y = {b1:.3f}x + {b0:.3f}$\\n$R^2 = {r2_lin:.3f}$",
+    f"$\\hat y = {b1:.3f}x + {b0:.3f}$\n$R^2 = {r2_lin:.3f}$",
 )
 
 draw_panel(
     ax[1],
     "Quadratic Regression (Least Squares)",
     y_quad,
-    f"$\\hat y = {a2:.3f}x^2 + {a1:.3f}x + {a0:.3f}$\\n$R^2 = {r2_quad:.3f}$",
+    f"$\\hat y = {a2:.3f}x^2 + {a1:.3f}x + {a0:.3f}$\n$R^2 = {r2_quad:.3f}$",
 )
 
 draw_panel(
     ax[2],
     "Cubic Regression (Least Squares)",
     y_cub,
-    f"$\\hat y = {c3:.3f}x^3 + {c2:.3f}x^2 + {c1:.3f}x + {c0:.3f}$\\n$R^2 = {r2_cub:.3f}$",
+    f"$\\hat y = {c3:.3f}x^3 + {c2:.3f}x^2 + {c1:.3f}x + {c0:.3f}$\n$R^2 = {r2_cub:.3f}$",
 )
 
 draw_panel(
     ax[3],
     "Degree-5 Polynomial (used here in place of 1D 'bicubic')",
     y_deg5,
-    f"$\\hat y = {d5:.3f}x^5 + {d4:.3f}x^4 + {d3:.3f}x^3 + {d2:.3f}x^2 + {d1:.3f}x + {d0:.3f}$\\n$R^2 = {r2_deg5:.3f}$",
+    f"$\\hat y = {d5:.3f}x^5 + {d4:.3f}x^4 + {d3:.3f}x^3 + {d2:.3f}x^2 + {d1:.3f}x + {d0:.3f}$\n$R^2 = {r2_deg5:.3f}$",
 )
 
 ax[3].set_xlabel("x")
 plt.show()
+
 `}
 />
 
