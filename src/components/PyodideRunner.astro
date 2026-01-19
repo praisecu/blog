@@ -70,9 +70,15 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     --py-shadow: 0 12px 30px rgba(0,0,0,0.10);
     --py-selection: rgba(37, 99, 235, 0.22);
 
-    --py-scroll-track: rgba(0,0,0,0.04);
-    --py-scroll-thumb: rgba(0,0,0,0.22);
-    --py-scroll-thumb-hover: rgba(0,0,0,0.32);
+    /* Scrollbar colors (light)
+       - WebKit supports gradients for the thumb.
+       - Firefox only supports flat colors via scrollbar-color.
+    */
+    --py-scroll-track: color-mix(in srgb, var(--py-panel-2) 78%, transparent);
+    --py-scroll-thumb-a: color-mix(in srgb, var(--py-token-keyword) 78%, transparent);
+    --py-scroll-thumb-b: color-mix(in srgb, var(--py-token-function) 78%, transparent);
+    --py-scroll-thumb: color-mix(in srgb, var(--py-token-function) 32%, var(--py-text) 18%);
+    --py-scroll-thumb-hover: color-mix(in srgb, var(--py-token-function) 44%, var(--py-text) 22%);
 
     /* Token colors (light) */
     --py-token-comment: rgba(100,116,139,0.85);
@@ -99,9 +105,12 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     --py-shadow: 0 12px 30px rgba(0,0,0,0.35);
     --py-selection: rgba(130,170,255,0.35);
 
-    --py-scroll-track: rgba(255,255,255,0.04);
-    --py-scroll-thumb: rgba(255,255,255,0.28);
-    --py-scroll-thumb-hover: rgba(255,255,255,0.38);
+    /* Scrollbar colors (dark) */
+    --py-scroll-track: color-mix(in srgb, var(--py-panel-2) 68%, transparent);
+    --py-scroll-thumb-a: color-mix(in srgb, var(--py-token-keyword) 82%, transparent);
+    --py-scroll-thumb-b: color-mix(in srgb, var(--py-token-function) 82%, transparent);
+    --py-scroll-thumb: color-mix(in srgb, var(--py-token-function) 40%, rgba(255,255,255,0.75) 25%);
+    --py-scroll-thumb-hover: color-mix(in srgb, var(--py-token-function) 52%, rgba(255,255,255,0.85) 28%);
 
     /* Token colors (dark) */
     --py-token-comment: rgba(148,163,184,0.80);
@@ -238,16 +247,31 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   }
   .py-editor::selection { background: var(--py-selection); }
 
-  /* Modern scrollbars */
-  .py-editor::-webkit-scrollbar { width: 10px; height: 10px; }
-  .py-editor::-webkit-scrollbar-track { background: var(--py-scroll-track); border-radius: 999px; }
-  .py-editor::-webkit-scrollbar-thumb {
-    background: var(--py-scroll-thumb);
+  /* Modern scrollbars (editor only)
+     - WebKit: pill + gradient thumb.
+     - Firefox: falls back to flat colors.
+  */
+  .py-editor::-webkit-scrollbar { width: 12px; height: 12px; }
+  .py-editor::-webkit-scrollbar-track {
+    background: var(--py-scroll-track);
     border-radius: 999px;
-    border: 2px solid rgba(0,0,0,0);
+    margin: 2px;
+  }
+  .py-editor::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--py-scroll-thumb-a), var(--py-scroll-thumb-b));
+    border-radius: 999px;
+    border: 3px solid rgba(0,0,0,0);
+    background-clip: padding-box;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--py-border) 55%, transparent);
+  }
+  .py-editor::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--py-scroll-thumb-a) 92%, var(--py-text) 8%), color-mix(in srgb, var(--py-scroll-thumb-b) 92%, var(--py-text) 8%));
     background-clip: padding-box;
   }
-  .py-editor::-webkit-scrollbar-thumb:hover { background: var(--py-scroll-thumb-hover); background-clip: padding-box; }
+  .py-editor::-webkit-scrollbar-thumb:active {
+    background: var(--py-scroll-thumb-hover);
+    background-clip: padding-box;
+  }
   .py-editor::-webkit-scrollbar-corner { background: transparent; }
   .py-editor { scrollbar-width: thin; scrollbar-color: var(--py-scroll-thumb) var(--py-scroll-track); }
 
