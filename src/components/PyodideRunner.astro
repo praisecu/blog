@@ -154,6 +154,22 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   }
   .py-editor::selection { background: rgba(130,170,255,0.35); }
 
+  /* Modern scrollbars (Chromium/Safari/Edge) */
+  .py-editor::-webkit-scrollbar { width: 10px; height: 10px; }
+  .py-editor::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); border-radius: 999px; }
+  .py-editor::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.28);
+    border-radius: 999px;
+    border: 2px solid rgba(0,0,0,0); /* creates padding */
+    background-clip: padding-box;
+  }
+  .py-editor::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.38); background-clip: padding-box; }
+  .py-editor::-webkit-scrollbar-corner { background: transparent; }
+
+  /* Firefox */
+  .py-editor { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.30) rgba(255,255,255,0.06); }
+
+
   .py-editorwrap:has(.py-editor:focus) {
     border-color: rgba(130,170,255,0.55);
     box-shadow: 0 0 0 3px rgba(130,170,255,0.18);
