@@ -20,7 +20,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
     <div class="py-body">
       <div class="py-editorwrap" style={`height:${height}px`}>
-        <div class="py-gutter" aria-hidden="true"></div>
+        <div class="py-gutter" aria-hidden="true"><pre class="py-gutter-inner"></pre></div>
 
         <div class="py-codepane">
           <!-- Highlight layer -->
@@ -176,6 +176,14 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     overflow: hidden;
   }
 
+
+  .py-gutter-inner {
+    margin: 0;
+    padding: 0;
+    transform: translateY(0);
+    will-change: transform;
+  }
+
   .py-codepane { position: relative; overflow: hidden; }
 
   .py-highlight, .py-editor {
@@ -307,6 +315,7 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
     const editor = root.querySelector(".py-editor");
     const gutter = root.querySelector(".py-gutter");
+    const gutterInner = root.querySelector(".py-gutter-inner");
     const highlightPre = root.querySelector(".py-highlight");
     const highlightCode = root.querySelector(".py-highlight code");
 
@@ -351,11 +360,11 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       const lines = editor.value.split("\n").length || 1;
       let out = "";
       for (let i = 1; i <= lines; i++) out += i + "\n";
-      gutter.textContent = out;
+      if (gutterInner) gutterInner.textContent = out; else gutter.textContent = out;
     }
 
     function syncScroll() {
-      gutter.scrollTop = editor.scrollTop;
+      if (gutterInner) gutterInner.style.transform = `translateY(${-editor.scrollTop}px)`;
       highlightPre.scrollTop = editor.scrollTop;
       highlightPre.scrollLeft = editor.scrollLeft;
     }
