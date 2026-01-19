@@ -1,5 +1,5 @@
 ---
-const { title = "Python (Pyodide)", initialCode = "", height = 240, id, packages = ["numpy","matplotlib","scipy","pandas"] } = Astro.props;
+const { title = "Python (Pyodide)", initialCode = "", height = 240, id, packages = ["numpy","matplotlib","scipy","pandas"], autoRun = false, fps = 6 } = Astro.props;
 const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 ---
 
