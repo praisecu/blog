@@ -32,8 +32,10 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
   .py-actions { display: flex; align-items: center; gap: 0.75rem; }
   .py-run { padding: 0.45rem 0.85rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.2); cursor: pointer; }
   .py-status { opacity: 0.8; font-size: 0.95rem; }
+
   .py-stdout, .py-stderr { white-space: pre-wrap; padding: 0.75rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.15); }
   .py-stdout.is-empty, .py-stderr.is-empty { display: none; }
+
   .py-stderr { border-color: rgba(255,0,0,0.25); }
   .py-figure { padding: 0.75rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.15); }
   .py-img { max-width: 100%; height: auto; display: none; }
@@ -62,6 +64,15 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     const imgEl = root.querySelector(".py-img");
 
     function setStatus(s) { statusEl.textContent = s; }
+
+    function refreshPanels() {
+      if (outEl.textContent.trim() === "") outEl.classList.add("is-empty");
+      else outEl.classList.remove("is-empty");
+
+      if (errEl.textContent.trim() === "") errEl.classList.add("is-empty");
+      else errEl.classList.remove("is-empty");
+    }
+
     function clearIO() {
       outEl.textContent = "";
       errEl.textContent = "";
@@ -69,12 +80,15 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       imgEl.removeAttribute("src");
       refreshPanels();
     }
+
     function logErr(e) {
       const msg = (e && (e.stack || e.message)) ? (e.stack || e.message) : String(e);
       errEl.textContent += (errEl.textContent ? "\n" : "") + msg;
       console.error(e);
+      refreshPanels();
     }
-    function makeStdout() { return (s) => { outEl.textContent += s + "\n"; }; }
+
+    function makeStdout() { return (s) => { outEl.textContent += s + "\n"; refreshPanels(); }; }
 
     // Shared Pyodide singleton across the whole site.
     const globalKey = "__PYODIDE_SINGLETON__";
@@ -96,7 +110,6 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     }
 
     setStatus("Ready to run. Click Run.");
-
     refreshPanels();
 
     btn.addEventListener("click", async () => {
@@ -106,14 +119,20 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
         const pyodide = await getPyodide();
         setStatus("Running…");
 
+        // Make JS stdout callable from Python via global lookup.
         pyodide.globals.set("__js_stdout__", makeStdout());
+
         const userCode = editor.value;
 
         const wrapped = `
-import sys, io, base64
+import sys, io, base64, warnings
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+# Suppress the common Agg backend warning triggered by plt.show().
+warnings.filterwarnings("ignore", message="Matplotlib is currently using agg")
+
 class _Writer:
     def write(self, s):
         if s is None: return
@@ -143,6 +162,7 @@ except Exception:
 
 _png_b64
 `;
+
         const b64 = await pyodide.runPythonAsync(wrapped);
         if (b64 && typeof b64 === "string") {
           imgEl.src = "data:image/png;base64," + b64;
