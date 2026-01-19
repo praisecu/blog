@@ -22,12 +22,13 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       <div class="py-editorwrap" style={`height:${height}px`}>
         <div class="py-gutter" aria-hidden="true"></div>
 
-        <!-- Syntax-highlight layer (non-editable) -->
-        <pre class="py-highlight" aria-hidden="true"><code class="language-python"></code></pre>
-
-        <!-- Editable layer -->
-        <textarea class="py-editor" spellcheck="false">{initialCode}</textarea>
-      </div></div>
+        <div class="py-codepane">
+          <!-- Highlight layer -->
+          <pre class="py-highlight" aria-hidden="true"><code class="language-python"></code></pre>
+          <!-- Input layer -->
+          <textarea class="py-editor" wrap="off" spellcheck="false">{initialCode}</textarea>
+        </div>
+      </div>
 
       <div class="py-actions">
         <button class="py-run" type="button">Run</button>
@@ -94,9 +95,8 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 
   .py-body { padding: 14px; display: grid; gap: 12px; }
 
-  /* Editor with line numbers */
+  /* Editor frame */
   .py-editorwrap {
-    position: relative;
     display: grid;
     grid-template-columns: 52px 1fr;
     border-radius: 12px;
@@ -114,80 +114,62 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     text-align: right;
     user-select: none;
     border-right: 1px solid rgba(255,255,255,0.08);
-    overflow: hidden; /* we'll sync scroll by translating content */
     white-space: pre;
+    overflow: hidden;
   }
 
+  .py-codepane {
+    position: relative;
+    overflow: hidden;
+  }
 
-  /* Syntax-highlight overlay: a <pre><code> behind a transparent textarea */
   .py-highlight, .py-editor {
+    position: absolute;
+    inset: 0;
     margin: 0;
     padding: 14px 14px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 0.95rem;
     line-height: 1.45;
     tab-size: 4;
+    white-space: pre;
   }
 
   .py-highlight {
-    position: absolute;
-    left: 52px;
-    right: 0;
-    top: 0;
-    bottom: 0;
     overflow: hidden;
     pointer-events: none;
-    white-space: pre;
     color: rgba(255,255,255,0.92);
   }
   .py-highlight code { display: block; }
 
   .py-editor {
-    position: absolute;
-    left: 52px;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: auto;
-    height: auto;
-    resize: none;
     border: 0;
     outline: none;
+    resize: none;
     background: transparent;
-    /* Make text transparent but keep caret + selection usable */
+    overflow: auto;
+    /* hide text but keep caret/selection */
     color: transparent;
     caret-color: rgba(255,255,255,0.92);
   }
+  .py-editor::selection { background: rgba(130,170,255,0.35); }
 
-  /* Minimal Prism-ish token colors for Python */
-  .token.comment, .token.prolog, .token.doctype, .token.cdata { color: rgba(148,163,184,0.75); }
-  .token.punctuation { color: rgba(226,232,240,0.75); }
-  .token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol { color: #f59e0b; }
-  .token.selector, .token.attr-name, .token.string, .token.char, .token.builtin { color: #34d399; }
-  .token.operator, .token.entity, .token.url { color: rgba(226,232,240,0.85); }
-  .token.atrule, .token.attr-value, .token.keyword { color: #a78bfa; }
-  .token.function, .token.class-name { color: #60a5fa; }
-  .token.regex, .token.important, .token.variable { color: #fb7185; }
-  .py-editor {
-    width: 100%;
-    height: 100%;
-    resize: none;
-    border: 0;
-    background: transparent;
-    color: rgba(255,255,255,0.92);
-    padding: 14px 14px;
-    line-height: 1.45;
-    font-size: 0.95rem;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    outline: none;
-  }
-
-  /* Focus ring on wrapper */
-  .py-editor:focus { outline: none; }
   .py-editorwrap:has(.py-editor:focus) {
     border-color: rgba(130,170,255,0.55);
     box-shadow: 0 0 0 3px rgba(130,170,255,0.18);
   }
+
+  /* Token colors (Python-ish) */
+  .token.comment { color: rgba(148,163,184,0.80); }
+  .token.keyword { color: #a78bfa; }
+  .token.string { color: #34d399; }
+  .token.number { color: #f59e0b; }
+  .token.function { color: #60a5fa; }
+  .token.operator { color: rgba(226,232,240,0.85); }
+  .token.punctuation { color: rgba(226,232,240,0.75); }
+  .token.builtin { color: #34d399; }
+  .token.class-name { color: #60a5fa; }
+  .token.boolean { color: #f59e0b; }
 
   .py-actions { display: flex; align-items: center; gap: 10px; }
   .py-run {
@@ -231,7 +213,6 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
 </style>
 
 <script is:inline type="module" define:vars={{ uid }}>
-  
   async function ensurePrism() {
     if (window.Prism?.languages?.python) return;
 
@@ -244,13 +225,12 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
       document.head.appendChild(s);
     });
 
-    // Prism core + python grammar (loaded on-demand)
-    await loadScript("https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js");
-    await loadScript("https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js");
+    // Use prism.min.js (full core) + python grammar
+    await loadScript("https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js");
     await loadScript("https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js");
   }
 
-async function init() {
+  async function init() {
     window.__PYODIDE_RUNNERS__ ??= new Set();
     if (window.__PYODIDE_RUNNERS__.has(uid)) return;
     window.__PYODIDE_RUNNERS__.add(uid);
@@ -262,7 +242,7 @@ async function init() {
     const gutter = root.querySelector(".py-gutter");
     const highlightPre = root.querySelector(".py-highlight");
     const highlightCode = root.querySelector(".py-highlight code");
-    const editorWrap = root.querySelector(".py-editorwrap");
+
     const btn = root.querySelector(".py-run");
     const copyBtn = root.querySelector(".py-copy");
     const copyText = root.querySelector(".py-copytext");
@@ -300,22 +280,23 @@ async function init() {
       return (s) => { outEl.textContent += s + "\n"; refreshPanels(); };
     }
 
-    // Line numbers
     function updateLineNumbers() {
       const lines = editor.value.split("\n").length || 1;
       let out = "";
       for (let i = 1; i <= lines; i++) out += i + "\n";
       gutter.textContent = out;
     }
+
     function syncScroll() {
       gutter.scrollTop = editor.scrollTop;
-      if (highlightPre) highlightPre.scrollTop = editor.scrollTop;
+      highlightPre.scrollTop = editor.scrollTop;
+      highlightPre.scrollLeft = editor.scrollLeft;
     }
-
 
     let prismReady = false;
     async function renderHighlight() {
       if (!highlightCode) return;
+
       if (!prismReady) {
         try {
           await ensurePrism();
@@ -326,16 +307,12 @@ async function init() {
         }
       }
       const code = editor.value;
-      const html = window.Prism.highlight(code, window.Prism.languages.python, "python");
-      highlightCode.innerHTML = html;
+      highlightCode.innerHTML = window.Prism.highlight(code, window.Prism.languages.python, "python");
     }
 
     editor.addEventListener("input", async () => { updateLineNumbers(); await renderHighlight(); });
     editor.addEventListener("scroll", syncScroll);
-    // Also sync when resized by layout changes
-    new ResizeObserver(() => syncScroll()).observe(editorWrap);
 
-    // Copy button
     copyBtn.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(editor.value);
@@ -344,18 +321,18 @@ async function init() {
         copyBtn.disabled = true;
         setTimeout(() => { copyText.textContent = prev; copyBtn.disabled = false; }, 900);
       } catch (e) {
-        // Fallback
         editor.select();
         document.execCommand("copy");
         editor.setSelectionRange(editor.value.length, editor.value.length);
       }
     });
 
-    // Initialize UI
+    // Initialize
     updateLineNumbers();
     await renderHighlight();
     syncScroll();
     refreshPanels();
+    setStatus("Ready to run. Click Run.");
 
     // Pyodide
     const globalKey = "__PYODIDE_SINGLETON__";
@@ -376,8 +353,6 @@ async function init() {
       return pyodide;
     }
 
-    setStatus("Ready to run. Click Run.");
-
     btn.addEventListener("click", async () => {
       btn.disabled = true;
       clearIO();
@@ -393,7 +368,6 @@ import sys, io, base64, warnings
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-
 warnings.filterwarnings("ignore", message="Matplotlib is currently using agg")
 
 class _Writer:
@@ -425,7 +399,6 @@ except Exception:
 
 _png_b64
 `;
-
         const b64 = await pyodide.runPythonAsync(wrapped);
         if (b64 && typeof b64 === "string") {
           imgEl.src = "data:image/png;base64," + b64;
@@ -445,7 +418,7 @@ _png_b64
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init, { once: true });
+    document.addEventListener("DOMContentLoaded", () => { init(); }, { once: true });
   } else {
     init();
   }
