@@ -159,17 +159,18 @@ const uid = id ?? `py_${Math.random().toString(36).slice(2, 10)}`;
     box-shadow: 0 0 0 3px rgba(130,170,255,0.18);
   }
 
-  /* Token colors (Python-ish) */
-  .token.comment { color: rgba(148,163,184,0.80); }
-  .token.keyword { color: #a78bfa; }
-  .token.string { color: #34d399; }
-  .token.number { color: #f59e0b; }
-  .token.function { color: #60a5fa; }
-  .token.operator { color: rgba(226,232,240,0.85); }
-  .token.punctuation { color: rgba(226,232,240,0.75); }
-  .token.builtin { color: #34d399; }
-  .token.class-name { color: #60a5fa; }
-  .token.boolean { color: #f59e0b; }
+    /* Token colors (Python-ish) — must be global because Prism injects spans without Astro scope attrs */
+  :global(.token.comment) { color: rgba(148,163,184,0.80); }
+  :global(.token.keyword) { color: #a78bfa; }
+  :global(.token.string) { color: #34d399; }
+  :global(.token.number) { color: #f59e0b; }
+  :global(.token.function) { color: #60a5fa; }
+  :global(.token.operator) { color: rgba(226,232,240,0.85); }
+  :global(.token.punctuation) { color: rgba(226,232,240,0.75); }
+  :global(.token.builtin) { color: #34d399; }
+  :global(.token.class-name) { color: #60a5fa; }
+  :global(.token.boolean) { color: #f59e0b; }
+
 
   .py-actions { display: flex; align-items: center; gap: 10px; }
   .py-run {
