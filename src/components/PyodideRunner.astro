@@ -488,10 +488,10 @@ window[globalKey] = pyodide;
       return pyodide;
     }
 
-    let hasRun = false;
-    async function runCodeOnce() {
-      if (hasRun) return;
-      hasRun = true;
+    let running = false;
+    async function runCode() {
+      if (running) return;
+      running = true;
 
       btn.disabled = true;
       clearIO();
@@ -552,14 +552,15 @@ _png_b64
         refreshPanels();
       } finally {
         btn.disabled = false;
+        running = false;
       }
     }
 
-    btn.addEventListener("click", runCodeOnce);
+    btn.addEventListener("click", runCode);
 
     // Optional auto-run on page load
     if (autoRun) {
-      queueMicrotask(() => runCodeOnce());
+      queueMicrotask(() => runCode());
     }
   }
 
