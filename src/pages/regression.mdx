@@ -5,6 +5,7 @@ author: "Chahat Deep Singh"
 description: "Fit and visualize linear, quadratic, cubic, and degree-5 polynomial regressions on mildly nonlinear data"
 date: "January 18, 2026"
 tags: ["machine-learning", "regression", "least-squares", "pyodide"]
+image: "images/regression.png"
 featured: true
 ---
 
@@ -14,9 +15,9 @@ import PyodideRunner from "../components/PyodideRunner.astro";
 
 This example demonstrates how increasingly flexible polynomial models behave when the underlying data-generating process is **mildly nonlinear**. Instead of one stacked figure, we place a plot immediately after each model section:
 
-1. Linear regression (ordinary least squares)
-2. Quadratic regression (least squares)
-3. Cubic regression (least squares)
+1. Linear regression
+2. Quadratic regression
+3. Cubic regression
 4. Degree-5 polynomial regression
 
 All models are fitted to the *same dataset* (same RNG seed and generation procedure). In every plot, the fitted curve is drawn in a **golden line** to visually distinguish it from the scatter.
