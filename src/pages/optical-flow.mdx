@@ -11,7 +11,7 @@ featured: false
 
 import PyodideRunner from "../components/PyodideRunner.astro";
 
-## Feature detection (OpenCV.js)
+## Feature detection
 
 
 <PyodideRunner
@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 import io
 from pyodide.http import pyfetch
 
-URL = "/images/charles.png"
+URL = "../images/charles.png"
 
 def conv2d(img, kernel):
     img = img.astype(np.float64)
