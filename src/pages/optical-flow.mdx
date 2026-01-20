@@ -119,7 +119,7 @@ if img.ndim == 3:
     plt.imshow(img)            # color
 else:
     plt.imshow(gray, cmap="gray")
-plt.scatter(xs, ys, s=14, c="red")  # colored corners
+plt.scatter(xs, ys, s=20, c="#25c", marker="+", linewidths=1.2) #colored corners
 plt.title(f"Harris corners: {len(pts)} points")
 plt.axis("off")
 
