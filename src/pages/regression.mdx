@@ -1,9 +1,9 @@
 ---
 layout: ../layouts/PostLayout.astro
-title: "Linear/Non-Linear Regression in the Browser"
+title: "Regression in Machine Learning"
 author: "Chahat Deep Singh"
 description: "Fit and visualize linear, quadratic, cubic, and degree-5 polynomial regressions on mildly nonlinear data"
-date: "January 18, 2026"
+date: "January 19, 2026"
 tags: ["machine-learning", "regression", "least-squares", "pyodide", "line-fit", "gradient", "descent"]
 image: "images/regression.png"
 featured: true
@@ -11,56 +11,59 @@ featured: true
 
 import PyodideRunner from "../components/PyodideRunner.astro";
 
-# Linear vs. Nonlinear Regression
+# Linear and Polynomial Regression
 
-This example demonstrates how increasingly flexible polynomial models behave when the underlying data-generating process is **mildly nonlinear**. Instead of one stacked figure, we place a plot immediately after each model section:
 
-1. Linear regression
-2. Quadratic regression
-3. Cubic regression
-4. Degree-5 polynomial regression
+## 1. Problem setting
 
-All models are fitted to the *same dataset* (same RNG seed and generation procedure). In every plot, the fitted curve is drawn in a **golden line** to visually distinguish it from the scatter.
+We consider supervised regression with scalar input $x \in \mathbb{R}$ and scalar output $y \in \mathbb{R}$. Given a dataset
+$\{(x_i, y_i)\}_{i=1}^n$, we fit a function $\hat f(x)$ from a specified model class and evaluate its agreement with the observed targets.
 
----
-
-## 1. Data Generation
-
-We generate one-dimensional input data $x \in [0, 10]$ and construct targets $y$ using a mildly nonlinear function:
-
-$$
-y = 2.4x + 5 + 2\sin(0.9x) + 0.12(x - 5)^2 + \varepsilon
-$$
-
-where $\varepsilon \sim \mathcal{N}(0, \sigma^2)$ is Gaussian noise.
-
-Key points:
-- The dominant trend is roughly linear.
-- The sinusoidal and quadratic terms introduce systematic nonlinearity.
-- Noise prevents perfect fitting by any deterministic model.
+A central point: **a model can be nonlinear in the input $x$ while remaining linear in its parameters**. Polynomial regression is the canonical example.
 
 ---
 
-## 2. Linear Regression
+## 2. Data generation model
 
-The linear model is:
-
-$$
-\hat y = \beta_1 x + \beta_0
-$$
-
-Parameters are computed using the closed-form least square solution:
+We generate inputs on an interval and synthesize targets from a function that is *mostly linear* but contains systematic curvature:
 
 $$
-\beta_1 = \frac{\sum (x_i - \bar x)(y_i - \bar y)}{\sum (x_i - \bar x)^2},
+y = 2.4x + 5 + 2\sin(0.9x) + 0.12(x - 5)^2 + \varepsilon,
 \qquad
-\beta_0 = \bar y - \beta_1 \bar x
+\varepsilon \sim \mathcal{N}(0, \sigma^2).
 $$
 
-### What to expect
-- Captures the average trend.
-- Leaves structured residuals due to misspecification (nonlinearity).
-- Typically exhibits lower $R^2$ than higher-order polynomials here.
+Interpretation:
+
+- $2.4x + 5$ provides a dominant linear trend.
+- $2\sin(0.9x)$ adds oscillatory structure that cannot be captured by a polynomial of very low degree without approximation error.
+- $0.12(x-5)^2$ adds global curvature.
+- $\varepsilon$ injects irreducible noise; no deterministic regressor can interpolate the data without overfitting.
+
+All models below are trained on the **same** dataset (same random seed and generation procedure) so differences in fit are attributable to the model class, not to resampling.
+
+---
+
+## 3. Linear regression (degree 1)
+
+### 3.1 Model
+The linear model is
+$$
+\hat y = \beta_1 x + \beta_0.
+$$
+
+### 3.2 Least-squares solution (closed form)
+Minimizing $\sum_i (y_i - (\beta_1 x_i + \beta_0))^2$ yields the standard closed-form solution:
+$$
+\beta_1 = \frac{\sum_{i=1}^n (x_i - \bar x)(y_i - \bar y)}{\sum_{i=1}^n (x_i - \bar x)^2},
+\qquad
+\beta_0 = \bar y - \beta_1 \bar x.
+$$
+
+<b>Expected behavior on this dataset</b>
+- The fit captures the global trend.
+- Residuals retain structure (systematic nonlinearity), indicating **model misspecification** rather than random noise.
+- Training $R^2$ is limited by the inability of a line to represent curvature.
 
 <PyodideRunner
   id="poly_reg_linear"
@@ -126,33 +129,40 @@ plt.show()
 
 ---
 
-## 3. Quadratic Regression
+## 4. Quadratic regression (degree 2)
 
-A quadratic model introduces curvature:
-
+### 4.1 Model
+A quadratic regressor is
 $$
-\hat y = a_2 x^2 + a_1 x + a_0
-$$
-
-Although nonlinear in $x$, it is linear in parameters $(a_2, a_1, a_0)$ and is solved by least squares:
-
-$$
-\min_a \|Xa - y\|_2^2
+\hat y = a_2 x^2 + a_1 x + a_0.
 $$
 
-with design matrix:
+This is nonlinear in $x$ but **linear in parameters** $(a_2,a_1,a_0)$.
 
+### 4.2 Design matrix formulation
+Define the design matrix
 $$
 X = \begin{bmatrix}
 x_1^2 & x_1 & 1 \\
 x_2^2 & x_2 & 1 \\
-\vdots & \vdots & \vdots
-\end{bmatrix}
+\vdots & \vdots & \vdots \\
+x_n^2 & x_n & 1
+\end{bmatrix},
+\qquad
+a = \begin{bmatrix} a_2 \\ a_1 \\ a_0 \end{bmatrix},
+\qquad
+y = \begin{bmatrix} y_1 \\ \vdots \\ y_n \end{bmatrix}.
 $$
 
-### What to expect
-- Better captures curvature than the linear model.
-- Higher $R^2$ in this dataset (on training data).
+Then $\hat y = Xa$ and the least-squares problem is
+$$
+\min_a \|Xa - y\|_2^2.
+$$
+
+<b>Expected behavior on this dataset</b>
+- Adds curvature and typically improves training fit relative to the linear model.
+- Still cannot represent oscillations well, but approximates the global quadratic component.
+- Training $R^2$ increases because the model class is strictly richer than degree 1.
 
 <PyodideRunner
   id="poly_reg_quadratic"
@@ -214,19 +224,21 @@ plt.show()
 
 ---
 
-## 4. Cubic Regression
+## 5. Cubic regression (degree 3)
 
-The cubic model adds another degree of freedom:
-
+### 5.1 Model
+The cubic model is
 $$
-\hat y = c_3 x^3 + c_2 x^2 + c_1 x + c_0
+\hat y = c_3 x^3 + c_2 x^2 + c_1 x + c_0.
 $$
 
-It is also solved by linear least squares using an appropriate polynomial design matrix.
+### 5.2 Least squares (linear in parameters)
+As with degree 2, we construct a polynomial design matrix with columns $(x^3, x^2, x, 1)$ and solve a linear least-squares problem.
 
-### What to expect
-- More flexible than quadratic.
-- Can follow subtle structure better, but increased flexibility can also fit noise if pushed too far.
+<b>Expected behavior on this dataset</b>
+- Greater flexibility enables closer tracking of systematic structure.
+- Training error typically decreases again.
+- Increased flexibility also increases sensitivity to noise, especially near domain boundaries.
 
 <PyodideRunner
   id="poly_reg_cubic"
@@ -288,19 +300,20 @@ plt.show()
 
 ---
 
-## 5. Degree-5 Polynomial 
+## 6. Degree-5 polynomial regression (degree 5)
 
-To satisfy the intent (a more flexible model than cubic) in a 1D setting, we use a degree-5 polynomial:
-
+### 6.1 Model
+A degree-5 polynomial is
 $$
-\hat y = d_5 x^5 + d_4 x^4 + d_3 x^3 + d_2 x^2 + d_1 x + d_0
+\hat y = d_5 x^5 + d_4 x^4 + d_3 x^3 + d_2 x^2 + d_1 x + d_0.
 $$
 
-### What to expect
-- Higher flexibility and typically higher $R^2$ on training data.
-- Increased risk of fitting noise rather than the underlying signal.
-- This model is included to illustrate the bias–variance tradeoff.
+<b>Expected behavior on this dataset</b>
+- Training fit typically improves further (lower residual norms, higher training $R^2$).
+- However, improved training metrics do not imply improved test performance.
+- High-degree polynomials can show undesirable oscillations and boundary artifacts, especially without regularization.
 
+This section exists to make the bias–variance point concrete: **capacity increases training fit monotonically, but generalization is not monotone**.
 
 <PyodideRunner
   id="poly_reg_deg5"
@@ -351,7 +364,8 @@ ax.set_ylabel("y")
 ax.grid(True, alpha=0.25)
 ax.text(
     0.02, 0.98,
-    f"$\\\\hat y = {d5:.3f}x^5 + {d4:.3f}x^4 + {d3:.3f}x^3 + {d2:.3f}x^2 + {d1:.3f}x + {d0:.3f}$\\n$R^2 = {r2:.3f}$",
+    f"$\\\\hat y = {d5:.3f}x^5 + {d4:.3f}x^4 + {d3:.3f}x^3 + {d2:.3f}x^2 + 
+            {d1:.3f}x + {d0:.3f}$\\n$R^2 = {r2:.3f}$",
     transform=ax.transAxes, va="top", ha="left",
     bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.92, linewidth=0.0),
 )
@@ -362,18 +376,27 @@ plt.show()
 
 ---
 
-## 6. Evaluation Metric: $R^2$
+## 7. Training metrics and interpretation
 
-Each plot reports **training** $R^2$ on the same data used to fit:
-
+### 7.1 Coefficient of determination $R^2$
+For observed targets $y$ and predictions $\hat y$, the (training) coefficient of determination is
 $$
-R^2 = 1 - \frac{\sum (y_i - \hat y_i)^2}{\sum (y_i - \bar y)^2}
+R^2 = 1 - \frac{\sum_{i=1}^n (y_i - \hat y_i)^2}{\sum_{i=1}^n (y_i - \bar y)^2}.
 $$
 
-Interpretation:
-- Larger $R^2$ indicates the model explains more variance in the observed $y$.
-- Training $R^2$ generally increases with model flexibility, but that does not guarantee better generalization.
+Key facts:
 
+- $R^2$ measures the fraction of variance (around $\bar y$) explained by the fitted model **on the data evaluated**.
+- When computed on the training set, $R^2$ usually increases with model flexibility.
+- A higher training $R^2$ does **not** certify better out-of-sample performance.
+
+### 7.2 L2 error and RMSE (training set)
+Two complementary training diagnostics are:
+
+- $\ell_2$ residual norm: $\|y-\hat y\|_2$
+- RMSE: $\sqrt{\frac{1}{n}\sum_i (y_i-\hat y_i)^2}$
+
+Both decrease as the model class becomes more expressive (on training data), but neither prevents overfitting.
 
 <PyodideRunner
   id="poly_reg_l2_compare"
@@ -492,3 +515,283 @@ ax.legend(["RMSE"], loc="upper center", bbox_to_anchor=(0.5, -0.18),
 plt.show()
 `}
 />
+
+---
+
+
+
+## 8. k-Nearest Neighbors (k-NN): a nonparametric local model
+
+Polynomial regression is a **parametric** approach: the hypothesis class is determined by a fixed set of parameters (the coefficients). In contrast, *k*-Nearest Neighbors (k-NN) is a **nonparametric** method: it stores the training set and predicts using local neighborhoods at query time.
+
+### 8.1 Classification vs. regression
+k-NN can be used for both tasks:
+
+- **k-NN classification:** predict a class label by majority vote among the *k* nearest training points.
+- **k-NN regression:** predict a real value by averaging the neighbors' targets (often with distance weights).
+
+In both cases, the inductive bias is the same: **nearby points in input space should have similar outputs**.
+
+### 8.2 Decision boundary geometry
+For classification, the k-NN decision boundary is determined by the local arrangement of labeled samples:
+
+- Small *k* yields a high-variance boundary that can track noise.
+- Large *k* yields a smoother, higher-bias boundary that can wash out fine structure.
+
+A common refinement is **distance-weighted voting**, which reduces sensitivity to the arbitrary choice of *k* by giving more influence to closer neighbors. One typical weighting is
+
+$$
+w(d) = \exp(-\lambda d^2),
+$$
+
+where $d$ is Euclidean distance and $\lambda > 0$ controls how quickly influence decays with distance.
+
+<PyodideRunner
+  id="knn_weighted_boundary"
+  title="k-NN classification (distance-weighted) and the effect of k"
+  height={520}
+  autoRun={false}
+  initialCode={`import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+
+# -----------------------------
+# 1) Toy dataset (2 classes, 2D)
+# -----------------------------
+rng = np.random.default_rng(0)
+
+n = 80
+X0 = rng.normal(loc=[-1.2, -0.8], scale=1.0, size=(n // 2, 2))
+X1 = rng.normal(loc=[+1.2, +0.8], scale=1.0, size=(n // 2, 2))
+
+# optional noisy points near the boundary
+m = 10
+X_noise = rng.normal(loc=[0.0, 0.0], scale=0.45, size=(m, 2))
+y_noise = rng.integers(0, 2, size=m)
+
+X = np.vstack([X0, X1, X_noise])
+y = np.hstack([
+    np.zeros(len(X0), dtype=int),
+    np.ones(len(X1), dtype=int),
+    y_noise
+])
+
+# -----------------------------
+# 2) Distance-weighted k-NN probability for class 1
+# -----------------------------
+lam = 3.0  # fixed across plots
+
+def knn_proba_weighted(X_train, y_train, X_query, k=5, lam=3.0):
+    """Return p(y=1 | x) using distance-weighted voting.
+
+    Weight: w(d) = exp(-lam * d^2). For binary labels {0,1}, the weighted
+    average of labels equals the estimated probability of class 1.
+    """
+    # Pairwise squared distances: ||x - x_i||^2
+    # X_query: (Q,2), X_train: (N,2)
+    diff = X_query[:, None, :] - X_train[None, :, :]
+    D2 = np.sum(diff * diff, axis=2)  # (Q,N)
+
+    # Indices of k smallest distances (partial sort)
+    nn_idx = np.argpartition(D2, kth=k-1, axis=1)[:, :k]  # (Q,k)
+    D2k = np.take_along_axis(D2, nn_idx, axis=1)
+
+    W = np.exp(-lam * D2k)
+    votes = y_train[nn_idx].astype(float)
+    p1 = (W * votes).sum(axis=1) / (W.sum(axis=1) + 1e-12)
+    return p1
+
+# -----------------------------
+# 3) Grid for plotting
+# -----------------------------
+pad = 0.8
+x1_min, x1_max = X[:, 0].min() - pad, X[:, 0].max() + pad
+x2_min, x2_max = X[:, 1].min() - pad, X[:, 1].max() + pad
+
+gx1 = np.linspace(x1_min, x1_max, 320)
+gx2 = np.linspace(x2_min, x2_max, 260)
+G1, G2 = np.meshgrid(gx1, gx2)
+G = np.c_[G1.ravel(), G2.ravel()]
+
+region_cmap = ListedColormap(["#cfe3f5", "#fde0c2"])
+
+# -----------------------------
+# 4) Compare boundaries for different k
+# -----------------------------
+Ks = [1, 6, 16]  # low -> high k
+
+plt.rcParams.update({
+    "figure.dpi": 140,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "font.size": 11,
+})
+
+fig, axes = plt.subplots(3, 1, figsize=(8.5, 12.5), layout="constrained")
+
+for ax, k in zip(axes, Ks):
+    P = knn_proba_weighted(X, y, G, k=k, lam=lam).reshape(G1.shape)
+
+    # hard regions from probability threshold
+    ax.contourf(G1, G2, (P >= 0.5).astype(int),
+                levels=[-0.5, 0.5, 1.5], cmap=region_cmap, alpha=0.35)
+
+    # decision boundary p=0.5
+    ax.contour(G1, G2, P, levels=[0.5], colors="black", linewidths=1.0)
+
+    ax.scatter(X[y == 0, 0], X[y == 0, 1],
+               s=34, alpha=0.95, edgecolors="none", color="#1f77b4", label="Class 0")
+    ax.scatter(X[y == 1, 0], X[y == 1, 1],
+               s=34, alpha=0.95, edgecolors="none", color="#ff7f0e", label="Class 1")
+
+    ax.set_title(f"k-NN (Distance-weighted): k = {k}", pad=10)
+    ax.set_xlabel("x1")
+    ax.set_ylabel("x2")
+    ax.grid(True, alpha=0.25)
+
+    ax.legend(frameon=True, loc="lower right",
+              bbox_to_anchor=(0.98, 0.02), edgecolor="black", facecolor="white")
+
+    ax.text(0.98, 0.95,
+            rf"$k={k},\ \lambda={lam}$",
+            transform=ax.transAxes, ha="right", va="top",
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", 
+                    edgecolor="black", linewidth=1.0))
+
+plt.show()
+`}
+/>
+
+---
+
+
+## 9. Logistic Regression
+
+Logistic regression models
+
+$$
+p(y=1 \mid x) = \sigma(w^\top x + b),
+$$
+
+with
+
+$$
+\sigma(z) = \frac{1}{1+e^{-z}}.
+$$
+
+Equivalently,
+
+$$
+\log\frac{p(y=1 \mid x)}{p(y=0 \mid x)} = w^\top x + b.
+$$
+
+The model is linear in the log-odds, but it produces calibrated probabilities rather than hard decisions.
+
+---
+
+## 10. The Logistic Loss
+
+Let $z=w^\top x + b$. Maximizing the conditional likelihood of labels is equivalent to minimizing the negative log-likelihood, which yields the logistic loss. For data $(x_i,y_i)$:
+
+$$
+\min_{w,b}\ \sum_{i=1}^n \left[\log(1+e^{z_i}) - y_i z_i\right].
+$$
+
+This objective is convex in $(w,b)$.
+
+---
+
+## 9. Demonstration: Logistic Regression Trained by Gradient Descent
+
+The next cell trains logistic regression using NumPy gradient descent and visualizes the decision boundary.
+
+<PyodideRunner
+  id="cls_logreg_demo"
+  title="Supervised classification with logistic regression (NumPy training)"
+  height={460}
+  autoRun={true}
+  initialCode={`import numpy as np
+import matplotlib.pyplot as plt
+
+# -----------------------------
+# Toy supervised dataset (2 classes, 2 features)
+# -----------------------------
+rng = np.random.default_rng(0)
+n = 160
+
+X0 = rng.normal(loc=[-1.6, -1.0], scale=0.7, size=(n // 2, 2))
+X1 = rng.normal(loc=[+1.6, +1.0], scale=0.7, size=(n // 2, 2))
+X = np.vstack([X0, X1])
+y = np.hstack([np.zeros(n // 2), np.ones(n // 2)]).astype(float)
+
+# Add bias
+Xb = np.c_[np.ones(len(X)), X]  # (n, 3)
+
+def sigmoid(z):
+    # numerically stable sigmoid
+    z = np.clip(z, -40.0, 40.0)
+    return 1.0 / (1.0 + np.exp(-z))
+
+def nll_and_grad(w):
+    z = Xb @ w
+    # Stable negative log-likelihood: sum(log(1+exp(z)) - y*z)
+    nll = np.sum(np.logaddexp(0.0, z) - y * z)
+    p = sigmoid(z)
+    grad = Xb.T @ (p - y)
+    return nll, grad
+
+# -----------------------------
+# Gradient descent
+# -----------------------------
+w = np.zeros(Xb.shape[1])
+lr = 0.05
+steps = 800
+
+for t in range(steps):
+    loss, grad = nll_and_grad(w)
+    w -= lr * grad / len(X)
+
+# Predictions
+proba = sigmoid(Xb @ w)
+yhat = (proba >= 0.5).astype(int)
+acc = (yhat == y.astype(int)).mean()
+
+# -----------------------------
+# Plot points + decision boundary
+# -----------------------------
+fig, ax = plt.subplots(figsize=(8.5, 5.2), dpi=130)
+
+ax.scatter(X0[:, 0], X0[:, 1], s=28, alpha=0.85, edgecolors="none", label="Class 0")
+ax.scatter(X1[:, 0], X1[:, 1], s=28, alpha=0.85, edgecolors="none", 
+            label="Class 1", color="#380")
+
+# Decision boundary: w0 + w1*x1 + w2*x2 = 0
+x1_line = np.linspace(X[:, 0].min() - 0.8, X[:, 0].max() + 0.8, 250)
+if abs(w[2]) > 1e-12:
+    x2_line = -(w[0] + w[1] * x1_line) / w[2]
+    ax.plot(x1_line, x2_line, linewidth=3, label="Decision boundary", color="goldenrod")
+else:
+    ax.axvline(-w[0] / w[1], linewidth=3, label="Decision boundary")
+
+ax.set_title("Logistic regression: probabilities with a linear boundary", pad=10)
+ax.set_xlabel("x1")
+ax.set_ylabel("x2")
+ax.grid(True, alpha=0.25, linewidth=1)
+ax.spines["top"].set_visible(False)
+ax.spines["right"].set_visible(False)
+ax.legend(frameon=False, loc="lower left", bbox_to_anchor=(0.02, 0.02))
+
+ax.text(0.60, 0.95,
+        f"$p(y=1|x)=\\sigma(w_0+w_1x_1+w_2x_2)$\\n"
+        f"$w=[{w[0]:.2f},{w[1]:.2f},{w[2]:.2f}],\\ \\mathrm{{acc}}={acc:.3f}$",
+        transform=ax.transAxes, va="top")
+
+plt.tight_layout()
+plt.show()
+`}
+/>
+
+---

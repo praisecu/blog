@@ -116,12 +116,14 @@ function indent(depth) {
 
   /* Title */
   .toc-title {
-    font-size: 11px;
+    font-size: 14px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    font-weight: 800;
+    font-weight: 600;
     margin: 0 0 12px;
     color: var(--toc-title);
+    text-align: center;
+    text-decoration: underline;
   }
 
   /* Desktop container: “card” */
@@ -141,7 +143,7 @@ function indent(depth) {
     padding: 9px 10px 9px 12px;
     border-radius: 12px;
     text-decoration: none;
-    font-size: 13px;
+    font-size: 16px;
     line-height: 1.25;
     color: var(--toc-link);
     transition: background 140ms ease, color 140ms ease, transform 140ms ease;
@@ -209,7 +211,7 @@ function indent(depth) {
 
   /* ---------------- Theme variables (Light + Dark) ---------------- */
   :root {
-    --toc-bg: rgba(255, 255, 255, 0.92);
+    --toc-bg: rgb(255, 255, 255);
     --toc-border: var(--border);
     --toc-shadow: 0 10px 30px rgba(20, 20, 20, 0.06);
 
@@ -219,7 +221,7 @@ function indent(depth) {
     --toc-link-hover-bg: rgba(24, 24, 24, 0.04);
     --toc-link-hover: rgba(32, 32, 32, 0.92);
 
-    --toc-active-bg: rgba(234, 179, 8, 0.14);
+    --toc-active-bg: rgba(238, 178, 0, 0.29);
     --toc-active-outline: rgba(234, 179, 8, 0.35);
     --toc-active-shadow: 0 6px 16px rgba(234, 179, 8, 0.18);
 

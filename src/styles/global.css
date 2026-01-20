@@ -9,20 +9,20 @@
   /* Base */
   --bg: #ffffff;
   --fg: #111827;
-  --muted: #6b7280;
-  --border: #ece7da;
+  --muted: #333333;
+  --border: #b39d6775;
   --card: #fbfaf1;
 
   /* Palette (olive + gold) */
-  --brand-ink: #2a2400;     /* deep olive/brown */
+  --brand-ink: #42423f;     /* deep olive/brown */
   --brand-gold: #413800;    /* warm gold for links/author */
-  --brand-gold-2: #503c00;  /* hover */
+  --brand-gold-2: #ffbf00;  /* hover */
   --brand-wash: #f3f1df;    /* warm beige highlight */
   --brand-wash-2: #ece7c9;  /* stronger beige */
 
   /* Accents */
   --link: var(--brand-gold);
-  --accent-bg: rgba(65, 56, 0, 0.10);
+  --accent-bg: rgba(0, 0, 0, 0.1);
   --accent-bg-hover: rgba(65, 56, 0, 0.16);
 
   /* Layout */
@@ -39,7 +39,7 @@
 
 /* ---------- Dark mode overrides (toggle via <html data-theme="dark">) ---------- */
 html[data-theme="dark"] {
-  --bg: #0b0b0b;
+  --bg: #000000ef;
   --fg: #e5e7eb;
   --muted: rgba(229, 231, 235, 0.62);
   --border: rgba(65, 56, 0, 0.28);
@@ -565,7 +565,7 @@ html[data-theme="dark"] .theme-toggle {
 
 /* Paper theme */
 html[data-theme="paper"] {
-  --bg: #fbf7ef;
+  --bg: #fff5e4f5;
   --fg: #111827;
   --muted: rgba(17, 24, 39, 0.66);
   --border: rgba(42, 36, 0, 0.14);
@@ -587,12 +587,13 @@ html[data-theme="paper"] h3,
 html[data-theme="paper"] .topbar,
 html[data-theme="paper"] .toc-title,
 html[data-theme="paper"] .theme-toggle {
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif;
+  font-family: 'Open Sans', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
 }
 
-html[data-theme="paper"] main {
-  line-height: 1.85;
-}
+/* html[data-theme="paper"] main { */
+  /* line-height: 1.85; */
+/* } */
 
 html[data-theme="paper"] pre {
   background: rgba(17, 24, 39, 0.035);
@@ -604,10 +605,10 @@ html[data-theme="paper"] body {
   font-family: var(--font-sans);
 }
 
-html[data-theme="paper"] main {
-  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  line-height: 1.85;
-}
+/* html[data-theme="paper"] main { */
+  /* font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif; */
+  /* line-height: 1.85; */
+/* } */
 
 /* Ensure TOC + sidebar stay sans */
 html[data-theme="paper"] aside,
