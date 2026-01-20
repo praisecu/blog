@@ -1,223 +1,175 @@
 ---
 layout: ../layouts/PostLayout.astro
-title: "Optical Flow vs Motion Flow: Geometry, Failure Modes, and Robotics Implications"
-author: "Chahat"
+title: "Motion Fields and Optical Flow: Geometry, Constraints, and Robotics Implications"
+author: "Chahat Deep Singh"
+description: "From 3D camera/object motion to 2D image motion: motion fields, optical flow, constraints, Lucas–Kanade, failure modes, and why the distinction matters in robotics."
 date: "January 18, 2026"
-description: "1–2 sentence abstract that appears on the homepage."
 image: "images/optical-flow.png"
-tags: ["Robotics", "Geometry"]
+tags: ["computer-vision", "optical-flow", "motion-fields", "geometry", "robotics"]
 featured: false
 ---
 
-## Introduction
+## Learning Objectives
 
-“Optical flow” is often used as shorthand for “image motion,” but that conflation is exactly what causes confusion in robotics pipelines.
-Optical flow is a **2D field in the image plane** describing apparent pixel motion between frames. Motion flow (sometimes used to mean *rigid-motion-induced image flow*) is the **image motion predicted by 3D scene structure and camera motion**. They coincide only under restrictive assumptions (brightness constancy, no occlusions, no non-rigid motion, no illumination change, etc.).
+By the end of this lecture, you should be able to:
 
-This post derives the core equations, shows where they break, and explains how these distinctions matter when you use flow for control, VO/VIO, and perception.
-
----
-
-## Definitions
-
-Let the image intensity be $I(\mathbf{x}, t)$ with pixel coordinate $\mathbf{x} = (x, y)^\top$.
-
-**Optical flow** is a 2D vector field
-$$
-\mathbf{u}(\mathbf{x}) = (u(\mathbf{x}), v(\mathbf{x}))^\top
-$$
-such that a point at $\mathbf{x}$ at time $t$ moves to $\mathbf{x} + \mathbf{u}(\mathbf{x})$ at $t + \Delta t$.
-
-**Motion flow** is the flow field induced by camera rigid motion $(\mathbf{v}, \boldsymbol{\omega})$ and scene depth $Z(\mathbf{x})$ through projective geometry. It is what you *should* observe in the image under a rigid world and calibrated camera.
-
-Optical flow is *estimated from images* (photometric assumptions). Motion flow is *predicted from geometry* (kinematics + depth).
+- Distinguish **motion fields** (true projected image motion induced by 3D motion) from **optical flow** (estimated image motion).
+- Derive the **motion field equations** for camera translation and rotation.
+- Explain why optical flow is **fundamentally ill-posed** without additional constraints.
+- Understand the **brightness constancy constraint** and its consequences.
+- Identify **failure modes** of optical flow that matter in robotics systems.
+- Explain where **Lucas–Kanade** fits—and what it does *not* solve.
 
 ---
 
-## Optical flow from brightness constancy
+## 1. Image Motion Is Not a Primitive Quantity
 
-The classical starting point is **brightness constancy**:
-$$
-I(\mathbf{x}, t) = I(\mathbf{x} + \mathbf{u}(\mathbf{x}), t+\Delta t).
-$$
+In robotics and vision pipelines, “optical flow” is often treated as a primitive sensor measurement. This is incorrect.
 
-For small motions, linearize:
-$$
-I(\mathbf{x} + \mathbf{u}, t+\Delta t) \approx I(\mathbf{x}, t) + I_x u + I_y v + I_t,
-$$
-giving the **optical flow constraint equation (OFCE)**:
-$$
-I_x u + I_y v + I_t = 0.
-$$
+There is no such thing as *true optical flow* in the physical world.
 
-This is one equation for two unknowns $(u,v)$ — the **aperture problem**. Any component of motion orthogonal to the local image gradient is unobservable:
-$$
-\mathbf{u} = \mathbf{u}_\parallel + \mathbf{u}_\perp,\quad \nabla I \cdot \mathbf{u}_\perp = 0.
-$$
+What exists physically is **3D motion**:
+- of the camera,
+- of objects,
+- or both.
 
-So, *optical flow is not “the” motion*; it’s the motion field that best satisfies photometric constraints plus whatever regularization you impose.
+What we observe in images is the **projection of this 3D motion onto the image plane**.
+
+This projection is called the **motion field**.
 
 ---
 
-## Regularization: why every optical flow method encodes a prior
+## 2. Motion Field: Definition
 
-Most flow methods solve an optimization problem:
-$$
-\min_{\mathbf{u}} \int_\Omega \rho\!\left(I(\mathbf{x}+\mathbf{u}, t+\Delta t)-I(\mathbf{x}, t)\right)\,d\mathbf{x}
-\;+\;
-\lambda \int_\Omega \phi(\nabla \mathbf{u})\,d\mathbf{x}.
-$$
+The **motion field** is the 2D velocity of image points induced by known 3D motion and scene geometry.
 
-- The first term enforces *data consistency* (brightness constancy, sometimes gradient constancy).
-- The second enforces *spatial coherence* (smoothness, piecewise-smoothness, total variation, etc.).
+Formally:
+- Let a 3D point \( \mathbf{X}(t) \) project to image coordinates \( (x(t), y(t)) \).
+- The **motion field** is \( (\dot{x}, \dot{y}) \), obtained by differentiating the projection equations.
 
-This is not a nuisance detail: the choice of $\phi$ is an *assumption about the world*.
-In robotics scenes with thin structures, disocclusions, specularities, or rapid lighting change, many “accurate” benchmark priors become liabilities.
+Crucially:
+- The motion field **depends on depth**.
+- It is **well-defined** even in textureless regions.
+- It is **not directly observable** from image intensities alone.
 
 ---
 
-## Motion flow from projective geometry
+## 3. Optical Flow: What It Actually Is
 
-Now derive motion flow. Let a 3D point in camera coordinates be $\mathbf{X}=(X,Y,Z)^\top$. Under a pinhole model (normalized image coordinates),
-$$
-x = \frac{X}{Z},\qquad y = \frac{Y}{Z}.
-$$
+**Optical flow** is an *estimate* of image motion computed from brightness patterns over time.
 
-Let the camera undergo instantaneous rigid motion: translational velocity $\mathbf{v}=(v_x,v_y,v_z)^\top$ and angular velocity $\boldsymbol{\omega}=(\omega_x,\omega_y,\omega_z)^\top$. The point’s velocity in camera coordinates (rigid scene) is:
-$$
-\dot{\mathbf{X}} = -\mathbf{v} - \boldsymbol{\omega}\times \mathbf{X}.
-$$
+It is:
+- An *inference problem*, not a geometric one.
+- Dependent on assumptions about the scene, lighting, and noise.
+- Undefined where those assumptions fail.
 
-Differentiate $x = X/Z$, $y = Y/Z$. The induced image velocity $(\dot{x},\dot{y})$ is:
-$$
+The common but incorrect identification  
+> *optical flow = image motion*  
+
+is the root cause of many robotics failures.
+
+---
+
+## 4. Brightness Constancy Constraint
+
+Most optical flow methods begin with the **brightness constancy assumption**:
+
+\[
+I(x, y, t) = I(x + \delta x, y + \delta y, t + \delta t)
+\]
+
+Linearizing yields the **optical flow constraint equation**:
+
+\[
+I_x u + I_y v + I_t = 0
+\]
+
+This is:
+- One equation
+- Two unknowns \((u, v)\)
+
+Therefore, **the problem is underdetermined**.
+
+This is not a numerical issue.  
+It is a **structural ambiguity**.
+
+---
+
+## 5. Aperture Problem (Not a Corner Case)
+
+The aperture problem is not a pathological edge case—it is the *generic situation*.
+
+- Along edges: motion perpendicular to the gradient is unobservable.
+- In uniform regions: motion is completely unconstrained.
+
+Any method that claims to “solve optical flow” without additional assumptions is mathematically incorrect.
+
+---
+
+## 6. Lucas–Kanade: What It Assumes
+
+The **Lucas–Kanade** method resolves the ambiguity by assuming:
+
+- Motion is **locally constant** within a small window.
+
+This converts the underdetermined problem into a least-squares system.
+
+Important consequences:
+- It works **only where intensity gradients span multiple directions** (i.e., corners).
+- It fails silently in low-texture regions.
+- It does not recover the true motion field—only a *regularized estimate*.
+
+Lucas–Kanade is an estimator, not a physical model.
+
+---
+
+## 7. Motion Field from Camera Motion (Key Result)
+
+For a calibrated camera with focal length \(f\), the motion field induced by:
+- translational velocity \(\mathbf{T} = (T_x, T_y, T_z)\),
+- rotational velocity \(\boldsymbol{\omega} = (\omega_x, \omega_y, \omega_z)\),
+
+can be written as:
+
+\[
 \begin{aligned}
-\dot{x} &= \frac{1}{Z}\left(-v_x + x v_z\right) + x y\, \omega_x - (1+x^2)\,\omega_y + y\,\omega_z, \\
-\dot{y} &= \frac{1}{Z}\left(-v_y + y v_z\right) + (1+y^2)\,\omega_x - x y\,\omega_y - x\,\omega_z.
+u &= \frac{-fT_x + xT_z}{Z} + xy\omega_x - (f^2 + x^2)\omega_y + y\omega_z \\
+v &= \frac{-fT_y + yT_z}{Z} + (f^2 + y^2)\omega_x - xy\omega_y - x\omega_z
 \end{aligned}
-$$
+\]
 
-Key takeaways:
-
-1. The translational component scales as $1/Z$. Closer objects move faster in the image.
-2. The rotational component is depth-independent (in normalized coordinates).
-3. You need calibration (or work in pixel coordinates with intrinsics).
-
-This is **motion flow**: a geometric prediction. If your estimated optical flow disagrees with this model, the disagreement is informative: non-rigidity, wrong depth, rolling shutter, photometric violation, or simply estimator bias.
+Key observations:
+- **Translation depends on depth** \(Z\).
+- **Rotation does not**.
+- Optical flow algorithms cannot separate these without additional information.
 
 ---
 
-## Relationship between optical flow and motion flow
+## 8. Why This Matters in Robotics
 
-When do they match?
+Confusing optical flow with motion fields leads to:
 
-They match if:
-- brightness constancy holds (or your data term is correct),
-- the scene is rigid (or motion model matches),
-- depth is well-defined (no transparency, no reflections),
-- there are no occlusions/disocclusions (or you model them),
-- camera model matches reality (no rolling shutter, no unmodeled distortion).
+- Incorrect ego-motion estimates
+- Spurious obstacle detection
+- Control instability
+- Dataset-specific “success” that collapses in deployment
 
-In robotics, at least one of these is routinely violated. Treating optical flow as ground-truth motion is therefore incorrect.
-
----
-
-## Failure modes that matter in robotics
-
-### 1) Occlusion and disocclusion
-Brightness constancy implicitly assumes correspondence exists. Occlusions violate that. Any estimator must either:
-- detect occlusions and downweight data terms, or
-- hallucinate motion that satisfies the regularizer.
-
-Downstream effect: if you use flow for control (e.g., collision avoidance via time-to-contact), occlusion-induced artifacts can create false hazards or miss real ones.
-
-### 2) Illumination and exposure changes
-Outdoor robotics and SLAM systems see strong intensity variation. Classic fixes:
-- gradient constancy,
-- robust penalties $\rho$,
-- photometric calibration,
-- learned features.
-
-But note: once you move away from intensity constancy, “optical flow” becomes “flow in feature space.” That can still be useful, but interpret it accordingly.
-
-### 3) Rolling shutter
-Many robots use rolling-shutter cameras. The rigid-motion flow equation above assumes global shutter. Rolling shutter produces a time-varying pose during readout, which warps the flow field in systematic ways. If you ignore this, you will bias egomotion and depth estimates.
-
-### 4) Dynamic scenes and non-rigid motion
-If objects move independently, optical flow is a mixture of:
-- rigid background motion flow (camera-induced),
-- independent object motions,
-- articulations.
-
-This is why flow is often paired with segmentation or layered motion models in robotics perception stacks.
+In robotics:
+- Optical flow is a *cue*, not a measurement.
+- Geometry and dynamics must come first.
 
 ---
 
-## Using flow for ego-motion: what is and isn’t identifiable?
+## 9. Summary (Non-Negotiable Facts)
 
-From motion flow equations, translation is entangled with depth through $1/Z$. This implies:
+- Motion fields are **physically defined**; optical flow is **inferred**.
+- Optical flow is **ill-posed** without assumptions.
+- Lucas–Kanade does not “solve” optical flow—it regularizes it.
+- Depth is inseparable from translation-induced image motion.
+- Treating optical flow as ground truth is a category error.
 
-- With pure rotation $(\mathbf{v}=0)$, you can estimate $\boldsymbol{\omega}$ from flow without depth (in principle).
-- With translation, you need depth (or additional constraints) to separate $\mathbf{v}$ and $Z$.
+If you remember only one thing:
 
-This is the root of **scale ambiguity** in monocular setups. You can get the *direction* of translation and the *structure up to scale* but not absolute scale without additional sensors or priors.
-
----
-
-## Flow, depth, and time-to-contact
-
-For planar motion towards a surface, an important quantity is **divergence** of flow (expansion), related to time-to-contact (TTC). In simplified cases,
-$$
-\text{TTC} \approx \frac{1}{\nabla \cdot \mathbf{u}}.
-$$
-
-But this is only meaningful if:
-- the flow corresponds to actual motion (not regularizer artifacts),
-- the scene is approximately rigid locally,
-- you handle occlusions and independently moving objects.
-
-This is why TTC-from-flow works well in constrained setups and can fail catastrophically in unconstrained environments.
+> **Optical flow is not motion. It is an estimate conditioned on assumptions.**
 
 ---
-
-## Practical guidance: what to do in robotics pipelines
-
-### If your goal is VO/VIO robustness
-- Use flow as a **measurement**, not truth.
-- Prefer sparse, well-conditioned features (corners) if your estimator can’t robustly handle occlusions.
-- If you use dense flow, explicitly model:
-  - occlusion masks,
-  - robust penalties,
-  - rolling shutter if applicable,
-  - camera intrinsics and distortion.
-
-### If your goal is control (navigation, landing, avoidance)
-- Avoid directly using raw dense flow magnitude as a proxy for distance.
-- Use flow-derived quantities that are physically meaningful *under your assumptions*:
-  - divergence (TTC),
-  - focus of expansion (FOE) for heading,
-  - epipolar constraints (rigid background).
-- Gate estimates by confidence/occlusion and ignore regions dominated by independent motion.
-
-### If your goal is dynamic scene understanding
-- Combine flow with segmentation or multi-body motion models:
-  - layered motion decomposition,
-  - rigid background estimation + residual flow for objects,
-  - scene flow (3D motion) if you have stereo/depth.
-
----
-
-## Summary
-
-- Optical flow is an **estimated 2D field** defined by photometric assumptions and regularization.
-- Motion flow is the **physically predicted image velocity** induced by camera rigid motion and depth.
-- Confusing the two leads to incorrect conclusions, especially in robotics where assumptions break routinely.
-- The difference between them is not noise; it is often the signal (non-rigidity, occlusion, calibration errors, rolling shutter, illumination change).
-
----
-
-## References
-
-1. Horn, B. K. P., & Schunck, B. G. (1981). Determining optical flow.  
-2. Lucas, B. D., & Kanade, T. (1981). An iterative image registration technique with an application to stereo vision.  
-3. Longuet-Higgins, H. C., & Prazdny, K. (1980). The interpretation of a moving retinal image.  
-4. Heeger, D. J., & Jepson, A. (1992). Subspace methods for recovering rigid motion I: Algorithm and implementation.
