@@ -44,8 +44,8 @@ This projection is called the **motion field**.
 The **motion field** is the 2D velocity of image points induced by known 3D motion and scene geometry.
 
 Formally:
-- Let a 3D point \( \mathbf{X}(t) \) project to image coordinates \( (x(t), y(t)) \).
-- The **motion field** is \( (\dot{x}, \dot{y}) \), obtained by differentiating the projection equations.
+- Let a 3D point $X(t)$ project to image coordinates $(x(t), y(t))$.
+- The **motion field** is $(\dot{x}, \dot{y})$, obtained by differentiating the projection equations.
 
 Crucially:
 - The motion field **depends on depth**.
@@ -74,19 +74,19 @@ is the root cause of many robotics failures.
 
 Most optical flow methods begin with the **brightness constancy assumption**:
 
-\[
+$$
 I(x, y, t) = I(x + \delta x, y + \delta y, t + \delta t)
-\]
+$$
 
 Linearizing yields the **optical flow constraint equation**:
 
-\[
+$$
 I_x u + I_y v + I_t = 0
-\]
+$$
 
 This is:
 - One equation
-- Two unknowns \((u, v)\)
+- Two unknowns $(u, v)$
 
 Therefore, **the problem is underdetermined**.
 
@@ -125,21 +125,22 @@ Lucas–Kanade is an estimator, not a physical model.
 
 ## 7. Motion Field from Camera Motion (Key Result)
 
-For a calibrated camera with focal length \(f\), the motion field induced by:
-- translational velocity \(\mathbf{T} = (T_x, T_y, T_z)\),
-- rotational velocity \(\boldsymbol{\omega} = (\omega_x, \omega_y, \omega_z)\),
+For a calibrated camera with focal length $f$, the motion field induced by:
+- translational velocity $T = (T_x, T_y, T_z)$,
+- rotational velocity $\omega = (\omega_x, \omega_y, \omega_z)$,
 
 can be written as:
 
-\[
-\begin{aligned}
-u &= \frac{-fT_x + xT_z}{Z} + xy\omega_x - (f^2 + x^2)\omega_y + y\omega_z \\
-v &= \frac{-fT_y + yT_z}{Z} + (f^2 + y^2)\omega_x - xy\omega_y - x\omega_z
-\end{aligned}
-\]
+$$
+u = \frac{-fT_x + xT_z}{Z} + xy\omega_x - (f^2 + x^2)\omega_y + y\omega_z
+$$
+
+$$
+v = \frac{-fT_y + yT_z}{Z} + (f^2 + y^2)\omega_x - xy\omega_y - x\omega_z
+$$
 
 Key observations:
-- **Translation depends on depth** \(Z\).
+- **Translation depends on depth** $Z$.
 - **Rotation does not**.
 - Optical flow algorithms cannot separate these without additional information.
 
