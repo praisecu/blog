@@ -9,6 +9,70 @@ tags: ["computer-vision", "optical-flow", "motion-fields", "geometry", "robotics
 featured: false
 ---
 
+import PyodideRunner from "../components/PyodideRunner.astro";
+
+<PyodideRunner
+  id="poly_reg_linear"
+  title="Linear regression"
+  height={380}
+  autoRun={true}
+  initialCode={`import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Data (same in every section)
+rng = np.random.default_rng(0)
+n = 220
+x = np.sort(rng.uniform(0, 10, size=n))
+
+y_true = 2.4 * x + 5.0 + 2.0 * np.sin(0.9 * x) + 0.12 * (x - 5.0) ** 2
+y = y_true + rng.normal(0, 1.8, size=n)
+
+def r2_score(y_true, y_pred):
+    y_bar = np.mean(y_true)
+    ss_tot = np.sum((y_true - y_bar) ** 2)
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    return 1.0 - ss_res / ss_tot
+
+# Closed-form LEast Square Solution:
+x_mean = x.mean()
+y_mean = y.mean()
+b1 = np.sum((x - x_mean) * (y - y_mean)) / np.sum((x - x_mean) ** 2)
+b0 = y_mean - b1 * x_mean
+
+# Predictions
+x_line = np.linspace(x.min(), x.max(), 600)
+y_line = b0 + b1 * x_line
+r2 = r2_score(y, b0 + b1 * x)
+
+plt.rcParams.update({
+    "figure.dpi": 140,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "font.size": 11,
+})
+
+fig, ax = plt.subplots(1, 1, figsize=(8.4, 4.6), layout="constrained")
+ax.scatter(x, y, s=34, alpha=0.78, edgecolors="white", linewidths=0.8, label="data")
+ax.plot(x_line, y_line, linewidth=2.6, color="goldenrod", label="fit")
+ax.set_title("Linear Regression")
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.grid(True, alpha=0.25)
+ax.text(
+    0.02, 0.98,
+    f"$\\\\hat y = {b1:.3f}x + {b0:.3f}$\\n$R^2 = {r2:.3f}$",
+    transform=ax.transAxes, va="top", ha="left",
+    bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.92, linewidth=0.0),
+)
+ax.legend(frameon=False, loc="lower right")
+plt.show()
+`}
+/>
+
 ## Learning Objectives
 
 By the end of this lecture, you should be able to:

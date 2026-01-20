@@ -25,9 +25,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install
-        run: npm install
+        run: npm ci --no-audit --no-fund --prefer-offline
 
       # For project pages the base is /<repo>.
       # In your case repo name is "blog" so base becomes "/blog"
