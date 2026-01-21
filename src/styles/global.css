@@ -19,9 +19,10 @@
   --brand-gold-2: #ffbf00;  /* hover */
   --brand-wash: #f3f1df;    /* warm beige highlight */
   --brand-wash-2: #ece7c9;  /* stronger beige */
+  --brand-gold-link: #8a8816;
 
   /* Accents */
-  --link: var(--brand-gold);
+  --link: var(--brand-gold-link);
   --accent-bg: rgba(0, 0, 0, 0.1);
   --accent-bg-hover: rgba(65, 56, 0, 0.16);
 
@@ -95,7 +96,7 @@ body {
   background: var(--bg);
 
   /* Reading defaults */
-  font-size: 16px;
+  font-size: 1px;
   line-height: 1.7;
   letter-spacing: -0.006em;
   text-rendering: optimizeLegibility;
@@ -105,7 +106,8 @@ body {
 /* Links */
 a {
   color: var(--link);
-  text-decoration: none;
+  text-decoration: underline;
+  /* font-weight: 600; */
 }
 a:hover {
   color: var(--brand-gold-2);
@@ -242,7 +244,7 @@ aside {
 main {
   min-width: 0;
   font-family: var(--font-sans);
-  font-size: 17px;
+  font-size: 20px;
   line-height: 1.78;
   color: rgba(26, 26, 26, 0.8);
 }
@@ -573,7 +575,7 @@ html[data-theme="paper"] {
   --brand-wash: rgba(65, 56, 0, 0.10);
   --brand-wash-2: rgba(65, 56, 0, 0.14);
 
-  --link: #4a3a06;
+  --link: #997500;
 }
 
 /* Paper typography */
@@ -642,3 +644,73 @@ html[data-theme="dark"] .theme-toggle .ticon-moon {
 html[data-theme="paper"] .theme-toggle .ticon-paper {
   display: block !important;
 }
+
+/* =========================================================
+   MDX / Markdown code blocks: padding + curvature + polish
+   ========================================================= */
+
+/* Inline code only (do NOT affect fenced blocks) */
+main :not(pre) > code {
+  padding: 0.16em 0.42em !important;
+  border-radius: 8px !important;
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent) !important;
+  background: color-mix(in srgb, var(--brand-wash) 78%, transparent) !important;
+  white-space: nowrap;
+}
+
+/* Dark theme */
+html[data-theme="dark"] main :not(pre) > code {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Paper theme */
+html[data-theme="paper"] main :not(pre) > code {
+  border-color: color-mix(in srgb, var(--border) 60%, transparent) !important;
+  background: rgba(17, 24, 39, 0.04) !important;
+}
+
+/* Fenced blocks */
+main pre {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--card) 92%, #111827 2%); /* light-ish by default */
+  overflow: auto;
+  line-height: 1.55;
+}
+
+/* Dark theme: darker, but not black */
+html[data-theme="dark"] main pre {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+/* Paper theme: very light */
+html[data-theme="paper"] main pre {
+  background: rgba(17, 24, 39, 0.04);
+}
+
+/* Shiki/Astro code blocks */
+pre.astro-code {
+  background: rgb(27, 27, 27) !important; /* light default */
+  border: 1px solid color-mix(in srgb, var(--border) 10%, transparent) !important;
+  border-radius: 14px !important;
+  padding: 14px 16px !important;
+  overflow: auto;
+}
+
+/* Dark theme */
+html[data-theme="dark"] pre.astro-code {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Paper theme */
+html[data-theme="paper"] pre.astro-code {
+  background: rgba(19, 20, 0, 0.993) !important;
+}
+
+
+

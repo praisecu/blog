@@ -1,0 +1,327 @@
+---
+layout: ../layouts/PostLayout.astro
+title: "How to Write Tutorial Posts in MDX"
+author: "Chahat Deep Singh"
+description: "A practical guide to authoring .mdx posts in this site: frontmatter, headings, math, images, code blocks, and interactive Python cells via PyodideRunner."
+date: "January 20, 2026"
+tags: ["mdx", "astro", "markdown", "latex", "pyodide", "tutorial"]
+image: "images/mdx-tutorial.png"
+featured: false
+---
+
+---
+
+{/* This is a comment. Use this to run in-browser python code. */}
+import PyodideRunner from "../components/PyodideRunner.astro";
+
+This site uses **MDX**: Markdown that can also embed components (JSX-like tags). In practice, that means you can write a normal tutorial with headings, lists, equations, images, and also drop in interactive Python code cells (via `PyodideRunner`) when needed. This website uses using Astro, Pyodide and Svelte in backhand.
+
+This document is itself a working reference you can copy/paste from.
+
+---
+
+## 1. File structure and where things live
+
+A typical post is a single `*.mdx` file under your content/posts folder (wherever your Astro content collection expects it).
+
+Common asset locations (typical Astro conventions):
+
+- **Images for posts**: `public/images/...`  
+  Refer to them as `images/...` (no leading slash) in frontmatter, and either `images/...` or `/images/...` in the body, depending on how your router is configured.
+- **Data files**: `public/data/...`  
+  Fetch them from Pyodide using `pyfetch("/data/yourfile.ext")`.
+
+If your site uses a different folder layout, keep the same idea: assets must be served by the web server (i.e., under `public/`), not only exist locally.
+
+---
+
+## 2. Frontmatter
+
+Every post begins with YAML frontmatter between `---` lines.
+
+Example (copy/paste):
+
+```yaml
+---
+layout: ../layouts/PostLayout.astro
+title: "Your Title"
+author: "Your Name"
+description: "One sentence for previews and SEO."
+date: "January 20, 2026" # Home page automatically sorts posts based on dates in a decreasing order.
+tags: ["tag-a", "tag-b"] 
+image: "images/cover.png"
+featured: false # Posts can be pinned on top, irrespective of the dates.
+---
+```
+
+### 2.1 What each field does
+
+- `layout`: which Astro layout renders the post. In this project, it is `../layouts/PostLayout.astro`.
+- `title`: shown on the post page and in list previews.
+- `author`: shown in the post header (if the layout displays it).
+- `description`: used for previews and metadata; keep it concrete.
+- `date`: used for sorting and display. Use a stable human-readable date string (as in existing posts).
+- `tags`: list of strings. **Do not** leave trailing commas inside the list.
+- `image`: preview/cover image for the post (commonly used on the blog index page).
+- `featured`: whether to highlight the post in lists (depends on your index implementation).
+
+<b>Note</b>: Comments in `mdx` are given by: `{/* This is a comment. */}`
+
+
+---
+
+## 3. Headings, text, lists, and links (Markdown)
+
+### 3.1 Headings
+
+Use `#` through `######`:
+
+```md
+# Top-level title (usually one per file)
+## Section
+### Subsection
+#### Sub-subsection
+```
+
+# Top-level title (usually one per file)
+## Section
+### Subsection
+#### Sub-subsection
+---
+
+### 3.2 Emphasis and inline code
+
+```md
+This is *italic*, this is **bold**, and this is `inline code`.
+```
+This is *italic*, this is **bold**, and this is `inline code`. Use `---` for a horizontal line/ruler.
+
+---
+
+### 3.3 Lists
+
+```md
+- Unordered item
+- Another item
+
+1. Ordered item
+2. Another item
+```
+- Unordered item
+- Another item
+
+1. Ordered item
+2. Another item
+---
+
+### 3.4 Links
+
+```md
+A normal link: [Normal Link](https://www.praisecu.com/)
+A local link: [Blog home](/blog/)
+```
+A normal link: [Normal Link](https://www.praisecu.com/)
+A local link: [Blog home](/blog/)
+
+---
+
+## 4. Math (LaTeX): use only `$` and `$$`
+
+This project compiles math from `$...$` (inline) and `$$...$$` (display).
+
+Inline example: $\nabla f(x)$, $x \in \mathbb{R}^d$.
+
+Display example:
+
+$$
+\arg\min_\theta \; \sum_{i=1}^n \left(y_i - f_\theta(x_i)\right)^2.
+$$
+
+### 4.1 Practical rules
+
+- Use `$...$` for short expressions inside a sentence.
+- Use `$$...$$` for multi-line or centered equations.
+- When writing backslashes inside code blocks, double-check escaping only when you are inside a JavaScript template string (see the `PyodideRunner` section).
+
+---
+
+## 5. Images in the body
+
+Even if your post has a cover image in frontmatter, you can (and often should) include figures inline.
+
+### 5.1 Simple image (Markdown)
+
+```md
+![Alt text describing the image](images/example.png)
+- OR -
+<img src="/images/mdx-tutorial.png" alt="A placeholder figure" style="width:100%;" />
+```
+
+Example (replace the path with a real image you have in `public/images/`):
+
+<img src="/images/mdx-tutorial.png" alt="A placeholder figure; replace with your own asset" style="width:100%;" />
+
+### 5.2 Figure with caption (HTML in MDX)
+
+MDX supports inline HTML. A robust pattern is:
+
+```html
+<figure>
+  <img src="/images/example.png" alt="Describe the figure precisely" />
+  <figcaption>Figure 1: A concise caption explaining what the reader should notice.</figcaption>
+</figure>
+```
+
+Notes:
+- Prefer **absolute** paths like `/images/...` inside `<img>` tags; they tend to be less fragile with routing.
+- Always provide `alt` text.
+
+---
+
+## 6. Code blocks (static)
+
+Use fenced code blocks with a language tag:
+
+```python
+import numpy as np
+
+x = np.linspace(0, 1, 5)
+print(x)
+```
+
+```bash
+npm run dev
+```
+
+```js
+console.log("Hello from MDX");
+```
+
+---
+
+## 7. Interactive Python cells with `PyodideRunner`
+
+This project includes a component:
+
+```js
+import PyodideRunner from "../components/PyodideRunner.astro";
+```
+
+You can embed a runnable Python cell like this:
+
+```mdx
+<PyodideRunner
+  id="unique_cell_id"
+  title="A short title shown above the cell"
+  height={360}
+  autoRun={false}
+  initialCode={`print("Hello from Pyodide")`}
+ />
+```
+
+### 7.1 `PyodideRunner` props (as used in your posts)
+
+From the existing posts in this repo, these props are in use:
+
+- `id` (string, required): unique DOM id for the cell instance.  
+  Use only letters/numbers/underscores; keep it unique within the page.
+- `title` (string, optional but recommended): shown as the cell label.
+- `height` (number, optional): visual height of the cell container (pixels).
+- `autoRun` (boolean): if `true`, executes immediately on page load.
+- `initialCode` (string): Python source code. In MDX, it is typically passed as a JavaScript template string: `` `...` ``.
+
+If your local `PyodideRunner.astro` defines additional props (e.g., theme, packages, prelude), keep this list in sync with that file.
+
+### 7.2 A complete example: compute + plot
+
+This cell shows the minimal pattern that reliably renders plots in Pyodide:
+
+<PyodideRunner
+  id="mdx_tutorial_plot"
+  title="Example: Matplotlib plot rendered in Pyodide"
+  height={430}
+  autoRun={true}
+  initialCode={`import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, 2*np.pi, 400)
+y = np.sin(x)
+
+fig, ax = plt.subplots(figsize=(7.2, 3.6), layout="constrained")
+ax.plot(x, y)
+ax.set_xlabel("x")
+ax.set_ylabel("sin(x)")
+ax.set_title("A simple sine wave")
+plt.show()
+`}
+ />
+
+**Common pitfall:** if you do not call `plt.show()`, many frontends will not display the figure.
+
+Notes:
+- Use `await pyfetch(...)` exactly as shown (top-level `await` is supported in Pyodide).
+- If the request 404s, your file is not in the server-visible `public/` tree or the URL is wrong.
+
+### 7.4 Escaping rules inside `initialCode`
+
+`initialCode` is passed as a JavaScript template string, so the following can break your MDX if used unescaped:
+
+- Backticks `` ` ``: avoid them in Python strings (or replace with quotes).
+- `${...}`: JavaScript template interpolation; avoid `${` sequences inside Python strings.
+
+If you need literal `${` inside Python code, write it as `"$" + "{...}"` or similar.
+
+---
+
+## 8. A minimal post template (copy/paste)
+
+```mdx
+---
+layout: ../layouts/PostLayout.astro
+title: "Title"
+author: "Chahat Deep Singh"
+description: "Describe the post in one sentence."
+date: "January 20, 2026"
+tags: ["tag1", "tag2"]  
+image: "images/cover.png"
+featured: false
+---
+
+import PyodideRunner from "../components/PyodideRunner.astro";
+
+# Title
+
+Intro paragraph with inline math like $x^2 + y^2$.
+
+## Section
+
+![Figure alt text](images/figure.png)
+
+<PyodideRunner
+  id="cell_1"
+  title="My first cell"
+  height={360}
+  autoRun={true}
+  initialCode={`print("Hello")`}
+ />
+```
+
+---
+
+## 9. Debugging checklist (when something breaks)
+
+- **MDX runtime error**: usually a malformed component tag or an unclosed brace.
+- **Tags parsing issues**: ensure `tags: ["a", "b"]` has no trailing comma.
+- **Plot not showing**: ensure `plt.show()` is called.
+- **Fetch fails**: ensure the asset exists under `public/` and the URL begins with `/`.
+- **Weird formatting around math**: ensure you used only `$...$` and `$$...$$` and did not mix in other math delimiters.
+
+---
+
+## 10. Suggested conventions for consistent posts
+
+- Use one `#` title at the top, then use `##` for main sections.
+- Put definitions in display math blocks and keep derivations readable.
+- Prefer deterministic random seeds in code cells for reproducibility.
+- Keep `id` values stable; changing them can break anchor links or cached state.
+
