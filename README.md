@@ -1,9 +1,13 @@
 # RF-Style Technical Blog (Astro + MDX + KaTeX + Svelte)
 
+For tutorial, please visit [here](https://www.praisecu.com/blog/tutorial/)
+
 This repository is a **static** technical blog designed for:
 - **Math-heavy writing** (LaTeX via KaTeX)
 - **Interactive figures** embedded inside posts (Svelte components)
 - **GitHub Pages** deployment (no server)
+- Run **Python** code in Browser using Pydiode
+
 
 Everything builds to static HTML/CSS/JS in `dist/` and is deployed via GitHub Actions.
 
@@ -229,5 +233,5 @@ This usually means the site base path is wrong. This repo sets `BASE_PATH=/<repo
 
 ---
 
-## License
-Add your preferred license file if you plan to publish this publicly.
+## Disclaimer
+Portions of this website were developed with the assistance of AI tools. All content, structure, and final design decisions were reviewed, edited, and validated by the author.
