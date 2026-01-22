@@ -364,10 +364,14 @@ ax.set_title("Degree-5 Polynomial Regression (Least Squares)")
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.grid(True, alpha=0.25)
+eq = (
+    rf"$\hat{{y}} = {d5:.3f}x^5 + {d4:.3f}x^4 + {d3:.3f}x^3 + "
+    rf"{d2:.3f}x^2 + {d1:.3f}x + {d0:.3f}$"
+    rf"$R^2 = {r2:.3f}$"
+)
+
 ax.text(
-    0.02, 0.98,
-    f"$\\\\hat y = {d5:.3f}x^5 + {d4:.3f}x^4 + {d3:.3f}x^3 + {d2:.3f}x^2 + 
-            {d1:.3f}x + {d0:.3f}$\\n$R^2 = {r2:.3f}$",
+    0.02, 0.98, eq,
     transform=ax.transAxes, va="top", ha="left",
     bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.92, linewidth=0.0),
 )
