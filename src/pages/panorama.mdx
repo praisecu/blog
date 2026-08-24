@@ -1,0 +1,530 @@
+---
+layout: ../layouts/PostLayout.astro
+title: "Stitch Happens: Panorama Stitching from Scratch"
+author: "Chahat Deep Singh"
+description: "Build your phone's panorama mode from scratch: Harris corners, ANMS, descriptors, matching, RANSAC, homographies, warping and blending — with interactive demos and runnable code at every step."
+date: "August 24, 2026"
+tags: ["computer-vision", "panorama", "harris", "ransac", "homography", "features", "interactive", "pyodide"]
+image: "images/panorama.jpg"
+featured: true
+---
+
+import PyodideRunner from "../components/PyodideRunner.astro";
+import PanoWidget from "../components/PanoWidget.astro";
+export const base = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
+
+# Stitch Happens: Panorama Stitching from Scratch
+
+You point your phone at a skyline, hit **Pano**, wave your arm like you're conducting an invisible orchestra, and *bam* — one glorious, seam-free, ultra-wide photo. It feels like magic.
+
+It is not magic. It is roughly 150 lines of Python, and by the end of this post you will have seen all of them work.
+
+Here's our mission: take these **two photos** of Tower Bridge, shot from the same spot but with the camera rotated between shots (and, because cameras love to betray us, with slightly different exposure):
+
+<figure class="pano-figure">
+  <img src={base + "images/pano/01-inputs.jpg"} alt="The two input photos, left and right, with an overlapping middle region" />
+  <figcaption>Two views, one bridge. They share a big chunk of the scene in the middle — that overlap is our lifeline.</figcaption>
+</figure>
+
+## 1. The naive plan (and why it faceplants)
+
+"Easy," says past-you. "Just slide the right photo over until it lines up, and average the overlap."
+
+Here is that exact plan, executed with confidence:
+
+<figure class="pano-figure">
+  <img src={base + "images/pano/02-naive.jpg"} alt="Naive overlap: ghosted double image with visible brightness bands" />
+  <figcaption>Tower Bridge, as experienced after spinning in a chair for five minutes.</figcaption>
+</figure>
+
+Two problems, both fatal:
+
+1. **Geometry.** The camera *rotated* between shots, so the right photo isn't just shifted — it's rotated and slightly keystoned. No amount of sliding fixes that. We need a *warp*.
+2. **Photometry.** The two photos have different brightness (auto-exposure did that), so even where they *do* line up, you can see the seam.
+
+The real pipeline fixes both:
+
+1. 📍 **Find corners** in each image (Harris)
+2. 🗺️ **Spread them out** (ANMS)
+3. 🏷️ **Describe** each corner with a tiny fingerprint
+4. 💘 **Match** fingerprints across the two images
+5. 🎰 **Vote out the liars** (RANSAC) and fit a **homography**
+6. 🌀 **Warp** one image onto the other
+7. 🪄 **Blend** away the seam
+
+Every step below follows the same rhythm: **intuition → code → result**, plus something you can poke at. All the code runs with just `numpy` and `opencv-python`; grab the <a href={base + "code/stitch.py"}>complete script</a> to run along.
+
+```python
+import cv2
+import numpy as np
+
+im1 = cv2.imread("left.jpg")          # 940 x 800
+im2 = cv2.imread("right.jpg")
+g1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY).astype(np.float32)
+g2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY).astype(np.float32)
+```
+
+## 2. Find the corners 📍
+
+To align two images, we need landmarks that we can find in *both* — distinctive points we could recognize again. What makes a point recognizable?
+
+Imagine sliding a tiny window around the image and asking: *"if I nudge this window a little, does what's inside change?"*
+
+- On flat **sky**: nudge it anywhere, nothing changes. Useless. A patch of sky could match a million other patches of sky.
+- On an **edge**: nudge it *along* the edge, nothing changes. Nudge across, everything changes. Half-useless — you can localize it in one direction only.
+- On a **corner**: nudge it in *any* direction and the content changes. Jackpot. A corner is pinned down in both $x$ and $y$.
+
+The **Harris corner detector** turns this into math. Around each pixel, collect the image gradients $I_x, I_y$ over a small window $W$ and build the structure tensor
+
+$$
+M \;=\; \sum_{(u,v)\,\in\, W}
+\begin{bmatrix}
+I_x^2 & I_x I_y \\
+I_x I_y & I_y^2
+\end{bmatrix}.
+$$
+
+The two eigenvalues $\lambda_1, \lambda_2$ of $M$ measure "how much the patch changes" along the two principal directions: both small → flat, one large → edge, **both large → corner**. Rather than computing eigenvalues explicitly, Harris uses the famous shortcut score
+
+$$
+R \;=\; \det(M) - k\,\mathrm{tr}(M)^2 \;=\; \lambda_1\lambda_2 - k(\lambda_1+\lambda_2)^2,
+\qquad k \approx 0.04,
+$$
+
+which is large and positive at corners, negative on edges, and near zero on flat stuff. OpenCV does the sliding-window part for us; we keep every pixel that beats its 8 neighbours, so a corner counts once, not fifty times:
+
+```python
+def harris_corners(gray):
+    R = cv2.cornerHarris(gray, blockSize=2, ksize=3, k=0.04)
+    R_dilated = cv2.dilate(R, None)          # 3x3 local max filter
+    is_peak = (R == R_dilated) & (R > 1e-4 * R.max())
+    ys, xs = np.nonzero(is_peak)
+    scores = R[ys, xs]
+    order = np.argsort(-scores)              # strongest first
+    return np.column_stack([xs, ys])[order], scores[order]
+
+pts1, sc1 = harris_corners(g1)   # ~14,000 candidate corners!
+pts2, sc2 = harris_corners(g2)
+```
+
+Here's the Harris response over the left photo. Bright = "this looks cornery":
+
+<figure class="pano-figure">
+  <img src={base + "images/pano/03-harris-heat.jpg"} alt="Harris corner response heatmap over the left image" />
+  <figcaption>The bridge is on fire with corners. The sky is a corner desert — exactly as the sliding-window story predicts.</figcaption>
+</figure>
+
+And thresholding + keeping local peaks gives us actual points:
+
+<figure class="pano-figure">
+  <img src={base + "images/pano/04-corners.jpg"} alt="Detected corners drawn on the left image" />
+</figure>
+
+Now **you** be the threshold. Drag the slider and watch the trade-off: too lenient and you drown in noise, too strict and you keep only a handful of superstar corners:
+
+<PanoWidget kind="harris" />
+
+<details class="pano-quiz">
+<summary>🤔 Quick check: why does the sky have (almost) no corners, and the water only a few?</summary>
+<p>The sky is textureless — slide a window anywhere and it sees the same blue, so both eigenvalues are tiny and R ≈ 0. The water <em>does</em> have texture (ripples, reflections), so it produces some corners — but they're weak and, worse, they <strong>move between shots</strong>. Remember that; those ripply corners will come back to haunt us in the matching step.</p>
+</details>
+
+## 3. Spread the love (ANMS) 🗺️
+
+We have ~14,000 corners per image. We only need a few hundred, so let's keep the strongest… right?
+
+Trap! Corner strength is clumpy. The ornate tower stonework generates hundreds of ultra-strong corners in one small area, so "top 300 by strength" gives you 300 points crammed onto the towers and *nothing* on the rest of the image:
+
+<figure class="pano-figure">
+  <img src={base + "images/pano/05-anms.jpg"} alt="Comparison: top 300 corners by strength cluster on the towers; 300 ANMS corners cover the whole image" />
+  <figcaption>Left: strength-based selection throws a party on the towers. Right: ANMS makes everyone spread out.</figcaption>
+</figure>
+
+Why is clumping bad? Because we'll fit a warp for the *whole image* from these points. Fitting a global transform from points in one tiny region is like surveying one dorm and calling it a national poll.
+
+**Adaptive Non-Maximal Suppression (ANMS)** fixes it with one elegant idea: for each corner $i$, ask
+
+> *"How far away is the nearest corner that is meaningfully stronger than me?"*
+
+$$
+r_i \;=\; \min_{j}\;\lVert \mathbf{p}_i - \mathbf{p}_j \rVert
+\quad\text{over } j \text{ such that } c\,R_j > R_i,
+\qquad c = 0.9 .
+$$
+
+Call $r_i$ the corner's **suppression radius**. A corner with a big radius is the champion of a big neighbourhood — keep those. A strong corner sitting next to an even stronger one has a tiny radius — drop it. Then "keep $N$ corners" = "keep the $N$ biggest radii", and coverage happens automatically. (The $c = 0.9$ means "you only suppress me if you're at least 10% stronger" — it stops two nearly-tied neighbours from suppressing each other on a coin flip.)
+
+```python
+def anms(pts, scores, num_keep=500, c_robust=0.9):
+    pts = pts[:1200].astype(np.float64)      # only consider the strongest 1200
+    scores = scores[:1200]
+    # d2[i, j] = squared distance from corner i to corner j
+    d2 = ((pts[:, None, :] - pts[None, :, :]) ** 2).sum(axis=2)
+    # only distances to corners that are meaningfully stronger count
+    meaningfully_stronger = scores[None, :] * c_robust > scores[:, None]
+    d2 = np.where(meaningfully_stronger, d2, np.inf)
+    radius = np.sqrt(d2.min(axis=1))         # suppression radius per corner
+    radius[0] = np.inf                       # the strongest corner fears no one
+    return pts[np.argsort(-radius)[:num_keep]]
+
+keep1 = anms(pts1, sc1)   # 500 well-spread corners, left image
+keep2 = anms(pts2, sc2)
+```
+
+Toggle between the two strategies and crank N up and down. Watch *where* the red points go versus the green ones:
+
+<PanoWidget kind="anms" />
+
+Want to feel the algorithm itself? Here's ANMS on a synthetic "corner map" with two strength hotspots — run it, then try changing `N` or the hotspot sizes:
+
+<PyodideRunner
+  id="pano_anms_cell"
+  title="ANMS playground (editable)"
+  height={430}
+  autoRun={false}
+  initialCode={`import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(0)
+
+# Fake "corner map": strong corners clumped in two hotspots + scattered weak ones
+hot1 = rng.normal([25, 30], 4, size=(60, 2))
+hot2 = rng.normal([70, 60], 5, size=(50, 2))
+spread = rng.uniform(0, 100, size=(140, 2))
+pts = np.vstack([hot1, hot2, spread])
+scores = np.concatenate([
+    rng.uniform(0.7, 1.0, 110),   # hotspot corners are strong
+    rng.uniform(0.05, 0.5, 140),  # the rest are weak
+])
+
+N = 60          # corners to keep  <-- try changing me!
+C_ROBUST = 0.9
+
+order = np.argsort(-scores)
+pts, scores = pts[order], scores[order]
+
+d2 = ((pts[:, None] - pts[None, :]) ** 2).sum(-1)
+stronger = scores[None, :] * C_ROBUST > scores[:, None]
+radius = np.sqrt(np.where(stronger, d2, np.inf).min(1))
+radius[0] = np.inf
+
+topN = pts[:N]
+anmsN = pts[np.argsort(-radius)[:N]]
+
+fig, axes = plt.subplots(1, 2, figsize=(9, 4.2), sharex=True, sharey=True)
+for ax, sel, title, col in [(axes[0], topN, "top-N by strength", "tab:red"),
+                            (axes[1], anmsN, "ANMS", "tab:green")]:
+    ax.scatter(pts[:, 0], pts[:, 1], s=8, c="lightgray", label="all corners")
+    ax.scatter(sel[:, 0], sel[:, 1], s=26, c=col, label="kept")
+    ax.set_title(title); ax.set_aspect("equal"); ax.legend(loc="lower right", fontsize=8)
+plt.suptitle("Same budget of N corners, two selection rules")
+plt.tight_layout()
+plt.show()`}
+/>
+
+<details class="pano-quiz">
+<summary>🤔 Quick check: the single strongest corner gets radius = ∞. Why?</summary>
+<p>Its suppression radius is "distance to the nearest stronger corner" — and no stronger corner exists. Nothing can suppress the champion, so it's always kept, no matter how small N is.</p>
+</details>
+
+## 4. Give every corner a name tag 🏷️
+
+We have 500 corners in each image. Now, for each corner in the left image, we need to find *the same physical spot* among the right image's corners. To compare corners, each one needs a **descriptor** — a little numeric fingerprint of what the image looks like around it.
+
+Dead-simple idea: grab the 40×40 pixel patch around the corner. Done?
+
+Almost — raw patches are too *literal*. If the corner's position is off by two pixels (it will be) or the exposure differs (ours does!), raw patches disagree everywhere. So we rough them up on purpose:
+
+1. **Blur** the patch (Gaussian, $\sigma \approx 2.5$) — small misalignments stop mattering.
+2. **Shrink** 40×40 → 8×8 — keeps the gist, discards fragile detail. 64 numbers.
+3. **Normalize** to zero mean and unit variance — and this is the magic one: for a patch $\mathbf{d}$, use $(\mathbf{d} - \mu)/\sigma$, and brightness shifts and contrast changes *vanish*. A dark version and a bright version of the same patch become the *same* descriptor.
+
+```python
+def make_descriptors(gray, pts, patch=40, out=8):
+    blurred = cv2.GaussianBlur(gray, (0, 0), 2.5)
+    h, w = gray.shape
+    descriptors, kept_pts = [], []
+    for x, y in pts.astype(int):
+        if not (patch//2 <= x < w - patch//2 and patch//2 <= y < h - patch//2):
+            continue                          # too close to the border
+        p = blurred[y - patch//2 : y + patch//2, x - patch//2 : x + patch//2]
+        p = cv2.resize(p, (out, out), interpolation=cv2.INTER_AREA).ravel()
+        p = (p - p.mean()) / (p.std() + 1e-8)   # exposure-proof!
+        descriptors.append(p)
+        kept_pts.append((x, y))
+    return np.float32(descriptors), np.float64(kept_pts)
+
+D1, kp1 = make_descriptors(g1, keep1)
+D2, kp2 = make_descriptors(g2, keep2)
+```
+
+Here's what three corners look like as they go from context → 40×40 patch → 8×8 descriptor:
+
+<figure class="pano-figure pano-narrow">
+  <img src={base + "images/pano/06-descriptors.jpg"} alt="Three corners shown as zoomed context, 40x40 patch, and 8x8 descriptor" />
+  <figcaption>Blurry 64-pixel thumbnails. That's genuinely all a corner needs to say "it's me" across two photos.</figcaption>
+</figure>
+
+<details class="pano-quiz">
+<summary>🤔 Quick check: our right photo came out darker than the left. Which of the three tricks saves us, and how?</summary>
+<p>Normalization. Subtracting the mean cancels any brightness offset; dividing by the standard deviation cancels contrast scaling. A patch and its darker twin map to identical descriptors — so matching doesn't even notice the exposure difference. (Blending will still have to deal with it later, though!)</p>
+</details>
+
+## 5. Speed dating for corners 💘
+
+Time to match. For every left descriptor, compute its distance to *every* right descriptor (64-dimensional sum of squared differences), and note the **best** and **second-best** candidates.
+
+Now the crucial bit. When is a match trustworthy? Not simply when the best distance is small — repetitive structures (windows, railings, ripples) produce *lots* of small distances. The real signal is when the best match is **much better than the runner-up**:
+
+$$
+\text{ratio} \;=\; \frac{d_{\text{best}}}{d_{\text{second-best}}} \;<\; 0.8 .
+$$
+
+> If your soulmate barely beats the second option, maybe don't propose. — David Lowe's ratio test, roughly
+
+```python
+d2 = ((D1**2).sum(1)[:, None] + (D2**2).sum(1)[None, :] - 2 * D1 @ D2.T)
+nearest2 = np.argsort(d2, axis=1)[:, :2]           # best & runner-up per row
+best  = d2[np.arange(len(D1)), nearest2[:, 0]]
+runup = d2[np.arange(len(D1)), nearest2[:, 1]]
+ratio = np.sqrt(best / runup)                      # 0 = confident, 1 = coin flip
+
+is_match = ratio < 0.8
+match_p1 = kp1[is_match]                           # left points
+match_p2 = kp2[nearest2[is_match, 0]]              # their right partners
+```
+
+With `ratio < 0.8` we get **148 matches**:
+
+<figure class="pano-figure">
+  <img src={base + "images/pano/07-matches.jpg"} alt="Candidate matches drawn as lines between the two images" />
+  <figcaption>Mostly beautiful parallel-ish lines… and a few chaotic ones cutting across everything. Those are impostors — wrong matches that survived the ratio test.</figcaption>
+</figure>
+
+Play matchmaker yourself. Loosen the ratio and watch garbage flood in; then flip on the "reveal" switch to see who was actually telling the truth (spoiler from the next section):
+
+<PanoWidget kind="match" />
+
+<details class="pano-quiz">
+<summary>🤔 Quick check: why compare best vs. second-best instead of just thresholding the best distance?</summary>
+<p>Because "small distance" means different things in different places. On unique structure, even the best match has a moderate distance; on repetitive texture (fifty identical windows, shimmering water), <em>many</em> candidates have tiny distances. An absolute threshold can't serve both. The ratio asks "is this match <em>uniquely</em> good?", which is exactly the property we need — a match that's barely better than its runner-up is probably a guess.</p>
+</details>
+
+## 6. Interlude: the warp we're hunting (homographies) 🌀
+
+Before we can vote out the impostors, we need to know what the honest matches agree *on*. What's the actual relationship between the two photos?
+
+When a camera **rotates in place** (your arm doing the pano wave), the two images are related by a **homography**: a 3×3 matrix $H$ that maps every pixel of one image to its position in the other, in homogeneous coordinates:
+
+$$
+\begin{bmatrix} x' \\ y' \\ w' \end{bmatrix}
+\;\sim\;
+\begin{bmatrix}
+h_1 & h_2 & h_3 \\
+h_4 & h_5 & h_6 \\
+h_7 & h_8 & 1
+\end{bmatrix}
+\begin{bmatrix} x \\ y \\ 1 \end{bmatrix},
+\qquad
+(x', y') \leftarrow \left(\tfrac{x'}{w'},\, \tfrac{y'}{w'}\right).
+$$
+
+That divide-by-$w'$ is what makes a homography more powerful than rotate+shift: it can make parallel lines converge — the keystone "leaning building" effect — which is exactly what camera rotation does to the world.
+
+$H$ has **8 unknowns** ($h_1 \dots h_8$). Each match pins down 2 equations (one for $x'$, one for $y'$), so **4 matches determine a homography**. Given 4+ matches, we build a linear system $A\mathbf{h} \approx \mathbf{0}$ and solve for the null space with SVD — the classic **Direct Linear Transform (DLT)**. The code is short (coordinate-normalization details in the <a href={base + "code/stitch.py"}>full script</a>):
+
+```python
+def apply_h(H, pts):
+    """Apply H to Nx2 points, including the divide-by-w'."""
+    p = np.column_stack([pts, np.ones(len(pts))]) @ H.T
+    return p[:, :2] / p[:, 2:3]
+
+def dlt_homography(src, dst):
+    """Fit H such that dst ~ H @ src, from N >= 4 point pairs."""
+    A = []
+    for (x, y), (u, v) in zip(src, dst):
+        A.append([-x, -y, -1,  0,  0,  0, u*x, u*y, u])
+        A.append([ 0,  0,  0, -x, -y, -1, v*x, v*y, v])
+    _, _, Vt = np.linalg.svd(np.array(A))
+    H = Vt[-1].reshape(3, 3)      # null space = the h that makes A @ h ~ 0
+    return H / H[2, 2]
+```
+
+So: 4 good matches → the exact warp. But hand DLT even *one* impostor match and it will cheerfully produce a nonsense warp. With ~13% of our matches being impostors, least-squares over everything is doomed. We need something outlier-proof.
+
+## 7. RANSAC, the democracy of matches 🎰
+
+**RANSAC** (RAndom SAmple Consensus) is the algorithm equivalent of "let's just vote on it":
+
+1. Pick **4 matches at random**. Fit a homography to just those 4.
+2. Ask every match to vote: *warp your left point with $H$ — does it land within 4 pixels of your right point?* If yes, you're an **inlier** for this $H$.
+3. Count votes. Remember the $H$ with the most.
+4. Repeat a few hundred times. Finally, refit $H$ using *all* inliers of the winner — a big, stable least-squares, now safe because the liars are gone.
+
+Why it works: impostor matches are *random* — they don't agree with each other. Honest matches all agree on the one true warp. So the moment your random sample happens to be 4 honest matches, hundreds of honest matches suddenly vote yes, and no coalition of impostors can ever match that score.
+
+```python
+best_inliers = None
+for _ in range(600):
+    sample = np.random.choice(len(match_p1), 4, replace=False)
+    H = dlt_homography(match_p2[sample], match_p1[sample])
+    projected = apply_h(H, match_p2)                  # warp right pts to left frame
+    err = np.linalg.norm(projected - match_p1, axis=1)
+    inliers = err < 4.0                               # pixels
+    if best_inliers is None or inliers.sum() > best_inliers.sum():
+        best_inliers = inliers
+
+H = dlt_homography(match_p2[best_inliers], match_p1[best_inliers])  # final refit
+```
+
+The verdict on our 148 matches — **129 inliers (green), 19 impostors (red)**:
+
+<figure class="pano-figure">
+  <img src={base + "images/pano/08-ransac.jpg"} alt="RANSAC result: inlier matches in green, outliers in red" />
+  <figcaption>Every single chaotic crossing line: busted. Democracy works (for panoramas).</figcaption>
+</figure>
+
+Now pull the lever yourself. Each spin picks 4 random matches, fits $H$, and counts the votes. Watch how a single impostor in the sample tanks the vote — and how good rounds all agree on ~129:
+
+<PanoWidget kind="ransac" />
+
+How many spins do we need? If a fraction $w$ of matches are honest, one sample of 4 is all-honest with probability $w^4$, so after $k$ spins
+
+$$
+P(\text{never saw a clean sample}) \;=\; \left(1 - w^4\right)^k .
+$$
+
+With our $w \approx 0.87$: one spin is clean with probability $0.87^4 \approx 57\%$, and the failure probability after just 10 spins is about $0.02\%$. That's the deep trick of RANSAC — you don't need most samples to be good, you need **one**, and one comes fast. (Real systems solve this formula backwards to pick the number of iterations.)
+
+RANSAC is bigger than panoramas — it rescues *any* model-fitting from outliers. Here it is saving a humble line fit; run it, then crank `N_OUTLIERS` and watch least-squares fold while RANSAC shrugs:
+
+<PyodideRunner
+  id="pano_ransac_cell"
+  title="RANSAC vs. least squares (editable)"
+  height={430}
+  autoRun={false}
+  initialCode={`import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(3)
+
+N_HONEST, N_OUTLIERS = 40, 25   # <-- try 40 honest vs 60 outliers!
+THR = 0.35                      # inlier distance threshold
+ITERS = 50
+
+x = rng.uniform(0, 10, N_HONEST)
+y = 0.7 * x + 1.5 + rng.normal(0, 0.25, N_HONEST)
+ox = rng.uniform(0, 10, N_OUTLIERS)
+oy = rng.uniform(0, 10, N_OUTLIERS)
+X = np.concatenate([x, ox]); Y = np.concatenate([y, oy])
+
+best_inl, best_ab = None, None
+for _ in range(ITERS):
+    i, j = rng.choice(len(X), 2, replace=False)
+    if X[i] == X[j]:
+        continue
+    a = (Y[j] - Y[i]) / (X[j] - X[i])
+    b = Y[i] - a * X[i]
+    dist = np.abs(Y - (a * X + b)) / np.sqrt(1 + a * a)
+    inl = dist < THR
+    if best_inl is None or inl.sum() > best_inl.sum():
+        best_inl, best_ab = inl, (a, b)
+
+a, b = best_ab
+# least-squares on ALL points, for contrast
+A = np.vstack([X, np.ones_like(X)]).T
+a_ls, b_ls = np.linalg.lstsq(A, Y, rcond=None)[0]
+
+xs = np.array([0.0, 10.0])
+plt.figure(figsize=(7, 4.5))
+plt.scatter(X[~best_inl], Y[~best_inl], c="tab:red", s=18, label="outliers (voted out)")
+plt.scatter(X[best_inl], Y[best_inl], c="tab:green", s=18, label="inliers")
+plt.plot(xs, a * xs + b, "g-", lw=2, label="RANSAC fit")
+plt.plot(xs, a_ls * xs + b_ls, "r--", lw=2, label="least squares on everything")
+plt.plot(xs, 0.7 * xs + 1.5, "k:", lw=1.5, label="true line")
+plt.legend(fontsize=8)
+plt.title(f"RANSAC kept {best_inl.sum()} of {len(X)} points as inliers")
+plt.tight_layout(); plt.show()`}
+/>
+
+## 8. Warp it 🌀
+
+We have $H$. Time to actually *use* it: warp the right image into the left image's coordinate frame and lay them on a shared canvas.
+
+One subtlety worth knowing — warping runs **backwards**. Instead of pushing each right-image pixel to its new home (which leaves holes), we go through every pixel of the *output*, apply $H^{-1}$ to ask "where in the right image does this come from?", and sample there. `cv2.warpPerspective` does this for us. We just have to compute a canvas big enough to hold both images: warp the 4 corners of the right image, take the bounding box, and shift everything by a translation $T$ so nothing lands at negative coordinates.
+
+```python
+corners = np.float64([[0, 0], [W, 0], [W, H_img], [0, H_img]])
+warped_corners = apply_h(H, corners)
+x0, y0 = np.floor(np.minimum(warped_corners.min(0), 0)).astype(int)
+x1, y1 = np.ceil(np.maximum(warped_corners.max(0), [W, H_img])).astype(int)
+T = np.array([[1, 0, -x0], [0, 1, -y0], [0, 0, 1.0]])   # keep pixels positive
+
+canvas_size = (x1 - x0, y1 - y0)
+warped2 = cv2.warpPerspective(im2, T @ H, canvas_size)
+canvas1 = np.zeros_like(warped2); canvas1[-y0:-y0+H_img, -x0:-x0+W] = im1
+```
+
+Geometrically, this *nails it* — look how the bridge deck, cables and skyline flow straight through the boundary. But paste one image over the other and you can still see exactly where the surgery happened:
+
+<figure class="pano-figure">
+  <img src={base + "images/pano/09-warped.jpg"} alt="Warped right image composited over left with the seam boundary marked in red" />
+  <figcaption>The red outline marks where the right image was pasted. Alignment: chef's kiss. That brightness jump: not so much. (Remember, the right photo really was darker.)</figcaption>
+</figure>
+
+## 9. Blend away the evidence 🪄
+
+The last impostor is the seam itself. The classic fix is **feathering**: in the overlap, cross-fade between the images — but do it smartly. Each pixel gets a weight equal to its **distance to the edge of its own image** (a distance transform gives us this in one call). Near your own border you whisper; deep inside your own territory you shout:
+
+```python
+def feather_weight(mask):
+    return cv2.distanceTransform(mask.astype(np.uint8), cv2.DIST_L2, 5)
+
+w1 = feather_weight(mask1)                # mask1/mask2 = where each image has pixels
+w2 = feather_weight(mask2)
+total = np.maximum(w1 + w2, 1e-6)
+panorama = (canvas1 * (w1/total)[..., None] +
+            warped2 * (w2/total)[..., None]).astype(np.uint8)
+```
+
+The seam region, before and after:
+
+<figure class="pano-figure">
+  <img src={base + "images/pano/11-seam.jpg"} alt="Close-up of the seam: hard cut versus feathered blend" />
+</figure>
+
+Drag the divider — left of the line is the hard cut, right of it is the feathered blend:
+
+<PanoWidget kind="blend" />
+
+And with that, the finished panorama — two photos in, one wide dawn out:
+
+<figure class="pano-figure">
+  <img src={base + "images/pano/10-final.jpg"} alt="Final stitched panorama of Tower Bridge" />
+  <figcaption>Stitch happened. 🎉</figcaption>
+</figure>
+
+## 10. The victory lap 🏁
+
+The whole pipeline, one breath: **Harris** found thousands of recognizable points; **ANMS** kept 500 well-spread ones; blurred, shrunken, normalized **descriptors** made them comparable across exposure changes; the **ratio test** matched them; **RANSAC** voted out the 19 impostors; **DLT** fit the homography from the 129 honest witnesses; **warpPerspective** bent the right photo into place; and **feathering** erased the seam.
+
+A fun sanity check: our two views were derived from one wide photo with a known warp, so we can grade ourselves — the recovered homography lands the image corners within **1–3 pixels** of the true positions. From nothing but pixels — not bad.
+
+### Challenges, if you're feeling dangerous 😈
+
+- **Your own photos.** Take two shots out your window (rotate, don't sidestep — a homography assumes rotation about the camera). Feed them to the <a href={base + "code/stitch.py"}>script</a>.
+- **Three or more images.** Stitch neighbours pairwise and chain the homographies onto one canvas. What slowly goes wrong as the chain grows?
+- **Gain compensation.** We hid the exposure difference with feathering; instead, estimate a brightness scale between images from the overlap and correct it before blending.
+- **Level up the blend.** Feathering can ghost when alignment is imperfect — implement two-band (Laplacian pyramid) blending and compare.
+- **Level up the features.** Swap our 8×8 patches for `cv2.SIFT_create()` and re-run the pipeline. What survives rotation and zoom now?
+
+### Further reading 📚
+
+- Szeliski, *Computer Vision: Algorithms and Applications* — the image stitching chapter ([free online](https://szeliski.org/Book/)).
+- Brown & Lowe, *Automatic Panoramic Image Stitching using Invariant Features* (2007) — the AutoStitch paper; our pipeline is its friendly cousin (it also introduced this flavor of gain compensation and multi-band blending).
+- Harris & Stephens, *A Combined Corner and Edge Detector* (1988) — the corner classic.
+- Lowe, *Distinctive Image Features from Scale-Invariant Keypoints* (2004) — SIFT and the ratio test.
+
+---
+
+*Photo credit: our two "camera views" were derived (crop, small perspective warp, exposure shift) from ["Tower Bridge from Shad Thames"](https://commons.wikimedia.org/wiki/File:Tower_Bridge_from_Shad_Thames.jpg) — © [User:Colin](https://commons.wikimedia.org/wiki/User:Colin) / Wikimedia Commons / [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), used and adapted here under the same license. Delightful footnote: that source photo is itself a panorama stitched from 30 frames. It's stitches all the way down.*
