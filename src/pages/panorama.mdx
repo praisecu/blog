@@ -48,7 +48,7 @@ The real pipeline fixes both:
 6. **Warp** one image onto the other
 7. **Blend** away the seam
 
-Every step below follows the same rhythm: **intuition → code → result**, plus something you can poke at. All the code runs with just `numpy` and `opencv-python`; grab the <a href={base + "code/stitch.py"}>complete script</a> to run along.
+Every step below follows the same rhythm: **intuition → code → result**, plus something you can poke at. All the code runs with just `numpy` and `opencv-python`, and every piece of it appears in the sections below.
 
 ```python
 import cv2
@@ -325,7 +325,7 @@ $$
 
 That divide-by-$w'$ is what makes a homography more powerful than rotate+shift: it can make parallel lines converge - the keystone "leaning building" effect - which is exactly what camera rotation does to the world.
 
-$H$ has **8 unknowns** ($h_1 \dots h_8$). Each match pins down 2 equations (one for $x'$, one for $y'$), so **4 matches determine a homography**. Given 4+ matches, we build a linear system $A\mathbf{h} \approx \mathbf{0}$ and solve for the null space with SVD - the classic **Direct Linear Transform (DLT)**. The code is short (coordinate-normalization details in the <a href={base + "code/stitch.py"}>full script</a>):
+$H$ has **8 unknowns** ($h_1 \dots h_8$). Each match pins down 2 equations (one for $x'$, one for $y'$), so **4 matches determine a homography**. Given 4+ matches, we build a linear system $A\mathbf{h} \approx \mathbf{0}$ and solve for the null space with SVD - the classic **Direct Linear Transform (DLT)**. The code is short (production implementations also normalize the coordinates before solving, which improves numerical stability):
 
 ```python
 def apply_h(H, pts):
@@ -532,7 +532,7 @@ Second, two overlapping aerial tiles of the Boulder campus. A scene viewed from 
 
 ### Challenges
 
-- **Your own photos.** Take two shots out your window (rotate, don't sidestep - a homography assumes rotation about the camera). Feed them to the <a href={base + "code/stitch.py"}>script</a>.
+- **Your own photos.** Take two shots out your window (rotate, don't sidestep - a homography assumes rotation about the camera) and run the pipeline from this post on them.
 - **Three or more images.** The full Flatirons sequence has five photos - stitch neighbours pairwise and chain the homographies onto one canvas. What slowly goes wrong as the chain grows?
 - **Gain compensation.** We hid the exposure difference with feathering; instead, estimate a brightness scale between images from the overlap and correct it before blending.
 - **Improve the blend.** Feathering can ghost when alignment is imperfect - implement two-band (Laplacian pyramid) blending and compare.
