@@ -20,8 +20,12 @@ export function initPanoWidgets(D) {
     const c = document.createElement('canvas');
     c.width = w;
     c.height = h;
-    c.style.width = '100%';
+    c.style.maxWidth = '100%';
+    c.style.maxHeight = '70vh';      /* keep tall (portrait) canvases from filling the screen */
+    c.style.width = 'auto';
     c.style.height = 'auto';
+    c.style.display = 'block';
+    c.style.margin = '0 auto';
     c.style.borderRadius = '6px';
     container.appendChild(c);
     return c;
@@ -142,7 +146,7 @@ export function initPanoWidgets(D) {
         }
         let msg = 'ratio &lt; <b>' + thr.toFixed(2) + '</b> &nbsp;&rarr;&nbsp; <b>' + kept + '</b> matches kept';
         if (reveal.checked) {
-          msg += ' &nbsp;(<b style="color:#2ecc71">' + good + ' correct</b>, <b style="color:#e74c3c">' + bad + ' impostors</b>)';
+          msg += ' &nbsp;(<b style="color:#2ecc71">' + good + ' correct</b>, <b style="color:#e74c3c">' + bad + ' outliers</b>)';
         }
         readout.innerHTML = msg;
       };
@@ -183,15 +187,15 @@ export function initPanoWidgets(D) {
         if (cur) {
           for (const k of cur.pick) matchLine(ctx, M.p1[S[k]], M.p2[S[k]], '#ffd166', 4);
           const verdict =
-            cur.count >= R.bestPossible * 0.9 ? ' &nbsp;🎉 jackpot!' :
-            cur.count < 20 ? ' &nbsp;😬 ouch — an outlier snuck into the sample.' : '';
+            cur.count >= R.bestPossible * 0.9 ? ' &nbsp;Near-optimal consensus.' :
+            cur.count < 20 ? ' &nbsp;An outlier in the sample spoiled this fit.' : '';
           readout.innerHTML =
             'Round <b>' + round + '</b>: sampled <b style="color:#d4a017">4</b> matches, fit a homography &rarr; <b style="color:#2ecc71">' +
             cur.count + '</b> of ' + S.length + ' matches agree. Best so far: <b>' + best + '</b>.' + verdict;
         } else {
           readout.innerHTML =
-            'Pull the lever! <b>' + S.length + '</b> matches are waiting to vote. (A perfect model can win <b>' +
-            R.bestPossible + '</b> votes.)';
+            'Run an iteration: each of the <b>' + S.length + '</b> candidate matches votes on the fitted homography. (Best possible consensus: <b>' +
+            R.bestPossible + '</b>.)';
         }
       };
       const spin = () => {

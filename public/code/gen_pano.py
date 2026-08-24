@@ -2,12 +2,12 @@
 """Regenerate all figures + widget data for the panorama-stitching tutorial.
 
 Run from anywhere:  python3 public/code/gen_pano.py
-Needs:              pip install numpy opencv-python
+Needs:              pip install numpy opencv-python gdown
 
-Downloads the CC BY-SA 4.0 base photo ("Tower Bridge from Shad Thames",
-(c) User:Colin / Wikimedia Commons) on first run, derives two overlapping
-'camera views' (the right view gets a small rotation + keystone and darker
-exposure to mimic a rotating, auto-exposing camera), then runs the pipeline:
+Downloads the input photographs on first run (three sequences from the
+course dataset on Google Drive; the tutorial uses images 3 and 4 of the
+Flatirons sequence, University of Colorado Boulder campus), then runs the
+pipeline:
 
   Harris corners -> ANMS -> patch descriptors -> ratio-test matching
   -> RANSAC homography -> warp -> feather blend
@@ -17,7 +17,7 @@ Outputs (repo-relative):
   src/data/pano-data.json     data consumed by the interactive widgets
 Deterministic: fixed RNG seed, so figures and widget data stay in sync.
 """
-import json, os, urllib.request
+import json, os
 import numpy as np
 import cv2
 
@@ -28,14 +28,30 @@ DATA_PATH = os.path.join(REPO, "src/data/pano-data.json")
 os.makedirs(IMG_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(DATA_PATH), exist_ok=True)
 
-BASE_URL = ("https://commons.wikimedia.org/wiki/Special:FilePath/"
-            "Tower_Bridge_from_Shad_Thames.jpg?width=1800")
-BASE_IMG = os.path.join(IMG_DIR, "_base_tower_bridge.jpg")
-if not os.path.exists(BASE_IMG):
-    print("downloading base photo (CC BY-SA 4.0, (c) User:Colin / Wikimedia Commons)...")
-    req = urllib.request.Request(BASE_URL, headers={"User-Agent": "pano-tutorial-figures/1.0"})
-    with urllib.request.urlopen(req) as r, open(BASE_IMG, "wb") as f:
-        f.write(r.read())
+# Input photos come from the course dataset (Google Drive).  The tutorial
+# itself uses images 3 and 4 of the Flatirons sequence; the closing section
+# runs the same pipeline on the CULogo and CUBoulderSatView sequences.
+SRC_DIR = os.path.join(IMG_DIR, "_src")
+DATASETS = {
+    "Flatirons":        "1cwLOG_4keUaQHmp5RVwe_ZiAHeULpjOd",
+    "CULogo":           "1Pv7eI-LOOUZxHffz1D5pmMKOk-Y7C-kx",
+    "CUBoulderSatView": "10WcuZFuCxbe1FQSwpdy_9piyMM45eOI_",
+}
+missing = [fid for name, fid in DATASETS.items()
+           if not os.path.isdir(os.path.join(SRC_DIR, name))]
+if missing:
+    print("downloading input photos (course dataset, Google Drive)...")
+    import gdown  # pip install gdown
+    os.makedirs(SRC_DIR, exist_ok=True)
+    cwd = os.getcwd()
+    os.chdir(SRC_DIR)
+    try:
+        for fid in missing:
+            gdown.download_folder(id=fid, quiet=True, use_cookies=False)
+    finally:
+        os.chdir(cwd)
+LEFT_SRC = os.path.join(SRC_DIR, "Flatirons", "3.jpg")
+RIGHT_SRC = os.path.join(SRC_DIR, "Flatirons", "4.jpg")
 
 JQ = [int(cv2.IMWRITE_JPEG_QUALITY), 84]
 
@@ -49,32 +65,20 @@ def save(name, img, q=JQ):
 # 0. Build the two views
 # ----------------------------------------------------------------------------
 print("== building views ==")
-base = cv2.imread(BASE_IMG)
-assert base is not None
-base = cv2.resize(base, (1600, 800), interpolation=cv2.INTER_AREA)
+VIEW_H = 800               # working height; width follows the aspect ratio
 
-VW, VH = 940, 800          # view size
-RX = 620                   # right-view crop origin in base coords
+def load_view(path):
+    im = cv2.imread(path)
+    assert im is not None, path
+    h, w = im.shape[:2]
+    return cv2.resize(im, (int(round(w * VIEW_H / h)), VIEW_H),
+                      interpolation=cv2.INTER_AREA)
 
-# Left view: plain crop at origin -> left-view coords == base coords.
-im1 = base[0:VH, 0:VW].copy()
-
-# Right view: sample the base through a small rotation + keystone about the
-# view centre, then translate to the crop origin.  M maps right-view -> base.
-theta = np.deg2rad(1.2)
-c, s = np.cos(theta), np.sin(theta)
-ctr = np.array([VW / 2, VH / 2])
+im1 = load_view(LEFT_SRC)      # left view  (photo 3)
+im2 = load_view(RIGHT_SRC)     # right view (photo 4)
+assert im1.shape == im2.shape, "expected same-size photos"
+VH, VW = im1.shape[:2]
 corners_out = np.array([[0, 0], [VW, 0], [VW, VH], [0, VH]], np.float64)
-rot = (corners_out - ctr) @ np.array([[c, -s], [s, c]]).T + ctr
-persp = np.array([[7, 3], [-6, -2], [6, -3], [-7, 2]], np.float64)  # keystone
-dst = rot + persp + np.array([RX, 0])
-M_true = cv2.getPerspectiveTransform(corners_out.astype(np.float32),
-                                     dst.astype(np.float32))
-im2 = cv2.warpPerspective(base, M_true, (VW, VH),
-                          flags=cv2.INTER_LINEAR | cv2.WARP_INVERSE_MAP,
-                          borderMode=cv2.BORDER_REFLECT101)
-# auto-exposure drift: right frame came out a touch darker
-im2 = np.clip(im2.astype(np.float32) * 0.90 + 2, 0, 255).astype(np.uint8)
 
 save("left.jpg", im1)
 save("right.jpg", im2)
@@ -94,18 +98,8 @@ def label(img, text):
 gap = np.full((VH, 16, 3), 255, np.uint8)
 save("01-inputs.jpg", np.hstack([label(im1, "LEFT photo"), gap, label(im2, "RIGHT photo")]))
 
-# --- fig: the naive attempt (just slide & average) ---------------------------
-print("== naive overlay ==")
-shift = VW - (VW - RX)     # slide right view so overlap regions coincide = RX
-naiveW = VW + shift
-naive = np.zeros((VH, naiveW, 3), np.float32)
-w = np.zeros((VH, naiveW, 1), np.float32)
-naive[:, :VW] += im1
-w[:, :VW] += 1
-naive[:, shift:shift + VW] += im2
-w[:, shift:shift + VW] += 1
-naive = (naive / np.maximum(w, 1)).astype(np.uint8)
-save("02-naive.jpg", naive)
+# (the naive slide-and-average figure is generated after matching, where the
+#  best pure translation can be estimated from the verified matches)
 
 # ----------------------------------------------------------------------------
 # 1. Harris corners + local maxima
@@ -274,7 +268,8 @@ def dlt_homography(src, dst):
 
 def project(H, pts):
     p = np.column_stack([pts, np.ones(len(pts))]) @ H.T
-    return p[:, :2] / p[:, 2:3]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return p[:, :2] / p[:, 2:3]
 
 src = m_p2[strict_mask]      # right-view points
 dst = m_p1[strict_mask]      # left-view points
@@ -301,14 +296,28 @@ err = np.linalg.norm(project(H_final, src) - dst, axis=1)
 inl = err < THR
 print(f"  matches {NMATCH}, inliers {int(inl.sum())} ({inl.mean():.0%})")
 
-# sanity: compare against ground truth M_true on the view corners
-gt = project(M_true, corners_out) - np.array([0, 0])  # base == left-view coords
-est = project(H_final, corners_out)
-print(f"  corner error vs ground truth: {np.linalg.norm(gt - est, axis=1).round(2)} px")
+# sanity: how tightly does the final model fit its inliers?
+print(f"  inlier reprojection error: mean {err[inl].mean():.2f} px, "
+      f"median {np.median(err[inl]):.2f} px, max {err[inl].max():.2f} px")
 
 # inlier flag for ALL loose matches (for the widgets)
 err_all = np.linalg.norm(project(H_final, m_p2) - m_p1, axis=1)
 inlier_all = err_all < THR
+
+# --- fig: the naive attempt (best pure translation + average) ----------------
+# The best a "just slide it over" plan can possibly do: translate the right
+# view by the median displacement of the verified matches, then average.
+print("== naive overlay ==")
+dx, dy = np.median(m_p1[inlier_all] - m_p2[inlier_all], axis=0).round().astype(int)
+gx, gy = max(0, -dx), max(0, -dy)
+naive = np.zeros((VH + abs(dy), VW + abs(dx), 3), np.float32)
+wgt = np.zeros(naive.shape[:2] + (1,), np.float32)
+naive[gy:gy + VH, gx:gx + VW] += im1
+wgt[gy:gy + VH, gx:gx + VW] += 1
+naive[gy + dy:gy + dy + VH, gx + dx:gx + dx + VW] += im2
+wgt[gy + dy:gy + dy + VH, gx + dx:gx + dx + VW] += 1
+naive = (naive / np.maximum(wgt, 1)).astype(np.uint8)
+save("02-naive.jpg", naive)
 
 cols = [(70, 210, 70) if i else (70, 70, 235) for i in inl]
 save("08-ransac.jpg", draw_matches(im1, im2, src, dst, cols))
@@ -344,21 +353,38 @@ w2n = np.where(wsum > 0, w2 / np.maximum(wsum, 1e-6), 0)[..., None]
 blend = (canvas1.astype(np.float32) * w1n + warped2.astype(np.float32) * w2n)
 blend = np.clip(blend, 0, 255).astype(np.uint8)
 
-# crop to the largest area with actual content (trim black wedges):
-# keep rows that are ~fully covered, then columns fully covered in those rows
-content = wsum > 0
-rows = np.nonzero(content.mean(axis=1) > 0.995)[0]
-r0, r1 = rows.min(), rows.max() + 1
-cols_ = np.nonzero(content[r0:r1].mean(axis=0) > 0.999)[0]
-crop = (slice(r0, r1), slice(cols_.min(), cols_.max() + 1))
+# crop to the largest axis-aligned rectangle fully covered by content
+# (trims the black wedges left by the warp)
+def largest_interior_rect(mask):
+    """(r0, c0, r1, c1) of the largest all-True rectangle, histogram method."""
+    h, w = mask.shape
+    heights = np.zeros(w + 1, np.int32)
+    best = (0, 0, 0, 0, 0)                       # area, r0, c0, r1, c1
+    for r in range(h):
+        heights[:w] = np.where(mask[r], heights[:w] + 1, 0)
+        stack = []                               # (start_col, height)
+        for c in range(w + 1):
+            start = c
+            while stack and stack[-1][1] >= heights[c]:
+                s, sh = stack.pop()
+                if sh * (c - s) > best[0]:
+                    best = (sh * (c - s), r - sh + 1, s, r + 1, c)
+                start = s
+            stack.append((start, heights[c]))
+    return best[1:]
+
+r0, c0, r1, c1 = largest_interior_rect(wsum > 0)
+crop = (slice(r0, r1), slice(c0, c1))
 final = blend[crop]
 hardc = hard[crop]
 save("10-final.jpg", final)
 save("hard-crop.jpg", hardc)
 
-# seam close-up: hard vs feathered around the seam line
-seam_x = -x0 + VW - 160
-sl = (slice(160, 560), slice(seam_x - 220, seam_x + 220))
+# seam close-up: hard vs feathered around the seam line (left image's right
+# border), clamped to the canvas
+seam_x = int(np.clip(-x0 + VW - 40, 220, CW - 220))
+seam_y = int(np.clip(CH // 2 - 200, 0, max(CH - 400, 0)))
+sl = (slice(seam_y, seam_y + 400), slice(seam_x - 220, seam_x + 220))
 z = np.hstack([label(cv2.resize(hard[sl], None, fx=1.6, fy=1.6), "hard cut"),
                np.full((640, 16, 3), 255, np.uint8),
                label(cv2.resize(blend[sl], None, fx=1.6, fy=1.6), "feathered")])
@@ -395,4 +421,96 @@ cover = cv2.resize(final, (1200, int(final.shape[0] * 1200 / final.shape[1])),
 cv2.imwrite(os.path.join(REPO, "public/images/panorama.jpg"), cover,
             [int(cv2.IMWRITE_JPEG_QUALITY), 85])
 print("  panorama.jpg (cover)")
+
+# ----------------------------------------------------------------------------
+# 8. The same pipeline on the other sequences (closing-section figures)
+# ----------------------------------------------------------------------------
+def pair_homography(imA, imB, iters=20000, ratio=0.85, n_keep=800):
+    """H mapping imB coords -> imA coords, using the full pipeline above.
+
+    Slightly looser settings than the tutorial pair: repetitive texture
+    (e.g. stone walls) drives ratios up, so we admit more candidates and
+    let RANSAC sort them out."""
+    gA = cv2.cvtColor(imA, cv2.COLOR_BGR2GRAY).astype(np.float32)
+    gB = cv2.cvtColor(imB, cv2.COLOR_BGR2GRAY).astype(np.float32)
+    _, pA, sA = harris_corners(gA)
+    _, pB, sB = harris_corners(gB)
+    oA, _ = anms(pA, sA, cap=2000)
+    oB, _ = anms(pB, sB, cap=2000)
+    DA, kA = make_descriptors(gA, pA[oA[:n_keep]])
+    DB, kB = make_descriptors(gB, pB[oB[:n_keep]])
+    dd = (DA ** 2).sum(1)[:, None] + (DB ** 2).sum(1)[None, :] - 2 * DA @ DB.T
+    nn2 = np.argsort(dd, axis=1)[:, :2]
+    b = dd[np.arange(len(DA)), nn2[:, 0]]
+    s2 = dd[np.arange(len(DA)), nn2[:, 1]]
+    rat = np.sqrt(np.maximum(b, 0) / np.maximum(s2, 1e-12))
+    keep = rat < ratio
+    srcB, dstA = kB[nn2[keep, 0]], kA[keep]
+    bestc, bestm = -1, None
+    for _ in range(iters):
+        pick = RNG.choice(len(srcB), 4, replace=False)
+        try:
+            Hh = dlt_homography(srcB[pick], dstA[pick])
+        except np.linalg.LinAlgError:
+            continue
+        e = np.linalg.norm(project(Hh, srcB) - dstA, axis=1)
+        m = e < THR
+        if m.sum() > bestc:
+            bestc, bestm = int(m.sum()), m
+    print(f"    pair: {len(srcB)} matches, {bestc} inliers")
+    return dlt_homography(srcB[bestm], dstA[bestm])
+
+def stitch_sequence(name, slug, use=None):
+    """Stitch the images of a dataset folder into one feathered panorama.
+
+    use: optional list of filenames to restrict to (e.g. when one photo of a
+    sequence overlaps its neighbour too little for the fixed-patch
+    descriptors, as CULogo photo 3 does at ~40 px)."""
+    print(f"== bonus: {name} ==")
+    folder = os.path.join(SRC_DIR, name)
+    files = use or sorted(f for f in os.listdir(folder)
+                          if f.split(".")[0].isdigit() and f.lower().endswith(".jpg"))
+    ims = [cv2.imread(os.path.join(folder, f)) for f in files]
+    assert all(im is not None for im in ims), files
+    ref = (len(ims) - 1) // 2                     # middle image = reference
+
+    # chain pairwise homographies to the reference frame
+    Hs = {ref: np.eye(3)}
+    for i in range(ref + 1, len(ims)):
+        Hs[i] = Hs[i - 1] @ pair_homography(ims[i - 1], ims[i])
+    for i in range(ref - 1, -1, -1):
+        Hs[i] = Hs[i + 1] @ pair_homography(ims[i + 1], ims[i])
+
+    # common canvas
+    allc = np.vstack([project(Hs[i], np.array(
+        [[0, 0], [im.shape[1], 0], [im.shape[1], im.shape[0]], [0, im.shape[0]]],
+        np.float64)) for i, im in enumerate(ims)])
+    bx0, by0 = np.floor(allc.min(0)).astype(int)
+    bx1, by1 = np.ceil(allc.max(0)).astype(int)
+    Tb = np.array([[1, 0, -bx0], [0, 1, -by0], [0, 0, 1]], np.float64)
+    size = (bx1 - bx0, by1 - by0)
+
+    # warp everything and feather-blend
+    acc = np.zeros((size[1], size[0], 3), np.float32)
+    wacc = np.zeros((size[1], size[0], 1), np.float32)
+    for i, im in enumerate(ims):
+        warped = cv2.warpPerspective(im, Tb @ Hs[i], size)
+        m = cv2.warpPerspective(np.full(im.shape[:2], 255, np.uint8), Tb @ Hs[i], size)
+        wgt = cv2.distanceTransform((m > 0).astype(np.uint8), cv2.DIST_L2, 5)[..., None]
+        acc += warped.astype(np.float32) * wgt
+        wacc += wgt
+    pano = np.clip(acc / np.maximum(wacc, 1e-6), 0, 255).astype(np.uint8)
+
+    r0, c0, r1, c1 = largest_interior_rect(wacc[..., 0] > 0)
+    pano = pano[r0:r1, c0:c1]
+
+    gap_v = np.full((ims[0].shape[0], 12, 3), 255, np.uint8)
+    row = []
+    for im in ims:
+        row += [im, gap_v]
+    save(f"bonus-{slug}-inputs.jpg", np.hstack(row[:-1]))
+    save(f"bonus-{slug}-result.jpg", pano)
+
+stitch_sequence("CULogo", "culogo", use=["1.jpg", "2.jpg"])
+stitch_sequence("CUBoulderSatView", "satview")
 print("DONE")
