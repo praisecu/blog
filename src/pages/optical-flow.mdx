@@ -10,7 +10,6 @@ featured: false
 ---
 
 import FlowExplorer from "../components/FlowExplorer.svelte";
-import ContactTest from "../components/ContactTest.svelte";
 
 export const base = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
 export const media = (name) => base + "images/motion-field/" + name;
@@ -135,7 +134,7 @@ Near the image center, rotation about $y$ and translation along $x$ look nearly 
 
 ## Explore the Equation
 
-The explorer below evaluates the motion field equation live. Combine any translation and rotation, change the scene depth, and move the pointer over the image to read the flow at that point.
+The explorer below evaluates the motion field equation live. Choose a camera motion and a scene, then move the pointer over the image to read the flow at that point.
 
 <FlowExplorer client:visible />
 
@@ -184,10 +183,6 @@ Time to contact is widely used for obstacle avoidance on small robots, and it al
   <figcaption>A gannet moments before entering the water, with its wings folded back.</figcaption>
 </figure>
 
-Try the same task. Each dive below uses a different height and speed, shown only afterward. The image depends on their ratio alone: its scale at time $t$ is $1 / (1 - t/\tau_0)$, where $\tau_0$ is the initial time to contact. You therefore have the same information as the gannet.
-
-<ContactTest client:visible />
-
 ## Motion Field vs. Optical Flow
 
 A camera cannot measure the motion field directly. It observes only changing brightness patterns, and the apparent motion of these patterns is called **optical flow**. Optical flow is an observable approximation of the motion field, but the two are not always equal.
@@ -228,35 +223,7 @@ Local measurements add a further ambiguity. Through a small window, only the com
   </figure>
 </div>
 
-## From the Equation to Flight
-
-These ideas run on real robots in our research, under severe limits on weight and computation.
-
-**Finding a gap with parallax.** In GapFlyt [3], a quadrotor flies through an unknown gap using a single camera. As it translates, the wall and the background beyond the gap move at different image speeds because of the $1/Z$ term, so the gap appears directly in the flow without building a 3D map.
-
-<figure class="flow-figure">
-  <video src={media("gapflyt.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="A quadrotor hovering in front of a textured wall with a gap, with an inset showing the gap detected from image motion"></video>
-  <figcaption>GapFlyt: the inset shows the gap emerging from image motion as the quadrotor moves.</figcaption>
-</figure>
-
-**Dodging what moves independently.** The motion field equation assumes a static scene, so a moving object stands out as flow the equation cannot explain. EVDodgeNet [4] uses this with event cameras to detect and dodge obstacles thrown at a quadrotor.
-
-<figure class="flow-figure">
-  <video src={media("evdodgenet.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="A quadrotor detecting an incoming obstacle and dodging it"></video>
-  <figcaption>EVDodgeNet: a quadrotor detects an incoming obstacle and dodges it.</figcaption>
-</figure>
-
-**Estimating flow on tiny hardware.** Small robots cannot carry the processors that accurate flow networks usually need. [TinyFlow](/research/TinyFlow-workshop.html) [5] is a warp-free network with 1.26M parameters that compiles to a single static INT8 graph for edge accelerators. It won the Best Poster Award at the IROS 2026 Workshop on Insect-scale Autonomy.
-
-<figure class="flow-figure">
-  <img src={media("tinyflow-qualitative.jpg")} alt="Grid of optical flow results on several datasets comparing ground truth, FlowNetS, NeuFlow v2, EdgeFlowNet, NanoFlowNet and TinyFlow" loading="lazy" />
-  <figcaption>TinyFlow (right column) compared with ground truth and other networks. Numbers show end-point error, and lower is better.</figcaption>
-</figure>
-
 ## References
 
 1. D. N. Lee, "A theory of visual control of braking based on information about time-to-collision," *Perception*, 1976.
 2. D. N. Lee and P. E. Reddish, "Plummeting gannets: a paradigm of ecological optics," *Nature*, 1981.
-3. C. D. Singh, N. J. Sanket, K. Ganguly, C. Fermüller and Y. Aloimonos, "GapFlyt: Active Vision Based Minimalist Structure-less Gap Detection For Quadrotor Flight," *IEEE Robotics and Automation Letters*, 2018.
-4. N. J. Sanket, C. M. Parameshwara, C. D. Singh, C. Fermüller, D. Scaramuzza and Y. Aloimonos, "EVDodgeNet: Deep Dynamic Obstacle Dodging with Event Cameras," *IEEE ICRA*, 2020.
-5. X. Song and C. D. Singh, "Rethinking Warping for Optical Flow on Edge Accelerators," *IROS Workshop on Insect-scale Autonomy*, 2026.

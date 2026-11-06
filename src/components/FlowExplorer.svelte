@@ -164,49 +164,22 @@
     height={H}
     on:pointermove={move}
     on:pointerleave={() => (probe = null)}
-    aria-label="Live motion field computed from the camera velocities below"
+    aria-label="Live motion field computed from the selected camera motion"
   ></canvas>
 
   <div class="fx-controls">
-    <div class="fx-sliders">
-      {#each [["Translation", 0, 3], ["Rotation", 3, 6]] as [title, a, b]}
-        <div class="fx-group">
-          <span class="fx-title">{title}</span>
-          {#each [0, 1, 2] as k}
-            {#if k + Number(a) < Number(b)}
-              <label>
-                {#if Number(a) === 0}
-                  <span>V<sub>{"xyz"[k]}</sub></span>
-                {:else}
-                  <span>ω<sub>{"xyz"[k]}</sub></span>
-                {/if}
-                {#if Number(a) === 0 && k === 0}<input type="range" min="-1" max="1" step="0.01" bind:value={vx} />
-                {:else if Number(a) === 0 && k === 1}<input type="range" min="-1" max="1" step="0.01" bind:value={vy} />
-                {:else if Number(a) === 0}<input type="range" min="-1" max="1" step="0.01" bind:value={vz} />
-                {:else if k === 0}<input type="range" min="-1" max="1" step="0.01" bind:value={wx} />
-                {:else if k === 1}<input type="range" min="-1" max="1" step="0.01" bind:value={wy} />
-                {:else}<input type="range" min="-1" max="1" step="0.01" bind:value={wz} />{/if}
-              </label>
-            {/if}
-          {/each}
-        </div>
-      {/each}
-    </div>
-
-    <div class="fx-side">
-      <label class="fx-select">
-        <span class="fx-title">Scene</span>
-        <select bind:value={scene}>
-          <option value="wall">Flat wall</option>
-          <option value="ground">Ground plane</option>
-          <option value="objects">Two objects at different depths</option>
-        </select>
-      </label>
-      <label class="fx-check">
-        <input type="checkbox" bind:checked={hideRotation} disabled={!rotating} />
-        Remove rotational flow
-      </label>
-    </div>
+    <label class="fx-select">
+      <span class="fx-title">Scene</span>
+      <select bind:value={scene}>
+        <option value="wall">Flat wall</option>
+        <option value="ground">Ground plane</option>
+        <option value="objects">Two objects at different depths</option>
+      </select>
+    </label>
+    <label class="fx-check">
+      <input type="checkbox" bind:checked={hideRotation} disabled={!rotating} />
+      Remove rotational flow
+    </label>
   </div>
 
   <dl class="fx-readout">
@@ -248,17 +221,15 @@
     border-radius: 8px;
   }
   .fx-controls {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 20px;
     margin-top: 14px;
     font-size: 14px;
   }
-  .fx-sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .fx-title { display: block; margin-bottom: 4px; font-size: 13px; font-weight: 700; }
-  .fx-group label { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
-  .fx-group label span { width: 22px; }
-  input[type="range"] { flex: 1; min-width: 0; accent-color: #8a6f1e; }
+  .fx-select { flex: 0 1 300px; }
   .fx-select select {
     width: 100%;
     padding: 5px;
@@ -270,7 +241,7 @@
     border-radius: 6px;
   }
   select option { color: #111111; }
-  .fx-check { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 13px; }
+  .fx-check { display: flex; align-items: center; gap: 6px; padding-bottom: 6px; font-size: 13px; }
   .fx-readout {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -281,7 +252,6 @@
   .fx-readout dt { color: var(--muted); }
   .fx-readout dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
   @media (max-width: 640px) {
-    .fx-controls, .fx-sliders { grid-template-columns: 1fr; }
     .fx-readout { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
