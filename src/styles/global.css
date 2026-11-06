@@ -714,3 +714,57 @@ html[data-theme="paper"] pre.astro-code {
 
 
 
+
+/* Figures and looping clips in the motion field post */
+main .flow-figure {
+  max-width: 108ch;
+  margin: 22px auto;
+}
+
+main .flow-figure--small {
+  max-width: 440px;
+}
+
+main .flow-figure img,
+main .flow-figure video {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 8px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+main .flow-figure figcaption {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+main .flow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 108ch;
+  margin: 22px auto;
+}
+
+main .flow-grid .flow-figure {
+  margin: 0;
+}
+
+main .flow-grid img,
+main .flow-grid video {
+  aspect-ratio: 8 / 7;
+  object-fit: contain;
+}
+
+@media (max-width: 640px) {
+  main .flow-grid {
+    grid-template-columns: 1fr;
+  }
+}
