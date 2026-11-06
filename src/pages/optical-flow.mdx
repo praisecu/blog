@@ -166,7 +166,12 @@ $$
 
 Notably, **time to contact can be measured from a single moving camera without knowing either depth or speed**, even though neither can be recovered individually. It requires only the flow vector and its distance from the FOE. Among points at the same distance from the FOE, longer flow vectors therefore indicate a more imminent collision.
 
-Time to contact is widely used for obstacle avoidance on small robots, and it also appears in nature. Gannets dive into the sea at high speed and fold their wings just before impact, and their timing is consistent with a time-to-contact estimate from image expansion [1, 2].
+Time to contact is widely used for obstacle avoidance on small robots, and it also appears in nature. Gannets, often called torpedo birds, plunge into the sea at high speed and must fold their wings just before impact. Their timing is consistent with a time-to-contact estimate from the expanding image of the water, rather than separate estimates of height and speed [1, 2].
+
+<figure class="flow-figure">
+  <img src={media("gannet.jpg")} alt="A gannet with folded wings diving just above the water, its reflection visible on the surface" loading="lazy" />
+  <figcaption>A gannet moments before entering the water, with its wings folded back.</figcaption>
+</figure>
 
 ## Motion Field vs. Optical Flow
 
