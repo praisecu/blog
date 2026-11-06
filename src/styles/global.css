@@ -768,3 +768,18 @@ main .flow-grid video {
     grid-template-columns: 1fr;
   }
 }
+
+/* Keep wide equations from widening the page on phones */
+main .katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+main .katex-mathml {
+  position: absolute;
+  clip: rect(1px, 1px, 1px, 1px);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
