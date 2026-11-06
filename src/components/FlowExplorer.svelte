@@ -5,7 +5,6 @@
   let vx = 0, vy = 0, vz = 0.6;
   let wx = 0, wy = 0, wz = 0;
   let scene = "wall";
-  let hideRotation = false;
   let probe: { x: number; y: number } | null = null;
 
   let canvas: HTMLCanvasElement;
@@ -25,7 +24,6 @@
 
   function apply(p: number[]) {
     [vx, vy, vz, wx, wy, wz] = p;
-    hideRotation = false;
   }
 
   // Scene depth. The ground plane recedes toward the horizon at y = 0.
@@ -40,13 +38,10 @@
   }
 
   // The motion field equation.
-  function flow(x: number, y: number, s: string, noRot: boolean) {
+  function flow(x: number, y: number, s: string) {
     const Z = depth(x, y, s);
-    let u = (x * vz - vx) / Z, v = (y * vz - vy) / Z;
-    if (!noRot) {
-      u += x * y * wx - (1 + x * x) * wy + y * wz;
-      v += (1 + y * y) * wx - x * y * wy - x * wz;
-    }
+    const u = (x * vz - vx) / Z + x * y * wx - (1 + x * x) * wy + y * wz;
+    const v = (y * vz - vy) / Z + (1 + y * y) * wx - x * y * wy - x * wz;
     return { u, v, Z };
   }
 
@@ -82,14 +77,14 @@
 
     const cell = (2 * hx) / NX;
     const hasT = Math.hypot(vx, vy, vz) > 0.001;
-    const hasR = !hideRotation && Math.hypot(wx, wy, wz) > 0.001;
+    const hasR = Math.hypot(wx, wy, wz) > 0.001;
     const color = hasT && hasR ? "#3B3B33" : hasR ? "#1F6FB2" : "#A63D2F";
     c.lineWidth = 2.6; c.lineCap = "round";
 
     for (let j = 0; j < NY; j++) {
       for (let i = 0; i < NX; i++) {
         const x = ((i + 0.5) / NX) * 2 * hx - hx, y = ((j + 0.5) / NY) * 2 * hy - hy;
-        const { u, v } = flow(x, y, scene, hideRotation);
+        const { u, v } = flow(x, y, scene);
         const sp = Math.hypot(u, v);
         if (sp < 0.004) continue;
         const L = Math.min(sp * 0.2, cell * 0.8);
@@ -105,7 +100,7 @@
     }
     c.globalAlpha = 1;
 
-    if (Math.abs(vz) > 0.001 && (hideRotation || !hasR)) {
+    if (Math.abs(vz) > 0.001 && !hasR) {
       const fx = vx / vz, fy = vy / vz;
       if (Math.abs(fx) <= hx && Math.abs(fy) <= hy) {
         c.fillStyle = "#1D1E00";
@@ -131,11 +126,10 @@
   const fmt = (n: number, d = 2) => (Math.abs(n) < 0.005 ? "0" : n.toFixed(d));
 
   $: point = probe ?? { x: 0, y: 0 };
-  $: _dep = [vx, vy, vz, wx, wy, wz, scene, hideRotation];
-  $: reading = (_dep, flow(point.x, point.y, scene, hideRotation));
+  $: _dep = [vx, vy, vz, wx, wy, wz, scene];
+  $: reading = (_dep, flow(point.x, point.y, scene));
   $: tau = vz > 0.001 ? reading.Z / vz : null;
   $: foe = Math.abs(vz) > 0.001 ? `(${fmt(vx / vz)}, ${fmt(vy / vz)})` : "at infinity";
-  $: rotating = Math.hypot(wx, wy, wz) > 0.001;
 
   onMount(() => {
     let raf = 0, visible = true;
@@ -175,10 +169,6 @@
         <option value="ground">Ground plane</option>
         <option value="objects">Two objects at different depths</option>
       </select>
-    </label>
-    <label class="fx-check">
-      <input type="checkbox" bind:checked={hideRotation} disabled={!rotating} />
-      Remove rotational flow
     </label>
   </div>
 
@@ -241,7 +231,6 @@
     border-radius: 6px;
   }
   select option { color: #111111; }
-  .fx-check { display: flex; align-items: center; gap: 6px; padding-bottom: 6px; font-size: 13px; }
   .fx-readout {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
