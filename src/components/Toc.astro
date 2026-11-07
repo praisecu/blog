@@ -53,8 +53,8 @@ function indent(depth) {
 
     /* Sticky sidebar that vertically centers its contents (desktop only). */
     position: sticky;
-    top: 0;
-    height: 100vh;
+    top: 74px;
+    height: calc(100vh - 74px);
     padding: 16px 0;
 
     display: flex;
@@ -63,7 +63,7 @@ function indent(depth) {
   }
 
   .toc-inner {
-    max-height: calc(100vh - 32px);
+    max-height: calc(100vh - 106px);
     overflow: auto;
   }
 

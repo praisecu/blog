@@ -4,6 +4,9 @@
  * - Featured (newest) post + compact list for the rest
  * - Auto-discovers posts from /src/pages/*.mdx
  */
+import SiteHead from "../components/SiteHead.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+
 const modules = import.meta.glob("./*.mdx", { eager: true });
 
 // Ensure BASE always ends with a single trailing slash: "/" or "/blog/"
@@ -41,6 +44,7 @@ const rest = posts.filter((p) => p !== featured);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>PRAISe Lab Blogs</title>
+    <SiteHead />
 
     <!-- Keep using your shared theme vars -->
     <link rel="stylesheet" href={`${BASE}src/styles/global.css`} />
@@ -103,12 +107,7 @@ const rest = posts.filter((p) => p !== featured);
       .wrap {
         max-width: 980px;
         margin: 0 auto;
-        padding: 22px 18px 70px; /* a bit tighter because topbar is present */
-      }
-
-      /* Give the topbar some breathing room on index */
-      .topbar {
-        margin-bottom: 18px;
+        padding: 22px 18px 70px;
       }
 
       .hero {
@@ -380,31 +379,9 @@ const rest = posts.filter((p) => p !== featured);
   </head>
 
   <body>
+    <SiteHeader />
+
     <div class="wrap">
-      <!-- NEW: topbar like post pages -->
-      <div class="topbar">
-        <div class="topbar-left">
-          <a class="topbar-link topbar-link-muted" href="/blog/">Blog Home</a>
-        </div>
-
-        <div class="topbar-center">
-          <a class="topbar-link topbar-link-primary" href="/">PRAISe Lab Home</a>
-        </div>
-
-        <div class="topbar-right">
-          <button
-            id="themeToggle"
-            class="theme-toggle theme-toggle-icon"
-            type="button"
-            aria-label="Theme: Light. Click to change."
-            title="Theme: Light (click to change)"
-          >
-            <span id="themeIcon" aria-hidden="true">☀</span>
-            <span id="themeLabel">Light</span>
-          </button>
-        </div>
-      </div>
-
       <div class="hero">
         <div>
           <h1>PRAISe Lab Blogs</h1>
@@ -502,42 +479,6 @@ const rest = posts.filter((p) => p !== featured);
           ) : null}
         </>
       )}
-
-      <script is:inline>
-        // ---- Theme (3-state): Light -> Dark -> Paper -> Light ----
-        (() => {
-          const STORAGE_KEY = "theme"; // "light" | "dark" | "paper"
-          const root = document.documentElement;
-
-          const btn = document.getElementById("themeToggle");
-          const icon = document.getElementById("themeIcon");
-          const label = document.getElementById("themeLabel");
-          if (!btn) return;
-
-          const ORDER = ["light", "dark", "paper"];
-          const NAME = { light: "Light", dark: "Dark", paper: "Paper" };
-          const ICON = { light: "☀", dark: "☾", paper: "⟡" };
-
-          const normalize = (v) => (ORDER.includes(v) ? v : "light");
-
-          const apply = (t) => {
-            root.dataset.theme = t;
-            if (label) label.textContent = NAME[t];
-            if (icon) icon.textContent = ICON[t];
-            btn.setAttribute("aria-label", `Theme: ${NAME[t]}. Click to change.`);
-            btn.setAttribute("title", `Theme: ${NAME[t]} (click to change)`);
-          };
-
-          apply(normalize(localStorage.getItem(STORAGE_KEY)));
-
-          btn.addEventListener("click", () => {
-            const cur = normalize(root.dataset.theme);
-            const next = ORDER[(ORDER.indexOf(cur) + 1) % ORDER.length];
-            localStorage.setItem(STORAGE_KEY, next);
-            apply(next);
-          });
-        })();
-      </script>
 
       <script>
         // ---- Search filtering ----

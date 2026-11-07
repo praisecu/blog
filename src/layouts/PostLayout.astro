@@ -1,4 +1,6 @@
 ---
+import SiteHead from "../components/SiteHead.astro";
+import SiteHeader from "../components/SiteHeader.astro";
 import Toc from "../components/Toc.astro";
 import "../styles/global.css";
 
@@ -15,68 +17,13 @@ const date = frontmatter?.date ?? "";
     <meta name="viewport" content="width=device-width" />
     <title>{title}</title>
     <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <SiteHead />
   </head>
 
   <body>
+    <SiteHeader />
+
     <div class="container">
-      <div class="topbar">
-        <div class="topbar-left">
-          <a class="topbar-link topbar-link-muted" href="/blog/">Blog Home</a>
-        </div>
-
-        <div class="topbar-center">
-          <a class="topbar-link topbar-link-primary" href="/">PRAISe Lab Home</a>
-        </div>
-
-        <div class="topbar-right">
-          <button
-            id="themeToggle"
-            class="theme-toggle theme-toggle-icon"
-            type="button"
-            aria-label="Change theme"
-            title="Change theme"
-          >
-            <!-- Sun -->
-            <svg class="ticon ticon-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" />
-              <path
-                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41
-                  M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-            </svg>
-
-            <!-- Moon -->
-            <svg class="ticon ticon-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M21 14.5A8.5 8.5 0 019.5 3a7 7 0 109.9 11.5z"
-                stroke="currentColor" stroke-width="2" stroke-linejoin="round"
-              />
-            </svg>
-
-            <!-- Paper -->
-            <svg class="ticon ticon-paper" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M7 3h8l4 4v14H7V3z"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M15 3v4h4"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linejoin="round"
-              />
-            </svg>
-
-          </button>
-
-        </div>
-      </div>
-
       <div class="layout">
         <aside>
           <Toc headings={headings} />
@@ -101,30 +48,7 @@ const date = frontmatter?.date ?? "";
 
 <script is:inline>
   (() => {
-    const STORAGE_KEY = "theme"; // "light" | "dark" | "paper"
-    const root = document.documentElement;
-
-    const btn = document.getElementById("themeToggle");
-    const label = document.getElementById("themeLabel");
-    if (!btn) return;
-
-    const ORDER = ["light", "dark", "paper"];
-    const NAME = { light: "Light", dark: "Dark", paper: "Paper" };
-
-    const normalize = (v) => (ORDER.includes(v) ? v : "light");
-
-    const apply = (mode) => {
-      // Always set explicit theme (no "removeAttribute" anymore)
-      root.setAttribute("data-theme", mode);
-
-      // Show CURRENT mode (not "next")
-      if (label) label.textContent = NAME[mode];
-
-      btn.setAttribute("aria-label", `Theme: ${NAME[mode]}. Click to change.`);
-      btn.setAttribute("title", `Theme: ${NAME[mode]} (click to change)`);
-    };
-
-    // ---- Reading time (must NOT early-return) ----
+    // Reading time
     const el = document.getElementById("rt");
     const article = document.querySelector("main");
     if (el && article) {
@@ -134,17 +58,6 @@ const date = frontmatter?.date ?? "";
       const minutes = Math.max(1, Math.round(words / WPM));
       el.textContent = ` · ${minutes} min read`;
     }
-
-    // ---- Theme init + cycle ----
-    const saved = normalize(localStorage.getItem(STORAGE_KEY));
-    apply(saved);
-
-    btn.addEventListener("click", () => {
-      const current = normalize(root.getAttribute("data-theme"));
-      const next = ORDER[(ORDER.indexOf(current) + 1) % ORDER.length];
-      localStorage.setItem(STORAGE_KEY, next);
-      apply(next);
-    });
   })();
 </script>
 </body>

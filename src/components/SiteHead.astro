@@ -1,0 +1,26 @@
+---
+// Head assets for the PRAISe Lab header. The stylesheets and scripts are the
+// main site's own files, served from the same origin as the blog, so header
+// styling stays in sync with www.praisecu.com.
+---
+
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;500;600;700;800;900&display=swap"
+/>
+<link rel="stylesheet" href="/css/font-awesome.min.css" />
+<link rel="stylesheet" href="/css/modern-header.css" />
+
+<!-- Apply the saved theme before first paint, using the main site's key. -->
+<script is:inline>
+  (() => {
+    let theme = "light";
+    try {
+      if (localStorage.getItem("praise-theme") === "dark") theme = "dark";
+    } catch {}
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+  })();
+</script>
+<script is:inline src="/js/theme-toggle.js" defer></script>
+<script is:inline src="/js/modern-header.js" defer></script>
