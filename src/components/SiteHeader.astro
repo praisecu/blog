@@ -1,7 +1,8 @@
 ---
 // The main site's header (src/_includes/components/modern-header.njk in
-// praisecu.github.io), plus a Blog link. Keep the two in step when the main
-// site's navigation changes, including the Openings badge.
+// praisecu.github.io), with Research marked as the current section. Keep the
+// two in step when the main site's navigation changes, including the Openings
+// badge.
 ---
 
 <header class="modern-header">
@@ -64,7 +65,7 @@
 
       <div class="modern-header__dropdown">
         <button
-          class="modern-header__link modern-header__dropdown-button"
+          class="modern-header__link modern-header__dropdown-button is-active"
           type="button"
           aria-expanded="false"
         >
@@ -75,13 +76,13 @@
         <div class="modern-header__dropdown-menu">
           <a href="/research-areas.html">Research Areas</a>
           <a href="/publications.html">Recent Publications</a>
+          <a href="/blog/">Blog</a>
         </div>
       </div>
 
       <a class="modern-header__link" href="/teaching.html">Teaching</a>
       <a class="modern-header__link" href="/team.html">Team</a>
       <a class="modern-header__link" href="/media.html">Media</a>
-      <a class="modern-header__link is-active" href="/blog/">Blog</a>
       <a class="modern-header__link" href="/openings.html">
         Openings
         <span class="nav-badge">New</span>
@@ -96,7 +97,7 @@
     <span>Home</span>
   </a>
 
-  <a class="mobile-bottom-nav__item" href="/research-areas.html">
+  <a class="mobile-bottom-nav__item is-active" href="/research-areas.html">
     <i class="fa fa-flask" aria-hidden="true"></i>
     <span>Research</span>
   </a>
@@ -112,7 +113,7 @@
   </a>
 
   <button
-    class="mobile-bottom-nav__item mobile-bottom-nav__more is-active"
+    class="mobile-bottom-nav__item mobile-bottom-nav__more"
     type="button"
     aria-expanded="false"
     aria-controls="mobile-more-menu"
@@ -146,13 +147,13 @@
     </div>
 
     <div class="mobile-more-menu__links">
-      <a href="/blog/">
-        <i class="fa fa-pencil" aria-hidden="true"></i>
-        <span>Blog</span>
-      </a>
       <a href="/publications.html">
         <i class="fa fa-book" aria-hidden="true"></i>
         <span>Publications</span>
+      </a>
+      <a href="/blog/">
+        <i class="fa fa-pencil" aria-hidden="true"></i>
+        <span>Blog</span>
       </a>
       <a href="/media.html">
         <i class="fa fa-camera" aria-hidden="true"></i>
