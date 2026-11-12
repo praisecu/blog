@@ -28,8 +28,21 @@ function indent(depth) {
 <!-- Mobile TOC (collapsible) -->
 <details class="toc toc-mobile" aria-label="Table of contents">
   <summary class="toc-summary">
-    <span class="toc-title">CONTENTS</span>
-    <span class="toc-chevron" aria-hidden="true">▾</span>
+    <span class="toc-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 6h11M9 12h11M9 18h11"></path>
+        <circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"></circle>
+        <circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"></circle>
+        <circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"></circle>
+      </svg>
+    </span>
+    <span class="toc-summary-text">
+      <span class="toc-mobile-label">Contents</span>
+      <span class="toc-current" data-toc-current>{filtered.filter((h) => h.depth === 2).length} sections</span>
+    </span>
+    <svg class="toc-chevron" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M6 9l6 6 6-6"></path>
+    </svg>
   </summary>
 
   <div class="toc-mobile-body">
@@ -37,10 +50,10 @@ function indent(depth) {
       <a
         class="toc-link"
         href={`#${h.slug}`}
-        style={`margin-left:${indent(h.depth)};`}
+        data-depth={h.depth}
         data-toc-link
       >
-        {h.text}
+        <span class="toc-text">{h.text}</span>
       </a>
     ))}
   </div>
@@ -192,20 +205,118 @@ function indent(depth) {
     background-clip: content-box;
   }
 
-  /* Mobile: match the card aesthetic */
+  /* Mobile: one clean card with an icon, the current section, and a numbered list */
   @media (max-width: 980px) {
     .toc-mobile {
       border: 1px solid var(--toc-border);
       background: var(--toc-bg);
-      border-radius: 16px;
-      padding: 10px;
+      border-radius: 18px;
+      padding: 0;
       box-shadow: var(--toc-shadow);
       backdrop-filter: blur(10px);
-      margin: 0 0 16px;
+      margin: 4px 0 20px;
+      overflow: hidden;
     }
 
     .toc-summary {
+      justify-content: flex-start;
+      gap: 12px;
+      min-height: 44px;
+      padding: 12px 14px;
+      border-radius: 0;
+      background: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .toc-summary:focus-visible { outline: 2px solid var(--toc-accent); outline-offset: -2px; border-radius: 18px; }
+
+    .toc-icon {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      color: var(--toc-accent);
+      background: var(--toc-active-bg);
+    }
+
+    .toc-summary-text { flex: 1 1 auto; min-width: 0; }
+    .toc-mobile-label {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--toc-link-hover);
+    }
+    .toc-current {
+      display: block;
+      margin-top: 2px;
+      overflow: hidden;
+      font-size: 13px;
+      line-height: 1.25;
+      color: var(--toc-title);
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .toc-chevron {
+      flex: 0 0 auto;
+      opacity: 0.6;
+      color: var(--toc-link-hover);
+      transition: transform 180ms ease;
+    }
+    details[open] .toc-chevron { transform: rotate(180deg); }
+
+    .toc-mobile-body {
+      counter-reset: toc-sec;
+      max-height: 55vh;
+      padding: 6px 8px 10px;
+      overflow: auto;
+      border-top: 1px solid var(--toc-border);
+      animation: toc-in 160ms ease-out;
+    }
+    .toc-mobile-body .toc-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 44px;
+      margin: 2px 0;
+      padding: 8px 10px;
+      font-size: 15px;
+      border-left: 0;
+      border-radius: 12px;
+      outline: none;
+      box-shadow: none;
+    }
+    .toc-mobile-body .toc-link:hover { transform: none; }
+    .toc-mobile-body .toc-link[data-depth="2"]::before {
+      counter-increment: toc-sec;
+      content: counter(toc-sec);
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      font-size: 12px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--toc-title);
       background: var(--toc-summary-bg);
+      border-radius: 999px;
+    }
+    .toc-mobile-body .toc-link[data-depth="3"] { padding-left: 48px; font-size: 14px; }
+    .toc-mobile-body .toc-link.is-active {
+      font-weight: 650;
+      background: var(--toc-active-bg);
+      outline: none;
+      box-shadow: none;
+    }
+    .toc-mobile-body .toc-link.is-active::before { color: #1d1e00; background: var(--toc-accent); }
+
+    @keyframes toc-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      .toc-mobile-body { animation: none; }
+      .toc-chevron { transition: none; }
     }
   }
 
@@ -228,7 +339,8 @@ function indent(depth) {
     --toc-scroll-thumb: rgba(27, 27, 27, 0.14);
     --toc-scroll-thumb-hover: rgba(29, 29, 29, 0.22);
 
-    --toc-summary-bg: rgba(26, 26, 26, 0.04);
+    --toc-summary-bg: rgba(26, 26, 26, 0.05);
+    --toc-accent: #a8862b;
   }
 
   /* Your toggle sets document.documentElement.dataset.theme = "dark" */
@@ -250,12 +362,14 @@ function indent(depth) {
     --toc-scroll-thumb: rgba(226, 232, 240, 0.18);
     --toc-scroll-thumb-hover: rgba(226, 232, 240, 0.28);
 
-    --toc-summary-bg: rgba(226, 232, 240, 0.06);
+    --toc-summary-bg: rgba(226, 232, 240, 0.08);
+    --toc-accent: #cfb87c;
   }
 </style>
 
 <script is:inline>
-  (() => {
+  // The TOC sits before the article, so wait for the headings to exist before observing them.
+  const initToc = () => {
     // We have 2 TOCs on the page (desktop + mobile). Collect all links.
     const links = Array.from(document.querySelectorAll("a[data-toc-link]"));
     if (!links.length) return;
@@ -271,12 +385,17 @@ function indent(depth) {
 
     const clear = () => links.forEach((a) => a.classList.remove("is-active"));
 
+    const current = document.querySelector("[data-toc-current]");
     const setActiveById = (id) => {
       if (!id) return;
       clear();
       for (const a of links) {
         const hid = decodeURIComponent(a.getAttribute("href").slice(1));
-        if (hid === id) a.classList.add("is-active");
+        if (hid === id) {
+          a.classList.add("is-active");
+          // Show the section you are reading in the collapsed mobile summary
+          if (current && a.closest(".toc-mobile")) current.textContent = a.textContent.trim();
+        }
       }
     };
 
@@ -312,5 +431,7 @@ function indent(depth) {
     // De-dup targets (because links repeat in desktop+mobile)
     const uniq = Array.from(new Set(targets));
     uniq.forEach((t) => io.observe(t));
-  })();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initToc);
+  else initToc();
 </script>

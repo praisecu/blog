@@ -100,15 +100,18 @@ Setting all but one velocity component to zero isolates the basic flow patterns.
 
 <div class="flow-grid">
   <figure class="flow-figure">
-    <video src={media("flow-vx.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated uniform flow toward the left"></video>
+    <video class="theme-light-only" src={media("flow-vx.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated uniform flow toward the left"></video>
+    <video class="theme-dark-only" src={media("flow-vx-dark.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated uniform flow toward the left" aria-hidden="true"></video>
     <figcaption>$V_x > 0$: camera moves right, flow is to the left.</figcaption>
   </figure>
   <figure class="flow-figure">
-    <video src={media("flow-vy.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated uniform flow upward"></video>
+    <video class="theme-light-only" src={media("flow-vy.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated uniform flow upward"></video>
+    <video class="theme-dark-only" src={media("flow-vy-dark.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated uniform flow upward" aria-hidden="true"></video>
     <figcaption>$V_y > 0$: camera moves down, flow is upward.</figcaption>
   </figure>
   <figure class="flow-figure">
-    <video src={media("flow-vz.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated flow expanding from the focus of expansion"></video>
+    <video class="theme-light-only" src={media("flow-vz.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated flow expanding from the focus of expansion"></video>
+    <video class="theme-dark-only" src={media("flow-vz-dark.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated flow expanding from the focus of expansion" aria-hidden="true"></video>
     <figcaption>$V_z > 0$: camera moves forward, flow expands.</figcaption>
   </figure>
 </div>
@@ -117,15 +120,18 @@ Setting all but one velocity component to zero isolates the basic flow patterns.
 
 <div class="flow-grid">
   <figure class="flow-figure">
-    <video src={media("flow-wx.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated flow downward, curving near the edges"></video>
+    <video class="theme-light-only" src={media("flow-wx.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated flow downward, curving near the edges"></video>
+    <video class="theme-dark-only" src={media("flow-wx-dark.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated flow downward, curving near the edges" aria-hidden="true"></video>
     <figcaption>$\omega_x > 0$: camera tilts up, flow is downward.</figcaption>
   </figure>
   <figure class="flow-figure">
-    <video src={media("flow-wy.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated flow toward the left, curving near the edges"></video>
+    <video class="theme-light-only" src={media("flow-wy.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated flow toward the left, curving near the edges"></video>
+    <video class="theme-dark-only" src={media("flow-wy-dark.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated flow toward the left, curving near the edges" aria-hidden="true"></video>
     <figcaption>$\omega_y > 0$: camera pans right, flow is to the left.</figcaption>
   </figure>
   <figure class="flow-figure">
-    <video src={media("flow-wz.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated flow circling the image center"></video>
+    <video class="theme-light-only" src={media("flow-wz.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated flow circling the image center"></video>
+    <video class="theme-dark-only" src={media("flow-wz-dark.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated flow circling the image center" aria-hidden="true"></video>
     <figcaption>$\omega_z > 0$: camera rolls, flow circles the center.</figcaption>
   </figure>
 </div>
@@ -133,7 +139,8 @@ Setting all but one velocity component to zero isolates the basic flow patterns.
 Near the image center, rotation about $y$ and translation along $x$ look nearly identical: for small $x$ and $y$, $\dot{x} \approx -\omega_y$ and $\dot{y} \approx 0$. The same holds for rotation about $x$ and translation along $y$, so the two are difficult to separate with a narrow field of view.
 
 <figure class="flow-figure">
-  <video src={media("flow-ambiguity.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated rotation flow and translation flow side by side, with a red box marking a narrow field of view in which they look alike"></video>
+  <video class="theme-light-only" src={media("flow-ambiguity.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated rotation flow and translation flow side by side, with a red box marking a narrow field of view in which they look alike"></video>
+  <video class="theme-dark-only" src={media("flow-ambiguity-dark.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="Animated rotation flow and translation flow side by side, with a red box marking a narrow field of view in which they look alike" aria-hidden="true"></video>
   <figcaption>Inside the red box, a narrow field of view, the two motions produce almost the same flow.</figcaption>
 </figure>
 

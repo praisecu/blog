@@ -133,11 +133,6 @@ a[href*="]"] {
   gap: 28px;
 }
 
-@media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; }
-  aside { position: static !important; border-right: 0; padding-right: 0; }
-}
-
 /* Sidebar TOC */
 aside {
   position: sticky;
@@ -145,6 +140,12 @@ aside {
   align-self: start;
   border-right: 1px solid var(--border);
   padding-right: 16px;
+}
+
+/* After the base rule, so the phone layout drops the sidebar divider */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  aside { position: static !important; border-right: 0; padding-right: 0; }
 }
 
 .toc-title {
@@ -563,6 +564,20 @@ main .flow-figure figcaption {
   font-size: 14px;
   line-height: 1.45;
   text-align: center;
+}
+
+/* Light/dark variants of figures: show the one that matches the site theme */
+main .theme-dark-only {
+  display: none !important;
+}
+html[data-theme="dark"] main .theme-light-only {
+  display: none !important;
+}
+html[data-theme="dark"] main .theme-dark-only {
+  display: block !important;
+}
+html[data-theme="dark"] main .flow-figure video.theme-dark-only {
+  background: #16181c;
 }
 
 main .flow-grid {
