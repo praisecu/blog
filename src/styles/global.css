@@ -580,6 +580,13 @@ html[data-theme="dark"] main .flow-figure video.theme-dark-only {
   background: #16181c;
 }
 
+/* Dark mode: the frame around every figure image and video is dark too */
+html[data-theme="dark"] main .flow-figure img,
+html[data-theme="dark"] main .flow-figure video {
+  background: #16181c;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
 main .flow-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
