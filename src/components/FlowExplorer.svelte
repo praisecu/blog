@@ -5,6 +5,11 @@
   let vx = 0, vy = 0, vz = 0.6;
   let wx = 0, wy = 0, wz = 0;
   let scene = "wall";
+  const sceneOptions = [
+    ["wall", "Flat wall"],
+    ["ground", "Ground plane"],
+    ["objects", "Objects at two depths"],
+  ];
   let probe: { x: number; y: number } | null = null;
 
   let canvas: HTMLCanvasElement;
@@ -162,14 +167,20 @@
   ></canvas>
 
   <div class="fx-controls">
-    <label class="fx-select">
-      <span class="fx-title">Scene</span>
-      <select bind:value={scene}>
-        <option value="wall">Flat wall</option>
-        <option value="ground">Ground plane</option>
-        <option value="objects">Two objects at different depths</option>
-      </select>
-    </label>
+    <div class="fx-scene">
+      <span class="fx-title" id="fx-scene-label">Scene</span>
+      <div class="fx-seg" role="radiogroup" aria-labelledby="fx-scene-label">
+        {#each sceneOptions as [value, label]}
+          <button
+            type="button"
+            role="radio"
+            aria-checked={scene === value}
+            class:active={scene === value}
+            on:click={() => (scene = value)}
+          >{label}</button>
+        {/each}
+      </div>
+    </div>
   </div>
 
   <dl class="fx-readout">
@@ -219,18 +230,33 @@
     font-size: 14px;
   }
   .fx-title { display: block; margin-bottom: 4px; font-size: 13px; font-weight: 700; }
-  .fx-select { flex: 0 1 300px; }
-  .fx-select select {
-    width: 100%;
-    padding: 5px;
-    font: inherit;
-    font-size: 13px;
-    color: inherit;
-    background: transparent;
+  /* Scene: segmented pill control instead of a native dropdown */
+  .fx-seg {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 12px;
+    background: color-mix(in srgb, currentColor 4%, transparent);
   }
-  select option { color: #111111; }
+  .fx-seg button {
+    padding: 6px 14px;
+    font-size: 13px;
+    border: 0;
+    border-radius: 9px;
+    opacity: 0.75;
+    transition: background-color 160ms ease, opacity 160ms ease, box-shadow 160ms ease;
+  }
+  .fx-seg button:hover { opacity: 1; background: color-mix(in srgb, currentColor 8%, transparent); }
+  .fx-seg button.active {
+    opacity: 1;
+    font-weight: 600;
+    background: color-mix(in srgb, currentColor 14%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 22%, transparent);
+  }
+  .fx-seg button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .fx-seg button { transition: none; } }
   .fx-readout {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
