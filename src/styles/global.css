@@ -546,15 +546,27 @@ main .flow-figure--small {
   max-width: 440px;
 }
 
+/* The media is rounded (8px) and the frame is a ring drawn outside it (8px frame + 1px
+   edge), so the outer corners (17px) stay concentric with the inner ones. */
+main .flow-figure {
+  --fig-frame: #ffffff;
+  --fig-edge: var(--border);
+}
+html[data-theme="dark"] main .flow-figure {
+  --fig-frame: #16181c;
+  --fig-edge: rgba(255, 255, 255, 0.12);
+}
 main .flow-figure img,
 main .flow-figure video {
   display: block;
-  width: 100%;
+  width: calc(100% - 18px);
   height: auto;
-  padding: 8px;
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  margin: 9px auto;
+  padding: 0;
+  background: var(--fig-frame);
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 0 0 8px var(--fig-frame), 0 0 0 9px var(--fig-edge);
   box-sizing: border-box;
 }
 
@@ -575,16 +587,6 @@ html[data-theme="dark"] main .theme-light-only {
 }
 html[data-theme="dark"] main .theme-dark-only {
   display: block !important;
-}
-html[data-theme="dark"] main .flow-figure video.theme-dark-only {
-  background: #16181c;
-}
-
-/* Dark mode: the frame around every figure image and video is dark too */
-html[data-theme="dark"] main .flow-figure img,
-html[data-theme="dark"] main .flow-figure video {
-  background: #16181c;
-  border-color: rgba(255, 255, 255, 0.12);
 }
 
 main .flow-grid {

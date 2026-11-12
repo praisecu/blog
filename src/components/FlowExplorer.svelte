@@ -28,6 +28,7 @@
   };
 
   let active = "Forward";
+  let palette = { dot: "#1D1E00" };
   function apply(name: string) {
     active = name;
     [vx, vy, vz, wx, wy, wz] = presets[name];
@@ -126,36 +127,46 @@
     if (!c) return;
     const dpr = canvas.width / W;
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
-    c.fillStyle = "#ffffff";
+    // Follow the site theme (the toggle sets html[data-theme])
+    const dark = document.documentElement.dataset.theme === "dark";
+    const P = dark
+      ? { bg: "#16181c", sky: ["#1a2129", "#1d2228"], gnd: ["#24221c", "#2c281e"], box: "#2a2720",
+          ink: "rgba(232, 236, 238, 0.55)", ink2: "rgba(232, 236, 238, 0.4)", horizon: "rgba(232, 236, 238, 0.18)",
+          rust: "#EE8A72", blue: "#6EB2F0", mixed: "#D9D6CC", dot: "#EDEFF1" }
+      : { bg: "#ffffff", sky: ["#E6EDF3", "#F5F8FA"], gnd: ["#F6F2E7", "#EAE2CC"], box: "#F3EEDF",
+          ink: "rgba(29, 30, 0, 0.45)", ink2: "rgba(29, 30, 0, 0.35)", horizon: "rgba(29, 30, 0, 0.18)",
+          rust: "#A63D2F", blue: "#1F6FB2", mixed: "#3B3B33", dot: "#1D1E00" };
+    palette = P;
+    c.fillStyle = P.bg;
     c.fillRect(0, 0, W, H);
     if (scene === "ground") {
       const sky = c.createLinearGradient(0, 0, 0, H / 2);
-      sky.addColorStop(0, "#E6EDF3"); sky.addColorStop(1, "#F5F8FA");
+      sky.addColorStop(0, P.sky[0]); sky.addColorStop(1, P.sky[1]);
       c.fillStyle = sky; c.fillRect(0, 0, W, H / 2);
       const gnd = c.createLinearGradient(0, H / 2, 0, H);
-      gnd.addColorStop(0, "#F6F2E7"); gnd.addColorStop(1, "#EAE2CC");
+      gnd.addColorStop(0, P.gnd[0]); gnd.addColorStop(1, P.gnd[1]);
       c.fillStyle = gnd; c.fillRect(0, H / 2, W, H / 2);
-      c.strokeStyle = "rgba(29, 30, 0, 0.18)"; c.lineWidth = 1;
+      c.strokeStyle = P.horizon; c.lineWidth = 1;
       c.beginPath(); c.moveTo(0, H / 2); c.lineTo(W, H / 2); c.stroke();
     }
     if (scene === "objects") {
       c.font = "600 12px system-ui, sans-serif";
       for (const [x0, x1, label] of [[-0.67, -0.23, "Z = 0.6"], [0.23, 0.67, "Z = 1.5"]] as const) {
-        c.fillStyle = "#F3EEDF";
+        c.fillStyle = P.box;
         c.beginPath();
         c.roundRect(toX(x0), toY(-0.3), toX(x1) - toX(x0), toY(0.3) - toY(-0.3), 12);
         c.fill();
-        c.fillStyle = "rgba(29, 30, 0, 0.45)";
+        c.fillStyle = P.ink;
         c.fillText(label, toX(x0) + 10, toY(-0.3) + 18);
       }
-      c.fillStyle = "rgba(29, 30, 0, 0.35)";
+      c.fillStyle = P.ink2;
       c.fillText("Background Z = 5", 12, H - 12);
     }
 
     const cell = (2 * hx) / NX;
     const hasT = Math.hypot(vx, vy, vz) > 0.001;
     const hasR = Math.hypot(wx, wy, wz) > 0.001;
-    const color = hasT && hasR ? "#3B3B33" : hasR ? "#1F6FB2" : "#A63D2F";
+    const color = hasT && hasR ? P.mixed : hasR ? P.blue : P.rust;
     c.lineWidth = 2.4; c.lineCap = "round"; c.lineJoin = "round";
 
     // Arrow lengths are scaled to this field's own speed range, so slow and fast regions
@@ -186,14 +197,14 @@
     if (Math.abs(vz) > 0.001 && !hasR) {
       const fx = vx / vz, fy = vy / vz;
       if (Math.abs(fx) <= hx && Math.abs(fy) <= hy) {
-        c.fillStyle = "#1D1E00";
+        c.fillStyle = palette.dot;
         c.beginPath(); c.arc(toX(fx), toY(fy), 5.5, 0, 2 * Math.PI); c.fill();
         c.font = "600 14px system-ui, sans-serif";
         c.fillText(vz > 0 ? "FOE" : "FOC", toX(fx) + 10, toY(fy) + 19);
       }
     }
     if (probe) {
-      c.strokeStyle = "#1D1E00"; c.lineWidth = 1.4;
+      c.strokeStyle = palette.dot; c.lineWidth = 1.4;
       c.beginPath(); c.arc(toX(probe.x), toY(probe.y), 8, 0, 2 * Math.PI); c.stroke();
     }
   }
@@ -323,7 +334,7 @@
     width: 100%;
     height: auto;
     touch-action: pan-y;
-    background: #ffffff;
+    background: transparent;
     border: 1px solid var(--border);
     border-radius: 14px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px -12px rgba(0, 0, 0, 0.18);
