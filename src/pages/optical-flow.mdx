@@ -16,6 +16,11 @@ export const media = (name) => base + "images/motion-field/" + name;
 
 When a camera moves through a scene, each visible 3D point traces a path across the image plane. The **motion field** is the projection of this 3D motion onto the image: it assigns a 2D velocity to every image point. This post derives the motion field equation and shows what it reveals about scene depth and camera motion.
 
+<figure class="flow-figure">
+  <video src={media("street-flow.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="A camera drives down a snowy street towards oncoming vintage cars. The left half shows the dense motion field in color, the right half shows the scene with flow arrows"></video>
+  <figcaption>Motion field of a street scene rendered in Blender Cycles. Left: dense flow, colored by direction. Right: sparse arrows. Scene: <a href="https://www.blendkit.com/asset-gallery-detail/60458356-c249-4945-908a-474e925bad16/" target="_blank" rel="noopener">1920s Winter City Street</a> by Joyble, via BlenderKit.</figcaption>
+</figure>
+
 ## Setup
 
 Assume a rigid, static scene and a camera with translational velocity $\mathbf{V} = [V_x, V_y, V_z]^T$ and rotational velocity $\boldsymbol{\Omega} = [\omega_x, \omega_y, \omega_z]^T$. A scene point $\mathbf{P} = [X, Y, Z]^T$, expressed in the camera frame, projects to the normalized image point $\mathbf{p} = [x, y, 1]^T$:
@@ -160,12 +165,7 @@ $$
 
 When $V_z = 0$, the FOE moves to infinity and the flow vectors become parallel.
 
-The same pattern appears in a rendered scene. In the clip below, the camera drives down a street while the cars drive slowly towards it. The left half shows the dense motion field, colored by direction and brighter where motion is faster, and the right half shows the same field as sparse arrows. The static street expands from a single FOE, but the oncoming cars do not follow it: their own motion adds to the camera's, so they move faster than the street around them.
-
-<figure class="flow-figure">
-  <video src={media("street-flow.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="A camera drives down a snowy street towards oncoming vintage cars. The left half shows the dense motion field in color, the right half shows the scene with flow arrows"></video>
-  <figcaption>Motion field of a street scene rendered in Blender Cycles. Left: dense flow, colored by direction. Right: sparse arrows. Scene: <a href="https://www.blendkit.com/asset-gallery-detail/60458356-c249-4945-908a-474e925bad16/" target="_blank" rel="noopener">1920s Winter City Street</a> by Joyble, via BlenderKit.</figcaption>
-</figure>
+The same pattern appears in the rendered scene at the top of this page, where the camera drives down a street while the cars drive slowly towards it. The static street expands from a single FOE, but the oncoming cars do not follow it: their own motion adds to the camera's, so they move faster than the street around them.
 
 ## Time to Contact
 
