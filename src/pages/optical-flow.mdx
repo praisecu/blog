@@ -160,6 +160,13 @@ $$
 
 When $V_z = 0$, the FOE moves to infinity and the flow vectors become parallel.
 
+The same pattern appears in a rendered scene. In the clip below, the camera drives down a street while the cars drive slowly towards it. The left half shows the dense motion field, colored by direction and brighter where motion is faster, and the right half shows the same field as sparse arrows. The static street expands from a single FOE, but the oncoming cars do not follow it: their own motion adds to the camera's, so they move faster than the street around them.
+
+<figure class="flow-figure">
+  <video src={media("street-flow.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="A camera drives down a snowy street towards oncoming vintage cars. The left half shows the dense motion field in color, the right half shows the scene with flow arrows"></video>
+  <figcaption>Motion field of a street scene rendered in Blender Cycles. Left: dense flow, colored by direction. Right: sparse arrows.</figcaption>
+</figure>
+
 ## Time to Contact
 
 The **time to contact** $\tau$ is the time remaining before the camera reaches the plane of a point, assuming constant velocity:
