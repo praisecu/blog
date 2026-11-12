@@ -209,7 +209,8 @@ A camera cannot measure the motion field directly. It observes only changing bri
 A rotating sphere shows the difference. Both spheres below rotate, so both have the same motion field, but only the textured one produces optical flow. A uniform sphere looks unchanged.
 
 <figure class="flow-figure">
-  <video src={media("rotating-spheres.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="A rotating golf ball with visible dimples and logo next to a rotating uniform sphere that looks unchanged"></video>
+  <video class="theme-light-only" src={media("rotating-spheres.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="A rotating golf ball with visible dimples and logo next to a rotating uniform sphere that looks unchanged"></video>
+  <video class="theme-dark-only" src={media("rotating-spheres-dark.mp4")} autoplay muted loop playsinline preload="metadata" aria-label="A rotating golf ball with visible dimples and logo next to a rotating uniform sphere that looks unchanged" aria-hidden="true"></video>
   <figcaption>Motion without flow: the motion field is the same for both spheres, but the uniform sphere has no optical flow.</figcaption>
 </figure>
 
